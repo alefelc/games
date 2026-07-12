@@ -39,7 +39,6 @@ export function GameScreen({
   const level = content.levels.find((item) => item.id === card?.level) ?? null;
   const mode = content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   const player = session.currentPlayer === 0 ? (setup.playerOne || 'Vos') : (setup.playerTwo || 'Tu pareja');
-  const [confirming, setConfirming] = useState(false);
   const [timerRunning, setTimerRunning] = useState(false);
   const [remaining, setRemaining] = useState(card?.duration_seconds ?? 0);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
@@ -47,7 +46,6 @@ export function GameScreen({
   useEffect(() => {
     setRemaining(card?.duration_seconds ?? 0);
     setTimerRunning(false);
-    setConfirming(false);
   }, [card?.id, card?.duration_seconds]);
 
   useEffect(() => {
@@ -81,10 +79,6 @@ export function GameScreen({
 
   const reveal = () => {
     if (!card || session.revealed) return;
-    if (card.requires_confirmation || level?.requires_confirmation) {
-      setConfirming(true);
-      return;
-    }
     onReveal();
     if (content.theme.enable_vibration && content.settings.allow_vibration && navigator.vibrate) navigator.vibrate(35);
   };
@@ -164,20 +158,6 @@ export function GameScreen({
         <button className="stop-button" type="button" onClick={onPause}><b>{content.settings.stop_word}</b><span>Pausar sin explicar</span></button>
       </main>
 
-      {confirming && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-          <div className="modal-card">
-            <div className="modal-icon"><Icon name="warning" /></div>
-            <p className="eyebrow">CONFIRMACIÓN ADICIONAL</p>
-            <h2 id="confirm-title">Esta carta es de alta intensidad</h2>
-            <p>La carta todavía está oculta. Ambos deben querer incluir este nivel ahora. Aceptar verla no obliga a cumplirla.</p>
-            <div className="modal-actions">
-              <button className="secondary-button" type="button" onClick={() => { setConfirming(false); onResolve('skipped'); }}>Saltar sin verla</button>
-              <button className="primary-button" type="button" onClick={() => { setConfirming(false); onReveal(); }}>Ver carta</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
