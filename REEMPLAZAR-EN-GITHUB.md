@@ -1,46 +1,26 @@
-# REEMPLAZO EN GITHUB / EASYPANEL
+# Corrección EasyPanel v2.2.3
 
-El error del build anterior no estaba en React.
+El build anterior falló porque GitHub no recibió el archivo oculto `.npmrc`, pero el Dockerfile intentaba copiarlo.
 
-Había dos fallas en el paquete:
+Esta versión no depende de ningún archivo oculto. Toda la configuración de npm está dentro del Dockerfile.
 
-- `node:22-alpine` está afectado por un fallo conocido de npm que puede terminar en
-  `Exit handler never called!`.
-- El `package-lock.json` contenía 474 URLs de un registro interno no accesible
-  desde tu servidor EasyPanel.
+## Reemplazo mínimo
 
-## Método más seguro
+Reemplazá en el repositorio:
 
-1. Eliminá del repositorio anterior todos los archivos.
-2. Subí el contenido completo de `pecadoclub-app-census-v2.2.2`.
-3. Confirmá que `Dockerfile`, `package.json` y `src` estén en la raíz.
-4. En EasyPanel pulsá **Deploy** o **Rebuild**.
+- `Dockerfile`
+- `package.json`
+- `package-lock.json`
 
-## Método mínimo
+Después hacé commit y ejecutá **Deploy / Rebuild sin caché** en EasyPanel.
 
-Reemplazá estos cinco archivos:
+## Verificación
 
-- Dockerfile
-- package.json
-- package-lock.json
-- .npmrc
-- .dockerignore
-
-Después hacé commit y redeploy.
-
-## Resultado esperado
-
-El log debe mostrar una base como:
+El log debe mostrar:
 
 ```text
-FROM node:22-bookworm-slim AS build
-```
-
-y luego:
-
-```text
+COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund --prefer-online
-RUN npm run build
 ```
 
-No debe volver a aparecer `node:22-alpine` en la etapa de build.
+No debe aparecer `.npmrc` en ninguna línea COPY.
