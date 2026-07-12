@@ -1,0 +1,14 @@
+{
+  "name": "directus-extension-pecadoclub-auto-publisher",
+  "version": "1.0.0",
+  "description": "Regenera automáticamente pc_public_bundle cuando cambia el contenido editorial de PecadoClub.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "private": true,
+  "directus:extension": {
+    "type": "hook",
+    "path": "dist/index.js",
+    "source": "src/index.js",
+    "host": "^12.0.0"
+  }
+}
