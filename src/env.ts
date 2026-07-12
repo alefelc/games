@@ -4,7 +4,7 @@ if (!directusUrl) throw new Error('VITE_DIRECTUS_URL no está configurado.');
 export const env = {
   directusUrl,
   basePath: String(import.meta.env.BASE_URL || '/'),
-  gameSlug: String(import.meta.env.VITE_GAME_SLUG || 'pecadoclub'),
+  gameSlug: String(import.meta.env.VITE_GAME_SLUG || 'te-animas'),
   allowBootstrapFallback: String(import.meta.env.VITE_ALLOW_BOOTSTRAP_FALLBACK || 'true') !== 'false',
   cacheHours: Math.max(1, Number(import.meta.env.VITE_CONTENT_CACHE_HOURS || 24)),
 };

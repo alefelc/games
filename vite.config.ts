@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => {
         includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
         manifest: {
           id: base,
-          name: 'PecadoClub',
-          short_name: 'PecadoClub',
+          name: '¿Te animás?',
+          short_name: '¿Te animás?',
           description: 'Juego íntimo configurable para parejas adultas.',
           start_url: base,
           scope: base,
@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: apiPattern,
               handler: 'NetworkFirst',
               options: {
-                cacheName: 'pecadoclub-directus-content',
+                cacheName: 'te-animas-directus-content',
                 networkTimeoutSeconds: 5,
                 expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
                 cacheableResponse: { statuses: [0, 200] }
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: assetPattern,
               handler: 'CacheFirst',
               options: {
-                cacheName: 'pecadoclub-directus-assets',
+                cacheName: 'te-animas-directus-assets',
                 expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
                 cacheableResponse: { statuses: [0, 200] }
               }

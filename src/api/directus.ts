@@ -12,10 +12,15 @@ export class DirectusPublicError extends Error {
   }
 }
 
-async function getJson<T>(endpoint: string, signal?: AbortSignal): Promise<T> {
+async function getJson<T>(
+  endpoint: string,
+  signal?: AbortSignal,
+  options: { noStore?: boolean } = {},
+): Promise<T> {
   const response = await fetch(`${env.directusUrl}${endpoint}`, {
     headers: { Accept: 'application/json' },
     signal,
+    cache: options.noStore ? 'no-store' : 'default',
   });
 
   const text = await response.text();
@@ -80,3 +85,120 @@ export async function readPublicBundle(
 
   throw lastError;
 }
+
+const GAME_FIELDS = [
+  'id','status','name','slug','tagline','description','minimum_age','default_locale','active',
+  'theme','privacy_notice','stop_word','terms_url','sort','cover_image',
+];
+
+const THEME_FIELDS = [
+  'id','status','name','slug','primary_color','secondary_color','accent_color','background_color',
+  'surface_color','card_background_color','card_border_color','text_color','muted_text_color',
+  'danger_color','heading_font_family','body_font_family','card_font_family','heading_font_url',
+  'body_font_url','card_font_url','border_radius','card_border_radius','button_height','card_ratio',
+  'shadow_intensity','enable_card_flip','enable_vibration','enable_sounds','enable_particles',
+  'animation_speed','logo_file','favicon_file','app_icon_file',
+];
+
+const SETTINGS_FIELDS = [
+  'id','game','status','default_mode','default_level','start_screen_title','intro_text',
+  'instructions_text','safety_text','stop_word','age_gate_enabled','show_timer',
+  'allow_screen_wake_lock','allow_fullscreen','allow_vibration','allow_offline',
+  'maximum_cards_per_session','enable_random_level','enable_private_filters',
+  'analytics_enabled','maintenance_mode','default_exclude_photo_video',
+  'default_exclude_third_parties','default_exclude_public_places','default_exclude_restraint',
+];
+
+function relationId(value: unknown): string | null {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (value && typeof value === 'object' && 'id' in value) {
+    const id = (value as { id?: string | number }).id;
+    return id === undefined || id === null ? null : String(id);
+  }
+  return null;
+}
+
+async function readFirst<T>(
+  collection: string,
+  fields: string[],
+  filters: Record<string, string>,
+  signal?: AbortSignal,
+): Promise<T> {
+  const params = new URLSearchParams({
+    fields: fields.join(','),
+    limit: '1',
+    ...filters,
+    _runtime: String(Date.now()),
+  });
+
+  const endpoint = `/items/${collection}?${params.toString()}`;
+  const result = await getJson<T[] | T>(endpoint, signal, { noStore: true });
+  const item = Array.isArray(result) ? result[0] : result;
+
+  if (!item) {
+    throw new DirectusPublicError(
+      `${collection} no devolvió un registro disponible para la app.`,
+      404,
+      endpoint,
+    );
+  }
+
+  return item;
+}
+
+export interface RuntimeConfigRecord {
+  game: unknown;
+  theme: unknown;
+  settings: unknown;
+}
+
+/**
+ * Lee en vivo únicamente la identidad visual y la configuración general.
+ * Las cartas y relaciones siguen saliendo del snapshot público seguro.
+ */
+export async function readRuntimeConfig(signal?: AbortSignal): Promise<RuntimeConfigRecord> {
+  const game = await readFirst<Record<string, unknown>>(
+    'pc_games',
+    GAME_FIELDS,
+    {
+      'filter[status][_eq]': 'published',
+      'filter[active][_eq]': 'true',
+      sort: 'sort',
+    },
+    signal,
+  );
+
+  const gameId = relationId(game.id);
+  const themeId = relationId(game.theme);
+  if (!gameId || !themeId) {
+    throw new DirectusPublicError(
+      'El juego publicado no tiene un tema válido vinculado.',
+      500,
+      '/items/pc_games',
+    );
+  }
+
+  const [theme, settings] = await Promise.all([
+    readFirst<Record<string, unknown>>(
+      'pc_themes',
+      THEME_FIELDS,
+      {
+        'filter[id][_eq]': themeId,
+        'filter[status][_eq]': 'published',
+      },
+      signal,
+    ),
+    readFirst<Record<string, unknown>>(
+      'pc_app_settings',
+      SETTINGS_FIELDS,
+      {
+        'filter[game][_eq]': gameId,
+        'filter[status][_eq]': 'published',
+      },
+      signal,
+    ),
+  ]);
+
+  return { game, theme, settings };
+}
+

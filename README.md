@@ -1,4 +1,4 @@
-# PecadoClub PWA v2.2.2 — census.ar
+# PecadoClub PWA v2.2.4 — census.ar
 
 Frontend React + TypeScript preparado para consumir el snapshot público seguro de Directus:
 
@@ -8,7 +8,7 @@ GET /items/pc_public_bundle
 
 No requiere ni incluye tokens de Directus.
 
-## Corrección v2.2.2 para EasyPanel
+## Corrección v2.2.4 para EasyPanel
 
 Esta versión corrige dos problemas del paquete anterior:
 
@@ -61,3 +61,8 @@ Después de editar contenido en Directus:
 node .\publish-public-bundle.mjs
 node .\validate-public-api.mjs
 ```
+
+
+## Corrección de ejecución v2.2.4
+
+Se eliminó un bucle de carga causado por la suscripción al store completo de Zustand. Ver `CORRECCION-PANTALLA-V2.2.4.md`.

@@ -1,7 +1,7 @@
 import { env } from '../env';
 import type { ContentBundle, ContentSource } from '../types';
 import { readCachedContent, writeCachedContent } from '../db/cache';
-import { readPublicBundle } from './directus';
+import { readPublicBundle, readRuntimeConfig } from './directus';
 import {
   cardElementSchema, cardSchema, cardTagSchema, cardToySchema, deckCardSchema, deckSchema,
   elementSchema, gameSchema, levelSchema, modeSchema, releaseSchema, settingsSchema, tagSchema,
@@ -47,14 +47,45 @@ function parseBundle(value: unknown): ContentBundle {
   return value as ContentBundle;
 }
 
-async function fetchFullBundle(signal?: AbortSignal): Promise<ContentBundle> {
+
+async function mergeRuntimeConfig(
+  bundle: ContentBundle,
+  signal?: AbortSignal,
+): Promise<{ bundle: ContentBundle; updated: boolean; warning: string | null }> {
+  try {
+    const live = await readRuntimeConfig(signal);
+    const merged = validateBundle({
+      ...bundle,
+      game: gameSchema.parse(live.game),
+      theme: themeSchema.parse(live.theme),
+      settings: settingsSchema.parse(live.settings),
+      fetchedAt: new Date().toISOString(),
+    });
+
+    return { bundle: merged, updated: true, warning: null };
+  } catch (error) {
+    return {
+      bundle,
+      updated: false,
+      warning:
+        'La configuración en vivo de Directus no está habilitada; se usa la última versión publicada. ' +
+        (error instanceof Error ? error.message : ''),
+    };
+  }
+}
+
+async function fetchFullBundle(
+  signal?: AbortSignal,
+): Promise<{ bundle: ContentBundle; warning: string | null }> {
   const record = await readPublicBundle({ includeBundle: true, signal });
   const raw = parseBundle(record.bundle);
-  return validateBundle({
+  const snapshot = validateBundle({
     ...raw,
     contentHash: record.content_hash,
     fetchedAt: new Date().toISOString(),
   });
+  const live = await mergeRuntimeConfig(snapshot, signal);
+  return { bundle: live.bundle, warning: live.warning };
 }
 
 async function readBootstrap(): Promise<ContentBundle> {
@@ -85,13 +116,19 @@ export async function loadContent(options: { force?: boolean; signal?: AbortSign
     if (!options.force && cached?.contentHash) {
       const metadata = await readPublicBundle({ includeBundle: false, signal: options.signal });
       if (metadata.content_hash === cached.contentHash && isFresh(cached)) {
-        return { bundle: validateBundle(cached), source: 'cache', warning: null };
+        const live = await mergeRuntimeConfig(validateBundle(cached), options.signal);
+        await writeCachedContent(live.bundle);
+        return {
+          bundle: live.bundle,
+          source: live.updated ? 'network' : 'cache',
+          warning: live.warning,
+        };
       }
     }
 
-    const bundle = await fetchFullBundle(options.signal);
-    await writeCachedContent(bundle);
-    return { bundle, source: 'network', warning: null };
+    const loaded = await fetchFullBundle(options.signal);
+    await writeCachedContent(loaded.bundle);
+    return { bundle: loaded.bundle, source: 'network', warning: loaded.warning };
   } catch (error) {
     if (cached) {
       return {
