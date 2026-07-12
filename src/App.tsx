@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadContent } from './api/content-loader';
 import { useGameStore } from './store/useGameStore';
 import { applyTheme } from './theme/applyTheme';
@@ -12,32 +12,81 @@ import { PauseScreen } from './screens/PauseScreen';
 import { SummaryScreen } from './screens/SummaryScreen';
 
 export default function App() {
-  const store = useGameStore();
+  /*
+   * No hay que suscribirse al store completo con useGameStore().
+   * Zustand entrega un nuevo objeto cada vez que cambia cualquier estado. Si ese objeto
+   * se usa como dependencia de refresh(), el efecto de carga vuelve a ejecutarse después
+   * de setContent() y genera un bucle infinito: loading → contenido → loading.
+   *
+   * Los selectores de abajo mantienen estables las acciones y solo vuelven a renderizar
+   * cuando cambia el fragmento de estado que la pantalla realmente utiliza.
+   */
+  const stage = useGameStore((state) => state.stage);
+  const content = useGameStore((state) => state.content);
+  const contentSource = useGameStore((state) => state.contentSource);
+  const contentWarning = useGameStore((state) => state.contentWarning);
+  const setup = useGameStore((state) => state.setup);
+  const session = useGameStore((state) => state.session);
+
+  const setContent = useGameStore((state) => state.setContent);
+  const acceptAge = useGameStore((state) => state.acceptAge);
+  const goHome = useGameStore((state) => state.goHome);
+  const openSetup = useGameStore((state) => state.openSetup);
+  const updateSetup = useGameStore((state) => state.updateSetup);
+  const updateFilters = useGameStore((state) => state.updateFilters);
+  const startGame = useGameStore((state) => state.startGame);
+  const revealCard = useGameStore((state) => state.revealCard);
+  const resolveCard = useGameStore((state) => state.resolveCard);
+  const pause = useGameStore((state) => state.pause);
+  const resume = useGameStore((state) => state.resume);
+  const finish = useGameStore((state) => state.finish);
+  const setCurrentLevel = useGameStore((state) => state.setCurrentLevel);
+  const restart = useGameStore((state) => state.restart);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestSequence = useRef(0);
 
-  const refresh = useCallback(async (force = false) => {
+  const refresh = useCallback(async (force = false, signal?: AbortSignal) => {
+    const requestId = ++requestSequence.current;
+
     if (force) setRefreshing(true);
     else setLoading(true);
     setError(null);
+
     try {
-      const result = await loadContent({ force });
-      store.setContent(result.bundle, result.source, result.warning);
+      const result = await loadContent({ force, signal });
+
+      // Evita que una respuesta anterior pise una solicitud más reciente.
+      if (requestId !== requestSequence.current || signal?.aborted) return;
+
+      setContent(result.bundle, result.source, result.warning);
       applyTheme(result.bundle.theme, result.bundle.game);
     } catch (cause) {
+      if (signal?.aborted || requestId !== requestSequence.current) return;
       setError(cause instanceof Error ? cause.message : 'Error desconocido al cargar el contenido.');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === requestSequence.current && !signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [store]);
-
-  useEffect(() => { void refresh(false); }, [refresh]);
+  }, [setContent]);
 
   useEffect(() => {
-    if (store.stage !== 'game' || !store.content?.settings.allow_screen_wake_lock) return;
+    const controller = new AbortController();
+    void refresh(false, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [refresh]);
+
+  useEffect(() => {
+    if (stage !== 'game' || !content?.settings.allow_screen_wake_lock) return;
     if (!('wakeLock' in navigator)) return;
+
     let sentinel: WakeLockSentinel | null = null;
     let cancelled = false;
 
@@ -49,73 +98,84 @@ export default function App() {
         // El navegador puede rechazar Wake Lock por ahorro de energía o falta de interacción.
       }
     };
+
     void acquire();
 
     return () => {
       cancelled = true;
       void sentinel?.release().catch(() => undefined);
     };
-  }, [store.stage, store.content?.settings.allow_screen_wake_lock]);
+  }, [stage, content?.settings.allow_screen_wake_lock]);
 
-  if (loading || !store.content) {
+  if (loading || !content) {
     if (error) return <ErrorScreen error={error} onRetry={() => void refresh(true)} />;
     return <LoadingScreen />;
   }
 
-  const content = store.content;
   if (content.settings.maintenance_mode) {
-    return <ErrorScreen error="El juego está temporalmente en mantenimiento desde el panel de administración." onRetry={() => void refresh(true)} />;
+    return (
+      <ErrorScreen
+        error="El juego está temporalmente en mantenimiento desde el panel de administración."
+        onRetry={() => void refresh(true)}
+      />
+    );
   }
 
-  switch (store.stage) {
+  switch (stage) {
     case 'age':
-      return <AgeGate content={content} onAccept={store.acceptAge} />;
+      return <AgeGate content={content} onAccept={acceptAge} />;
+
     case 'home':
       return (
         <HomeScreen
           content={content}
-          source={store.contentSource}
-          warning={store.contentWarning}
-          onStart={store.openSetup}
+          source={contentSource}
+          warning={contentWarning}
+          onStart={openSetup}
           onRefresh={() => void refresh(true)}
           refreshing={refreshing}
         />
       );
+
     case 'setup':
-      return store.setup ? (
+      return setup ? (
         <SetupScreen
           content={content}
-          setup={store.setup}
-          onBack={store.goHome}
-          onStart={store.startGame}
-          updateSetup={store.updateSetup}
-          updateFilters={store.updateFilters}
+          setup={setup}
+          onBack={goHome}
+          onStart={startGame}
+          updateSetup={updateSetup}
+          updateFilters={updateFilters}
         />
       ) : <LoadingScreen />;
+
     case 'game':
-      return store.setup && store.session ? (
+      return setup && session ? (
         <GameScreen
           content={content}
-          setup={store.setup}
-          session={store.session}
-          onReveal={store.revealCard}
-          onResolve={store.resolveCard}
-          onPause={store.pause}
-          onSetLevel={store.setCurrentLevel}
+          setup={setup}
+          session={session}
+          onReveal={revealCard}
+          onResolve={resolveCard}
+          onPause={pause}
+          onSetLevel={setCurrentLevel}
         />
       ) : <LoadingScreen />;
+
     case 'paused':
-      return <PauseScreen content={content} onResume={store.resume} onFinish={store.finish} />;
+      return <PauseScreen content={content} onResume={resume} onFinish={finish} />;
+
     case 'summary':
-      return store.setup ? (
+      return setup ? (
         <SummaryScreen
           content={content}
-          setup={store.setup}
-          session={store.session}
-          onRestart={store.restart}
-          onHome={store.goHome}
+          setup={setup}
+          session={session}
+          onRestart={restart}
+          onHome={goHome}
         />
       ) : <LoadingScreen />;
+
     default:
       return <LoadingScreen />;
   }
