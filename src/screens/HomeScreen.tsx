@@ -54,6 +54,7 @@ export function HomeScreen({
         }
       />
       <main className="hero">
+        <Brand game={content.game} theme={content.theme} />
         <p className="eyebrow">{content.game.tagline || 'CUANDO SE JUEGA, SE ENCIENDE'}</p>
         <p className="hero-copy">{content.settings.intro_text}</p>
 
