@@ -106,6 +106,12 @@ h2 { font-size: 1.6rem; }
 .brand-image { width: min(100%, 520px); max-height: 150px; object-fit: contain; }
 .brand-image.compact { width: min(180px, 45vw); max-height: 40px; }
 
+.home-cover-brand {
+  width: min(82vw, 420px);
+  max-height: 220px;
+  object-fit: contain;
+}
+
 .primary-button, .secondary-button, .start-button {
   min-height: var(--pc-button-height);
   border-radius: calc(var(--pc-radius) * .72);
