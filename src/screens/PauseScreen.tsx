@@ -7,7 +7,7 @@ export function PauseScreen({ content, onResume, onFinish }: { content: ContentB
       <div className="pause-mark"><Icon name="pause" /></div>
       <p className="eyebrow">{content.settings.stop_word}</p>
       <h1>La partida está pausada</h1>
-      <p>No se continúa hasta que ambos quieran. No hace falta justificar la pausa ni negociar en este momento.</p>
+      <p>No se continúa hasta que ambos quieran.</p>
       <div className="pause-actions">
         <button className="primary-button wide" type="button" onClick={onResume}>Ambos queremos continuar</button>
         <button className="secondary-button wide" type="button" onClick={onFinish}>Terminar la partida</button>
