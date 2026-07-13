@@ -96,7 +96,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 1 DE 4</p>
             <h1>¿Quiénes juegan y cómo?</h1>
-            <p className="section-copy">Los nombres son opcionales y solo se guardan durante esta partida.</p>
+            {/*<p className="section-copy">Los nombres son opcionales y solo se guardan durante esta partida.</p>*/}
 
             <div className="player-grid">
               <label><span>Persona 1</span><input maxLength={24} value={setup.playerOne} onChange={(event) => updateSetup({ playerOne: event.target.value })} placeholder="Vos" /></label>
@@ -118,7 +118,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 2 DE 4</p>
             <h1>Definan la intensidad</h1>
-            <p className="section-copy">No seleccionen un nivel por curiosidad. Selecciónenlo solo si ambos quieren que pueda aparecer.</p>
+            {/*<p className="section-copy">No seleccionen un nivel por curiosidad. Selecciónenlo solo si ambos quieren que pueda aparecer.</p>*/}
 
             <div className="level-grid">
               {content.levels.map((level) => {
@@ -171,7 +171,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 3 DE 4</p>
             <h1>¿Qué tienen disponible?</h1>
-            <p className="section-copy">Una carta que requiera algo no seleccionado quedará automáticamente fuera de la partida.</p>
+            {/*<p className="section-copy">Una carta que requiera algo no seleccionado quedará automáticamente fuera de la partida.</p>*/}
 
             <h2 className="subheading">Elementos comunes</h2>
             <div className="choice-list two-columns">
@@ -205,7 +205,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 4 DE 4</p>
             <h1>Marquen los límites</h1>
-            <p className="section-copy">Activar un filtro significa excluir ese contenido. Estos filtros operan antes de elegir cada carta.</p>
+            {/*<p className="section-copy">Activar un filtro significa excluir ese contenido. Estos filtros operan antes de elegir cada carta.</p>*/}
 
             <div className="filter-list">
               <FilterToggle checked={setup.filters.excludePhotoVideo} title="Excluir fotos y videos" description="Evita creación o envío de contenido íntimo." onChange={(value) => updateFilters({ excludePhotoVideo: value })} />
