@@ -54,26 +54,23 @@ export function HomeScreen({
         }
       />
       <main className="hero">
-        <div className="hero-emblem"><Icon name="flame" /></div>
-        <p className="eyebrow">{content.game.tagline || 'CUANDO SE JUEGA, SE ENCIENDE'}</p>
         <Brand game={content.game} theme={content.theme} />
+        <p className="eyebrow">{content.game.tagline || 'CUANDO SE JUEGA, SE ENCIENDE'}</p>
         <p className="hero-copy">{content.settings.intro_text}</p>
 
         <button className="start-button" type="button" onClick={onStart}>
-          <span><small>PARTIDA PERSONALIZADA</small><b>Empezar a jugar</b></span>
+          <span><b>Empezar a jugar</b></span>
           <Icon name="arrow" />
         </button>
 
         <div className="home-stats" aria-label="Contenido disponible">
-          <div><b>{content.cards.length}</b><span>cartas públicas</span></div>
+          <div><b>{content.cards.length}</b><span>cartas</span></div>
           <div><b>{publishedLevels}</b><span>niveles</span></div>
           <div><b>{content.modes.length}</b><span>modos</span></div>
         </div>
 
         <button className="text-button" type="button" onClick={() => setShowRules(true)}>Cómo se juega</button>
 
-        {warning && <div className="warning-banner"><Icon name="info" /><span>{warning}</span></div>}
-        <div className="content-source"><span className={`status-dot ${source}`} />{sourceLabel} · versión {content.release.version}</div>
         <div className="privacy-note"><Icon name="lock" /><span>{content.game.privacy_notice || 'La actividad de la partida queda en este dispositivo.'}</span></div>
       </main>
     </div>
