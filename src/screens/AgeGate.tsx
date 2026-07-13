@@ -11,7 +11,7 @@ export function AgeGate({ content, onAccept }: { content: ContentBundle; onAccep
   return (
     <main className="center-screen age-screen">
       <Brand game={content.game} theme={content.theme} />
-      <p className="lead">Juego de cartas para parejas adultas. Contiene lenguaje y propuestas sexuales explícitas, por lo que no está diseñado para menores de 18 años.
+      <p className="lead">Juego de cartas para parejas adultas. Contiene lenguaje y propuestas sexuales explícitas, no apto para menores de 18 años.
 </p>
 
       <div className="consent-box">
