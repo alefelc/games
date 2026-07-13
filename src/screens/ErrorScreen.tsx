@@ -8,7 +8,7 @@ export function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => 
       <h1>Hay un problema con el contenido</h1>
       <p>{error}</p>
       <button className="primary-button" type="button" onClick={onRetry}>Reintentar</button>
-      <small>La aplicación no utiliza un token privado. Directus debe permitir lectura pública de las colecciones del juego.</small>
+      {/*<small>La aplicación no utiliza un token privado. Directus debe permitir lectura pública de las colecciones del juego.</small>*/}
     </main>
   );
 }
