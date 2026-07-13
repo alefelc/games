@@ -151,7 +151,7 @@ export function SetupScreen({
 
             <details className="deck-details">
               <summary>Mazos incluidos <span>{setup.deckIds.length || 'todos'}</span></summary>
-              <p>Los mazos permiten crear ediciones temáticas desde Directus. Si no elegís ninguno, se consideran todos.</p>
+              <p>Los mazos permiten crear ediciones temáticas. Si no elegís ninguno, se consideran todos.</p>
               <div className="choice-list compact">
                 {content.decks.map((deck) => (
                   <ChoiceToggle
