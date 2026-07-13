@@ -220,10 +220,6 @@ export function GameScreen({
             >
               {level.name}
             </span>
-
-            <p>
-              Turno de <b>{player}</b>
-            </p>
           </div>
 
           <div className="counter">
@@ -263,6 +259,22 @@ export function GameScreen({
             </div>
 
             <div className="card-face card-front">
+              <div
+                className="card-player-name"
+                style={{
+                  alignSelf: 'stretch',
+                  textAlign: 'left',
+                  fontSize: 'clamp(1.25rem, 4.5vw, 1.75rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.1,
+                  color: 'var(--pc-accent)',
+                  marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {player}
+              </div>
+
               <p className="card-text">{card.text}</p>
 
               {card.instructions && (
