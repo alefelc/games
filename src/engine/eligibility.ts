@@ -47,6 +47,29 @@ function hasRequiredResources(
   return true;
 }
 
+
+function matchesSexRequirements(
+  card: Card,
+  currentPlayerSexId: Id | null | undefined,
+  partnerSexId: Id | null | undefined,
+): boolean {
+  if (!card.performer_sex && !card.target_sex) return true;
+  if (!currentPlayerSexId || !partnerSexId) return false;
+
+  const direct =
+    (!card.performer_sex || card.performer_sex === currentPlayerSexId) &&
+    (!card.target_sex || card.target_sex === partnerSexId);
+
+  const isMutual = card.performer === 'both' || card.target === 'both';
+  if (!isMutual) return direct;
+
+  const reverse =
+    (!card.performer_sex || card.performer_sex === partnerSexId) &&
+    (!card.target_sex || card.target_sex === currentPlayerSexId);
+
+  return direct || reverse;
+}
+
 export function isCardEligible(
   card: Card,
   context: EligibilityContext,
@@ -55,6 +78,13 @@ export function isCardEligible(
   if (card.status !== 'published') return false;
   if (!context.selectedLevelIds.has(card.level)) return false;
   if (card.minimum_players > 2 || card.maximum_players < 2) return false;
+  if (
+    !matchesSexRequirements(
+      card,
+      context.currentPlayerSexId,
+      context.partnerSexId,
+    )
+  ) return false;
 
   if (context.selectedDeckIds.size > 0) {
     const cardDecks = indexes.decksByCard.get(card.id) ?? [];

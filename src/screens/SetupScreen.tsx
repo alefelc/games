@@ -68,7 +68,14 @@ export function SetupScreen({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const eligibleCount = useMemo(() => previewEligibleCount(content, setup), [content, setup]);
   const requiresIntenseConsent = content.levels.some((level) => setup.levelIds.includes(level.id) && level.requires_confirmation);
-  const canStart = Boolean(setup.modeId && setup.levelIds.length && eligibleCount > 0 && (!requiresIntenseConsent || setup.intenseConsent));
+  const canStart = Boolean(
+    setup.playerOneSexId &&
+    setup.playerTwoSexId &&
+    setup.modeId &&
+    setup.levelIds.length &&
+    eligibleCount > 0 &&
+    (!requiresIntenseConsent || setup.intenseConsent)
+  );
 
   const selectMode = (modeId: Id) => {
     const mode = content.modes.find((item) => item.id === modeId);
@@ -96,11 +103,64 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 1 DE 4</p>
             <h1>¿Quiénes juegan y cómo?</h1>
-            <p className="section-copy"></p>
+            <p className="section-copy">Los nombres son opcionales. Elegí el sexo de cada persona para que las cartas correspondan a quien tiene el turno.</p>
 
             <div className="player-grid">
-              <label><span>Persona 1</span><input maxLength={24} value={setup.playerOne} onChange={(event) => updateSetup({ playerOne: event.target.value })} placeholder="Vos" /></label>
-              <label><span>Persona 2</span><input maxLength={24} value={setup.playerTwo} onChange={(event) => updateSetup({ playerTwo: event.target.value })} placeholder="Tu pareja" /></label>
+              <label>
+                <span>Persona 1</span>
+                <input
+                  maxLength={24}
+                  value={setup.playerOne}
+                  onChange={(event) =>
+                    updateSetup({ playerOne: event.target.value })
+                  }
+                  placeholder="Vos"
+                />
+                <select
+                  value={setup.playerOneSexId ?? ''}
+                  onChange={(event) =>
+                    updateSetup({
+                      playerOneSexId: event.target.value || null,
+                    })
+                  }
+                  aria-label="Sexo de la persona 1"
+                >
+                  <option value="">Elegí su sexo</option>
+                  {content.sexes.map((sex) => (
+                    <option key={sex.id} value={sex.id}>
+                      {sex.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span>Persona 2</span>
+                <input
+                  maxLength={24}
+                  value={setup.playerTwo}
+                  onChange={(event) =>
+                    updateSetup({ playerTwo: event.target.value })
+                  }
+                  placeholder="Tu pareja"
+                />
+                <select
+                  value={setup.playerTwoSexId ?? ''}
+                  onChange={(event) =>
+                    updateSetup({
+                      playerTwoSexId: event.target.value || null,
+                    })
+                  }
+                  aria-label="Sexo de la persona 2"
+                >
+                  <option value="">Elegí su sexo</option>
+                  {content.sexes.map((sex) => (
+                    <option key={sex.id} value={sex.id}>
+                      {sex.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
 
             <h2 className="subheading">Modo de juego</h2>
@@ -118,7 +178,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 2 DE 4</p>
             <h1>Definan la intensidad</h1>
-            <p className="section-copy"></p>
+            <p className="section-copy">No seleccionen un nivel por curiosidad. Selecciónenlo solo si ambos quieren que pueda aparecer.</p>
 
             <div className="level-grid">
               {content.levels.map((level) => {
@@ -151,7 +211,7 @@ export function SetupScreen({
 
             <details className="deck-details">
               <summary>Mazos incluidos <span>{setup.deckIds.length || 'todos'}</span></summary>
-              <p>Los mazos permiten crear ediciones temáticas. Si no elegís ninguno, se consideran todos.</p>
+              <p>Los mazos permiten crear ediciones temáticas desde Directus. Si no elegís ninguno, se consideran todos.</p>
               <div className="choice-list compact">
                 {content.decks.map((deck) => (
                   <ChoiceToggle
@@ -171,7 +231,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 3 DE 4</p>
             <h1>¿Qué tienen disponible?</h1>
-            <p className="section-copy"></p>
+            <p className="section-copy">Una carta que requiera algo no seleccionado quedará automáticamente fuera de la partida.</p>
 
             <h2 className="subheading">Elementos comunes</h2>
             <div className="choice-list two-columns">
@@ -205,7 +265,7 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 4 DE 4</p>
             <h1>Marquen los límites</h1>
-            <p className="section-copy"></p>
+            <p className="section-copy">Activar un filtro significa excluir ese contenido. Estos filtros operan antes de elegir cada carta.</p>
 
             <div className="filter-list">
               <FilterToggle checked={setup.filters.excludePhotoVideo} title="Excluir fotos y videos" description="Evita creación o envío de contenido íntimo." onChange={(value) => updateFilters({ excludePhotoVideo: value })} />

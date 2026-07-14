@@ -4,7 +4,7 @@ import { readCachedContent, writeCachedContent } from '../db/cache';
 import { readPublicBundle, readRuntimeConfig } from './directus';
 import {
   cardElementSchema, cardSchema, cardTagSchema, cardToySchema, deckCardSchema, deckSchema,
-  elementSchema, gameSchema, levelSchema, modeSchema, releaseSchema, settingsSchema, tagSchema,
+  elementSchema, gameSchema, levelSchema, modeSchema, releaseSchema, settingsSchema, sexSchema, tagSchema,
   themeSchema, toySchema,
 } from './schemas';
 
@@ -21,6 +21,7 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   const elements = sortByOrder(raw.elements.map((item) => elementSchema.parse(item)));
   const toys = sortByOrder(raw.toys.map((item) => toySchema.parse(item)));
   const tags = sortByOrder(raw.tags.map((item) => tagSchema.parse(item)));
+  const sexes = sortByOrder(raw.sexes.map((item) => sexSchema.parse(item)));
   const cards = sortByOrder(raw.cards.map((item) => cardSchema.parse(item)));
   const deckCards = raw.deckCards.map((item) => deckCardSchema.parse(item));
   const cardElements = raw.cardElements.map((item) => cardElementSchema.parse(item));
@@ -34,7 +35,7 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   if (!modes.length) throw new Error('Directus no devolvió modos publicados.');
 
   return {
-    game, theme, levels, decks, modes, elements, toys, tags, cards, deckCards,
+    game, theme, levels, decks, modes, elements, toys, tags, sexes, cards, deckCards,
     cardElements, cardToys, cardTags, settings, release,
     fetchedAt: raw.fetchedAt || new Date().toISOString(),
     contentHash: raw.contentHash,

@@ -58,11 +58,17 @@ export const tagSchema = z.object({
   id, game: id, status: z.string(), name: z.string(), slug: z.string(), category: z.string(), color: nullableString, sort: nullableNumber,
 });
 
+export const sexSchema = z.object({
+  id, game: id, status: z.string(), name: z.string(), slug: z.string(),
+  description: nullableString, sort: nullableNumber,
+});
+
 export const cardSchema = z.object({
   id, game: id, level: id, status: z.string(), sort: nullableNumber, code: z.string(), title: nullableString,
   text: z.string().min(1), instructions: nullableString, card_type: z.string(), original_deck: nullableString,
   duration_seconds: nullableNumber, weight: number, intensity: number, minimum_players: number, maximum_players: number,
-  performer: z.string(), target: z.string(), allow_skip: bool, requires_confirmation: bool, safety_note: nullableString,
+  performer: z.string(), target: z.string(), performer_sex: relationId, target_sex: relationId,
+  allow_skip: bool, requires_confirmation: bool, safety_note: nullableString,
   privacy_risk: number, physical_risk: number, gender_scope: z.string(), language: z.string(),
   contains_oral: bool, contains_penetration: bool, contains_restraint: bool, contains_food: bool,
   contains_temperature: bool, contains_public_place: bool, contains_third_parties: bool, contains_photo: bool,

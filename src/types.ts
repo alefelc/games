@@ -151,6 +151,17 @@ export interface Tag {
   sort: number | null;
 }
 
+
+export interface Sex {
+  id: Id;
+  game: Id;
+  status: string;
+  name: string;
+  slug: 'hombre' | 'mujer' | string;
+  description: string | null;
+  sort: number | null;
+}
+
 export interface Card {
   id: Id;
   game: Id;
@@ -170,6 +181,8 @@ export interface Card {
   maximum_players: number;
   performer: string;
   target: string;
+  performer_sex: Id | null;
+  target_sex: Id | null;
   allow_skip: boolean;
   requires_confirmation: boolean;
   safety_note: string | null;
@@ -278,6 +291,7 @@ export interface ContentBundle {
   elements: ElementItem[];
   toys: Toy[];
   tags: Tag[];
+  sexes: Sex[];
   cards: Card[];
   deckCards: DeckCard[];
   cardElements: CardElement[];
@@ -310,6 +324,8 @@ export interface SafetyFilters {
 export interface GameSetup {
   playerOne: string;
   playerTwo: string;
+  playerOneSexId: Id | null;
+  playerTwoSexId: Id | null;
   modeId: Id;
   levelIds: Id[];
   deckIds: Id[];
@@ -342,4 +358,6 @@ export interface EligibilityContext {
   selectedElementIds: Set<Id>;
   selectedToyIds: Set<Id>;
   filters: SafetyFilters;
+  currentPlayerSexId?: Id | null;
+  partnerSexId?: Id | null;
 }

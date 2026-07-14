@@ -106,12 +106,6 @@ h2 { font-size: 1.6rem; }
 .brand-image { width: min(100%, 520px); max-height: 150px; object-fit: contain; }
 .brand-image.compact { width: min(180px, 45vw); max-height: 40px; }
 
-.home-cover-brand {
-  width: min(82vw, 420px);
-  max-height: 220px;
-  object-fit: contain;
-}
-
 .primary-button, .secondary-button, .start-button {
   min-height: var(--pc-button-height);
   border-radius: calc(var(--pc-radius) * .72);
@@ -237,7 +231,8 @@ h2 { font-size: 1.6rem; }
 .subheading { margin: 32px 0 12px; font-family: var(--pc-body-font); font-size: .9rem; text-transform: uppercase; letter-spacing: .12em; color: var(--pc-accent); }
 .player-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 26px 0; }
 .player-grid label { display: grid; gap: 7px; color: var(--pc-muted); font-size: .78rem; }
-.player-grid input { width: 100%; height: 54px; border-radius: 15px; border: 1px solid color-mix(in srgb, var(--pc-accent) 18%, transparent); background: color-mix(in srgb, var(--pc-surface) 82%, transparent); color: var(--pc-text); padding: 0 16px; }
+.player-grid input, .player-grid select { width: 100%; height: 54px; border-radius: 15px; border: 1px solid color-mix(in srgb, var(--pc-accent) 18%, transparent); background: color-mix(in srgb, var(--pc-surface) 82%, transparent); color: var(--pc-text); padding: 0 16px; }
+.player-grid select { appearance: none; cursor: pointer; }
 .mode-grid, .level-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .mode-card, .level-card {
   border: 1px solid color-mix(in srgb, var(--pc-accent) 14%, transparent);

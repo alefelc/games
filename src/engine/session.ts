@@ -11,6 +11,8 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
   return {
     playerOne: 'Vos',
     playerTwo: 'Tu pareja',
+    playerOneSexId: null,
+    playerTwoSexId: null,
     modeId: defaultMode,
     levelIds: defaultLevels,
     deckIds: content.decks.filter((deck) => deck.active).map((deck) => deck.id),
@@ -117,27 +119,66 @@ export function drawNextCard(
   const mode = content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   if (!mode) return { session, card: null, exhausted: true };
 
-  const context = {
+  const contextForPlayer = (player: 0 | 1) => ({
     selectedLevelIds: new Set(setup.levelIds),
     selectedDeckIds: new Set(setup.deckIds),
     selectedElementIds: new Set(setup.elementIds),
     selectedToyIds: new Set(setup.toyIds),
     filters: setup.filters,
-  };
+    currentPlayerSexId:
+      player === 0 ? setup.playerOneSexId : setup.playerTwoSexId,
+    partnerSexId:
+      player === 0 ? setup.playerTwoSexId : setup.playerOneSexId,
+  });
 
   const targetLevel = targetLevelForDraw(content, setup, session, mode);
   const used = new Set(session.usedCardIds);
-  const allEligible = eligibleCards(content, context).filter((card) => !used.has(card.id));
-  let candidates = targetLevel ? allEligible.filter((card) => card.level === targetLevel) : allEligible;
 
-  // Si un nivel quedó sin cartas por los filtros, no bloquea la partida completa.
-  if (!candidates.length && mode.slug !== 'solo-previa') candidates = allEligible;
+  let drawPlayer = session.currentPlayer;
+  let allEligible = eligibleCards(
+    content,
+    contextForPlayer(drawPlayer),
+  ).filter((card) => !used.has(card.id));
+
+  let candidates = targetLevel
+    ? allEligible.filter((card) => card.level === targetLevel)
+    : allEligible;
+
+  if (!candidates.length && mode.slug !== 'solo-previa') {
+    candidates = allEligible;
+  }
+
+  // Si el turno actual no tiene cartas compatibles, se prueba con la otra persona.
+  if (!candidates.length) {
+    const otherPlayer = drawPlayer === 0 ? 1 : 0;
+    const otherEligible = eligibleCards(
+      content,
+      contextForPlayer(otherPlayer),
+    ).filter((card) => !used.has(card.id));
+
+    const otherCandidates = targetLevel
+      ? otherEligible.filter((card) => card.level === targetLevel)
+      : otherEligible;
+
+    if (otherCandidates.length || otherEligible.length) {
+      drawPlayer = otherPlayer;
+      allEligible = otherEligible;
+      candidates = otherCandidates.length ? otherCandidates : otherEligible;
+    }
+  }
 
   const card = weightedPick(candidates, random);
-  if (!card) return { session: { ...session, currentCardId: null }, card: null, exhausted: true };
+  if (!card) {
+    return {
+      session: { ...session, currentCardId: null },
+      card: null,
+      exhausted: true,
+    };
+  }
 
   const nextSession: SessionState = {
     ...session,
+    currentPlayer: drawPlayer,
     currentCardId: card.id,
     currentLevelId: card.level,
     revealed: false,
@@ -176,12 +217,31 @@ export function resolveCurrentCard(
   };
 }
 
-export function previewEligibleCount(content: ContentBundle, setup: GameSetup): number {
-  return eligibleCards(content, {
+export function previewEligibleCount(
+  content: ContentBundle,
+  setup: GameSetup,
+): number {
+  const common = {
     selectedLevelIds: new Set(setup.levelIds),
     selectedDeckIds: new Set(setup.deckIds),
     selectedElementIds: new Set(setup.elementIds),
     selectedToyIds: new Set(setup.toyIds),
     filters: setup.filters,
-  }).length;
+  };
+
+  const playerOneCards = eligibleCards(content, {
+    ...common,
+    currentPlayerSexId: setup.playerOneSexId,
+    partnerSexId: setup.playerTwoSexId,
+  });
+
+  const playerTwoCards = eligibleCards(content, {
+    ...common,
+    currentPlayerSexId: setup.playerTwoSexId,
+    partnerSexId: setup.playerOneSexId,
+  });
+
+  return new Set(
+    [...playerOneCards, ...playerTwoCards].map((card) => card.id),
+  ).size;
 }
