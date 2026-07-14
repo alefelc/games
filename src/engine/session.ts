@@ -9,8 +9,8 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
   const defaultMode = content.settings.default_mode ?? content.modes[0]?.id ?? '';
 
   return {
-    playerOne: 'Vos',
-    playerTwo: 'Tu pareja',
+    playerOne: '',
+    playerTwo: '',
     playerOneSexId: null,
     playerTwoSexId: null,
     modeId: defaultMode,
