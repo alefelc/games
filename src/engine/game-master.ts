@@ -1,4 +1,4 @@
-import { requestGameMasterDecision } from '../api/game-master';
+import { checkGameMasterAvailability, requestGameMasterDecision } from '../api/game-master';
 import type {
   Card,
   ContentBundle,
@@ -49,6 +49,28 @@ function rankCandidates(
   });
 }
 
+function localFallback(
+  content: ContentBundle,
+  setup: GameSetup,
+  session: SessionState,
+): DrawResult {
+  const local = drawNextCard(content, setup, session);
+
+  if (!local.card) return local;
+
+  return {
+    ...local,
+    session: {
+      ...local.session,
+      gmHostMessage: null,
+      gmStrategy: setup.gameMasterEnabled
+        ? 'adaptive_fallback'
+        : null,
+      gmFallbackUsed: setup.gameMasterEnabled,
+    },
+  };
+}
+
 export async function drawAdaptiveCard(
   content: ContentBundle,
   setup: GameSetup,
@@ -56,15 +78,30 @@ export async function drawAdaptiveCard(
   resolvedEvent: GameMasterEvent | null,
 ): Promise<DrawResult> {
   if (!setup.gameMasterEnabled) {
-    return drawNextCard(content, setup, session);
-  }
-
-  const pool = getDrawCandidatePool(content, setup, session);
-  if (pool.exhausted || !pool.candidates.length) {
-    return { session, card: null, exhausted: true };
+    return localFallback(content, setup, session);
   }
 
   try {
+    const available = await checkGameMasterAvailability();
+
+    if (!available) {
+      return localFallback(content, setup, session);
+    }
+
+    const pool = getDrawCandidatePool(
+      content,
+      setup,
+      session,
+    );
+
+    if (pool.exhausted || !pool.candidates.length) {
+      return {
+        session,
+        card: null,
+        exhausted: true,
+      };
+    }
+
     const candidates = rankCandidates(
       pool.candidates,
       session,
@@ -85,7 +122,7 @@ export async function drawAdaptiveCard(
     );
 
     if (!selected) {
-      throw new Error('La carta elegida ya no está disponible.');
+      return localFallback(content, setup, session);
     }
 
     return {
@@ -105,8 +142,7 @@ export async function drawAdaptiveCard(
       card: selected,
       exhausted: false,
     };
-  } catch (error) {
-    console.warn('Se continuó con la selección local.', error);
-    return drawNextCard(content, setup, session);
+  } catch {
+    return localFallback(content, setup, session);
   }
 }

@@ -7,6 +7,24 @@ const nullableNumber = z.coerce.number().nullable().optional().transform((value)
 const bool = z.coerce.boolean();
 const number = z.coerce.number();
 
+const numberWithDefault = (fallback: number) =>
+  z.preprocess(
+    (value) =>
+      value === null || value === '' || value === undefined
+        ? undefined
+        : value,
+    z.coerce.number().optional().default(fallback),
+  );
+
+const stringWithDefault = (fallback: string) =>
+  z.preprocess(
+    (value) =>
+      value === null || value === undefined || value === ''
+        ? undefined
+        : value,
+    z.string().optional().default(fallback),
+  );
+
 export const gameSchema = z.object({
   id, status: z.string(), name: z.string(), slug: z.string(), tagline: nullableString,
   description: nullableString, minimum_age: number, default_locale: z.string(), active: bool,
@@ -73,14 +91,14 @@ export const cardSchema = z.object({
   contains_temperature: bool, contains_public_place: bool, contains_third_parties: bool, contains_photo: bool,
   contains_video: bool, contains_nudity: bool, contains_roleplay: bool, contains_toy: bool,
   contains_manual_stimulation: bool, contains_explicit_language: bool, requires_device: bool, requires_private_space: bool,
-  gm_escalation_score: number.optional().default(0),
-  gm_energy_score: number.optional().default(3),
-  gm_intimacy_score: number.optional().default(3),
-  gm_humor_score: number.optional().default(0),
-  gm_recovery_score: number.optional().default(0),
-  gm_novelty_score: number.optional().default(3),
+  gm_escalation_score: numberWithDefault(0),
+  gm_energy_score: numberWithDefault(3),
+  gm_intimacy_score: numberWithDefault(3),
+  gm_humor_score: numberWithDefault(0),
+  gm_recovery_score: numberWithDefault(0),
+  gm_novelty_score: numberWithDefault(3),
   gm_continuity_group: nullableString,
-  gm_scene_role: z.string().optional().default('continuation'),
+  gm_scene_role: stringWithDefault('continuation'),
 });
 
 export const deckCardSchema = z.object({ id, deck: id, card: id, sort: nullableNumber, enabled: bool });
@@ -113,8 +131,8 @@ export const settingsSchema = z.object({
   setup_step_4_subtitle: z.string().optional().default('Activen todo lo que prefieran dejar afuera antes de empezar.'),
   game_master_enabled: bool.optional().default(false),
   game_master_default_on: bool.optional().default(false),
-  game_master_title: z.string().optional().default('Game Master adaptativo'),
-  game_master_description: z.string().optional().default('Adapta la intensidad, el ritmo y la continuidad según cómo avanza la partida.'),
+  game_master_title: stringWithDefault('Game Master adaptativo'),
+  game_master_description: stringWithDefault('Adapta la intensidad, el ritmo y la continuidad según cómo avanza la partida.'),
   game_master_show_reactions: bool.optional().default(true),
 });
 

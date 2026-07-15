@@ -11,6 +11,7 @@ import type {
 import {
   createDefaultSetup,
   createSession,
+  drawNextCard,
   resolveCurrentCard,
 } from '../engine/session';
 import { drawAdaptiveCard } from '../engine/game-master';
@@ -151,26 +152,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { content, setup, gameMasterBusy } = get();
     if (!content || !setup || gameMasterBusy) return;
 
-    let session = createSession(content, setup);
+    const initial = createSession(content, setup);
+
+    if (!setup.gameMasterEnabled) {
+      const draw = drawNextCard(content, setup, initial);
+
+      set({
+        stage: draw.exhausted ? 'summary' : 'game',
+        session: draw.session,
+        gameMasterBusy: false,
+      });
+
+      return;
+    }
+
     set({
       stage: 'game',
-      session,
+      session: initial,
       gameMasterBusy: true,
     });
 
-    const draw = await drawAdaptiveCard(
-      content,
-      setup,
-      session,
-      null,
-    );
+    try {
+      const draw = await drawAdaptiveCard(
+        content,
+        setup,
+        initial,
+        null,
+      );
 
-    session = draw.session;
-    set({
-      stage: draw.exhausted ? 'summary' : 'game',
-      session,
-      gameMasterBusy: false,
-    });
+      set({
+        stage: draw.exhausted ? 'summary' : 'game',
+        session: draw.session,
+        gameMasterBusy: false,
+      });
+    } catch {
+      const draw = drawNextCard(content, setup, initial);
+
+      set({
+        stage: draw.exhausted ? 'summary' : 'game',
+        session: draw.session,
+        gameMasterBusy: false,
+      });
+    }
   },
 
   revealCard() {
@@ -222,23 +245,53 @@ export const useGameStore = create<GameStore>((set, get) => ({
       };
     }
 
+    if (!setup.gameMasterEnabled) {
+      const draw = drawNextCard(
+        content,
+        setup,
+        resolved,
+      );
+
+      set({
+        stage: draw.exhausted ? 'summary' : 'game',
+        session: draw.session,
+        gameMasterBusy: false,
+      });
+
+      return;
+    }
+
     set({
       session: resolved,
       gameMasterBusy: true,
     });
 
-    const draw = await drawAdaptiveCard(
-      content,
-      setup,
-      resolved,
-      resolvedEvent,
-    );
+    try {
+      const draw = await drawAdaptiveCard(
+        content,
+        setup,
+        resolved,
+        resolvedEvent,
+      );
 
-    set({
-      stage: draw.exhausted ? 'summary' : 'game',
-      session: draw.session,
-      gameMasterBusy: false,
-    });
+      set({
+        stage: draw.exhausted ? 'summary' : 'game',
+        session: draw.session,
+        gameMasterBusy: false,
+      });
+    } catch {
+      const draw = drawNextCard(
+        content,
+        setup,
+        resolved,
+      );
+
+      set({
+        stage: draw.exhausted ? 'summary' : 'game',
+        session: draw.session,
+        gameMasterBusy: false,
+      });
+    }
   },
 
   pause() {

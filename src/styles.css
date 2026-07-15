@@ -676,3 +676,8 @@ h2 { font-size: 1.6rem; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.game-master-setup .choice-toggle:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}

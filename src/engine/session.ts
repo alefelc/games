@@ -38,7 +38,7 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
     },
     maxCards: Math.min(20, Math.max(1, content.settings.maximum_cards_per_session || 20)),
     intenseConsent: false,
-    gameMasterEnabled: content.settings.game_master_enabled && content.settings.game_master_default_on,
+    gameMasterEnabled: false,
   };
 }
 
