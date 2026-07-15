@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { ContentBundle, GameSetup, Id, SessionState } from '../types';
 import { Brand } from '../components/Brand';
@@ -9,6 +9,29 @@ function formatTime(seconds: number) {
   const rest = seconds % 60;
 
   return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+}
+
+
+function readAnimationDuration(): number {
+  const fallback = 320;
+
+  try {
+    const value = getComputedStyle(document.documentElement)
+      .getPropertyValue('--pc-animation')
+      .trim();
+
+    if (value.endsWith('ms')) {
+      return Number.parseFloat(value) || fallback;
+    }
+
+    if (value.endsWith('s')) {
+      return (Number.parseFloat(value) || fallback / 1000) * 1000;
+    }
+  } catch {
+    // Se usa la duración predeterminada.
+  }
+
+  return fallback;
 }
 
 async function toggleFullscreen() {
@@ -58,10 +81,23 @@ export function GameScreen({
   const [timerRunning, setTimerRunning] = useState(false);
   const [remaining, setRemaining] = useState(card?.duration_seconds ?? 0);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
+  const [visualRevealed, setVisualRevealed] = useState(session.revealed);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const flipTimers = useRef<number[]>([]);
 
   useEffect(() => {
+    flipTimers.current.forEach((timer) => window.clearTimeout(timer));
+    flipTimers.current = [];
+
     setRemaining(card?.duration_seconds ?? 0);
     setTimerRunning(false);
+    setVisualRevealed(session.revealed);
+    setIsFlipping(false);
+
+    return () => {
+      flipTimers.current.forEach((timer) => window.clearTimeout(timer));
+      flipTimers.current = [];
+    };
   }, [card?.id, card?.duration_seconds]);
 
   useEffect(() => {
@@ -123,9 +159,26 @@ export function GameScreen({
   ]);
 
   const reveal = () => {
-    if (!card || session.revealed) return;
+    if (!card || session.revealed || isFlipping) return;
 
-    onReveal();
+    const duration = readAnimationDuration();
+    const midpoint = Math.max(80, Math.round(duration / 2));
+
+    setIsFlipping(true);
+
+    flipTimers.current.push(
+      window.setTimeout(() => {
+        setVisualRevealed(true);
+        onReveal();
+      }, midpoint),
+    );
+
+    flipTimers.current.push(
+      window.setTimeout(() => {
+        setIsFlipping(false);
+        flipTimers.current = [];
+      }, duration + 40),
+    );
 
     if (
       content.theme.enable_vibration &&
@@ -244,21 +297,22 @@ export function GameScreen({
         >
           <article
             className={`playing-card ${
-              session.revealed ? 'revealed' : ''
-            }`}
+              isFlipping ? 'flipping' : ''
+            } ${visualRevealed ? 'revealed' : ''}`}
             style={levelStyle}
           >
-            <div className="card-face card-back">
-              <div className="card-logo">
-                <Brand
-                  game={content.game}
-                  theme={content.theme}
-                />
-                <small>Tocá para revelar</small>
+            {!visualRevealed ? (
+              <div className="card-face card-back">
+                <div className="card-logo">
+                  <Brand
+                    game={content.game}
+                    theme={content.theme}
+                  />
+                  <small>Tocá para revelar</small>
+                </div>
               </div>
-            </div>
-
-            <div className="card-face card-front">
+            ) : (
+              <div className="card-face card-front">
               <div
                 className="card-player-name"
                 style={{
@@ -316,6 +370,7 @@ export function GameScreen({
                 <span />
               </div>
             </div>
+            )}
           </article>
         </button>
 

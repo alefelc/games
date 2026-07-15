@@ -313,66 +313,114 @@ h2 { font-size: 1.6rem; }
   width: 100%;
   height: 100%;
   position: relative;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transition: transform var(--pc-animation) cubic-bezier(.2,.8,.2,1);
+  transform-origin: 50% 50%;
   will-change: transform;
   isolation: isolate;
 }
-.playing-card.revealed { transform: rotateY(180deg); }
+.playing-card.flipping {
+  animation: card-single-face-flip var(--pc-animation)
+    cubic-bezier(.35,.05,.2,1) both;
+}
 .card-face {
   position: absolute;
   inset: 0;
   border-radius: var(--pc-card-radius);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--pc-card-border) 65%, transparent);
+  border: 1px solid color-mix(
+    in srgb,
+    var(--pc-card-border) 65%,
+    transparent
+  );
   box-shadow: 0 26px 70px rgba(0,0,0,var(--pc-shadow-alpha));
 }
 .card-back {
-  transform: rotateY(0deg) translateZ(1px);
   z-index: 2;
-  background: radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--pc-primary) 55%, transparent), transparent 36%), repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--pc-accent) 5%, transparent) 8px 9px), var(--pc-card);
+  background:
+    radial-gradient(
+      circle at 50% 44%,
+      color-mix(in srgb, var(--pc-primary) 55%, transparent),
+      transparent 36%
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 8px,
+      color-mix(in srgb, var(--pc-accent) 5%, transparent) 8px 9px
+    ),
+    var(--pc-card);
   display: grid;
   place-items: center;
 }
-.card-back::before { content: ""; position: absolute; inset: 13px; border: 1px solid color-mix(in srgb, var(--pc-accent) 36%, transparent); border-radius: calc(var(--pc-card-radius) - 10px); }
-.card-logo { display: grid; justify-items: center; gap: 10px; text-transform: uppercase; letter-spacing: .15em; }
-.card-logo svg { width: 76px; height: 76px; color: var(--pc-accent); fill: color-mix(in srgb, var(--pc-primary) 50%, transparent); }
-.card-logo b { font-family: var(--pc-heading-font); font-size: 1.5rem; }
-.card-logo small { color: var(--pc-muted); font-size: .62rem; }
-.corner { position: absolute; color: var(--pc-accent); font-family: Georgia, serif; line-height: .95; font-size: 1rem; }
+.card-back::before {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--pc-accent) 36%,
+    transparent
+  );
+  border-radius: calc(var(--pc-card-radius) - 10px);
+}
+.card-logo {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+}
+.card-logo svg {
+  width: 76px;
+  height: 76px;
+  color: var(--pc-accent);
+  fill: color-mix(in srgb, var(--pc-primary) 50%, transparent);
+}
+.card-logo b {
+  font-family: var(--pc-heading-font);
+  font-size: 1.5rem;
+}
+.card-logo small {
+  color: var(--pc-muted);
+  font-size: .62rem;
+}
+.corner {
+  position: absolute;
+  color: var(--pc-accent);
+  font-family: Georgia, serif;
+  line-height: .95;
+  font-size: 1rem;
+}
 .corner.top { top: 26px; left: 26px; }
-.corner.bottom { right: 26px; bottom: 26px; transform: rotate(180deg); }
+.corner.bottom {
+  right: 26px;
+  bottom: 26px;
+  transform: rotate(180deg);
+}
 .card-front {
-  transform: rotateY(180deg) translateZ(1px);
   z-index: 1;
-  opacity: 0;
-  visibility: hidden;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--level-color) 18%, var(--pc-card)), var(--pc-card));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--level-color) 18%, var(--pc-card)),
+    var(--pc-card)
+  );
   padding: clamp(22px, 6vw, 38px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-.playing-card.revealed .card-back {
-  animation: hide-card-back var(--pc-animation) linear forwards;
-  pointer-events: none;
-}
-.playing-card.revealed .card-front {
-  animation: show-card-front var(--pc-animation) linear forwards;
-}
-@keyframes hide-card-back {
-  0%, 49% { opacity: 1; visibility: visible; }
-  50%, 100% { opacity: 0; visibility: hidden; }
-}
-@keyframes show-card-front {
-  0%, 49% { opacity: 0; visibility: hidden; }
-  50%, 100% { opacity: 1; visibility: visible; }
+@keyframes card-single-face-flip {
+  0% {
+    transform: perspective(1200px) rotateY(0deg) scaleX(1);
+  }
+  48% {
+    transform: perspective(1200px) rotateY(82deg) scaleX(.08);
+  }
+  52% {
+    transform: perspective(1200px) rotateY(-82deg) scaleX(.08);
+  }
+  100% {
+    transform: perspective(1200px) rotateY(0deg) scaleX(1);
+  }
 }
 .card-front::before { content: ""; position: absolute; inset: 12px; border: 1px solid color-mix(in srgb, var(--level-color) 42%, transparent); border-radius: calc(var(--pc-card-radius) - 9px); pointer-events: none; }
 .card-topline { position: absolute; top: 28px; left: 30px; right: 30px; display: flex; justify-content: space-between; color: color-mix(in srgb, var(--level-color) 70%, white); font-size: .64rem; text-transform: uppercase; letter-spacing: .12em; }
