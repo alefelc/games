@@ -300,7 +300,19 @@ export function GameScreen({
 
               <div className="card-ornament">
                 <span />
-                <Icon name="flame" />
+                <img
+                  src={`${import.meta.env.BASE_URL}te-animas-symbol.svg`}
+                  alt=""
+                  aria-hidden="true"
+                  className="card-ornament-logo"
+                  style={{
+                    width: 'clamp(1.65rem, 5vw, 2.15rem)',
+                    height: 'clamp(1.65rem, 5vw, 2.15rem)',
+                    display: 'block',
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                  }}
+                />
                 <span />
               </div>
             </div>

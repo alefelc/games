@@ -24,6 +24,7 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
       excludePublicPlaces: content.settings.default_exclude_public_places,
       excludeRestraint: content.settings.default_exclude_restraint,
       excludePenetration: false,
+      excludeAnal: false,
       excludeOral: false,
       excludeNudity: false,
       excludeExplicitLanguage: false,
@@ -133,13 +134,13 @@ export function drawNextCard(
 
   const targetLevel = targetLevelForDraw(content, setup, session, mode);
   const used = new Set(session.usedCardIds);
-
   let drawPlayer = session.currentPlayer;
-  let allEligible = eligibleCards(
-    content,
-    contextForPlayer(drawPlayer),
-  ).filter((card) => !used.has(card.id));
 
+  const eligibleFor = (player: 0 | 1) =>
+    eligibleCards(content, contextForPlayer(player))
+      .filter((card) => !used.has(card.id));
+
+  let allEligible = eligibleFor(drawPlayer);
   let candidates = targetLevel
     ? allEligible.filter((card) => card.level === targetLevel)
     : allEligible;
@@ -148,14 +149,9 @@ export function drawNextCard(
     candidates = allEligible;
   }
 
-  // Si el turno actual no tiene cartas compatibles, se prueba con la otra persona.
   if (!candidates.length) {
-    const otherPlayer = drawPlayer === 0 ? 1 : 0;
-    const otherEligible = eligibleCards(
-      content,
-      contextForPlayer(otherPlayer),
-    ).filter((card) => !used.has(card.id));
-
+    const otherPlayer: 0 | 1 = drawPlayer === 0 ? 1 : 0;
+    const otherEligible = eligibleFor(otherPlayer);
     const otherCandidates = targetLevel
       ? otherEligible.filter((card) => card.level === targetLevel)
       : otherEligible;
@@ -229,19 +225,17 @@ export function previewEligibleCount(
     filters: setup.filters,
   };
 
-  const playerOneCards = eligibleCards(content, {
+  const one = eligibleCards(content, {
     ...common,
     currentPlayerSexId: setup.playerOneSexId,
     partnerSexId: setup.playerTwoSexId,
   });
 
-  const playerTwoCards = eligibleCards(content, {
+  const two = eligibleCards(content, {
     ...common,
     currentPlayerSexId: setup.playerTwoSexId,
     partnerSexId: setup.playerOneSexId,
   });
 
-  return new Set(
-    [...playerOneCards, ...playerTwoCards].map((card) => card.id),
-  ).size;
+  return new Set([...one, ...two].map((card) => card.id)).size;
 }

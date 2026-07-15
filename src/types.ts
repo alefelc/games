@@ -151,13 +151,12 @@ export interface Tag {
   sort: number | null;
 }
 
-
 export interface Sex {
   id: Id;
   game: Id;
   status: string;
   name: string;
-  slug: 'hombre' | 'mujer' | string;
+  slug: string;
   description: string | null;
   sort: number | null;
 }
@@ -192,6 +191,7 @@ export interface Card {
   language: string;
   contains_oral: boolean;
   contains_penetration: boolean;
+  contains_anal: boolean;
   contains_restraint: boolean;
   contains_food: boolean;
   contains_temperature: boolean;
@@ -309,6 +309,7 @@ export interface SafetyFilters {
   excludePublicPlaces: boolean;
   excludeRestraint: boolean;
   excludePenetration: boolean;
+  excludeAnal: boolean;
   excludeOral: boolean;
   excludeNudity: boolean;
   excludeExplicitLanguage: boolean;

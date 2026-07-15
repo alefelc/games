@@ -11,8 +11,9 @@ export function AgeGate({ content, onAccept }: { content: ContentBundle; onAccep
   return (
     <main className="center-screen age-screen">
       <Brand game={content.game} theme={content.theme} />
-      <p className="lead">Juego de cartas para parejas adultas. Contiene lenguaje y propuestas sexuales explícitas, no apto para menores de 18 años.
-</p>
+      <p className="eyebrow">ACCESO PARA PERSONAS ADULTAS</p>
+      <h1>Antes de entrar</h1>
+      <p className="lead">Este juego contiene lenguaje y propuestas sexuales explícitas. No está diseñado para menores.</p>
 
       <div className="consent-box">
         <label className="check-row">
@@ -28,7 +29,7 @@ export function AgeGate({ content, onAccept }: { content: ContentBundle; onAccep
       <button className="primary-button wide" type="button" disabled={!adult || !consent} onClick={onAccept}>
         Entrar al juego <Icon name="arrow" />
       </button>
-      <div className="privacy-inline"><Icon name="lock" /><span>No se guardan respuestas, fotos ni videos en nuestro sistema.</span></div>
+      <div className="privacy-inline"><Icon name="lock" /><span>No se guardan respuestas, fotos ni videos en el servidor.</span></div>
     </main>
   );
 }

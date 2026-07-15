@@ -60,8 +60,7 @@ function matchesSexRequirements(
     (!card.performer_sex || card.performer_sex === currentPlayerSexId) &&
     (!card.target_sex || card.target_sex === partnerSexId);
 
-  const isMutual = card.performer === 'both' || card.target === 'both';
-  if (!isMutual) return direct;
+  if (card.performer !== 'both' && card.target !== 'both') return direct;
 
   const reverse =
     (!card.performer_sex || card.performer_sex === partnerSexId) &&
@@ -78,13 +77,11 @@ export function isCardEligible(
   if (card.status !== 'published') return false;
   if (!context.selectedLevelIds.has(card.level)) return false;
   if (card.minimum_players > 2 || card.maximum_players < 2) return false;
-  if (
-    !matchesSexRequirements(
-      card,
-      context.currentPlayerSexId,
-      context.partnerSexId,
-    )
-  ) return false;
+  if (!matchesSexRequirements(
+    card,
+    context.currentPlayerSexId,
+    context.partnerSexId,
+  )) return false;
 
   if (context.selectedDeckIds.size > 0) {
     const cardDecks = indexes.decksByCard.get(card.id) ?? [];
@@ -96,6 +93,7 @@ export function isCardEligible(
   if (filters.excludeThirdParties && card.contains_third_parties) return false;
   if (filters.excludePublicPlaces && card.contains_public_place) return false;
   if (filters.excludeRestraint && card.contains_restraint) return false;
+  if (filters.excludeAnal && card.contains_anal) return false;
   if (filters.excludePenetration && card.contains_penetration) return false;
   if (filters.excludeOral && card.contains_oral) return false;
   if (filters.excludeNudity && card.contains_nudity) return false;

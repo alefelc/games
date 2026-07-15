@@ -68,9 +68,11 @@ export function SetupScreen({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const eligibleCount = useMemo(() => previewEligibleCount(content, setup), [content, setup]);
   const requiresIntenseConsent = content.levels.some((level) => setup.levelIds.includes(level.id) && level.requires_confirmation);
+  const peopleConfigured = Boolean(
+    setup.playerOneSexId && setup.playerTwoSexId
+  );
   const canStart = Boolean(
-    setup.playerOneSexId &&
-    setup.playerTwoSexId &&
+    peopleConfigured &&
     setup.modeId &&
     setup.levelIds.length &&
     eligibleCount > 0 &&
@@ -103,65 +105,79 @@ export function SetupScreen({
           <section className="setup-section">
             <p className="eyebrow">PASO 1 DE 4</p>
             <h1>¿Quiénes juegan y cómo?</h1>
-            <p className="section-copy">Los nombres son opcionales. Elegí el sexo de cada persona para que las cartas correspondan a quien tiene el turno.</p>
+            <p className="section-copy">Los nombres son opcionales. Elegí Hombre o Mujer para que cada carta corresponda a la persona que tiene el turno.</p>
 
             <div className="player-grid">
-              <label>
-                <span>Persona 1</span>
+              <div className="player-field">
+                <label htmlFor="player-one-name">Persona 1</label>
                 <input
+                  id="player-one-name"
                   maxLength={24}
                   value={setup.playerOne}
+                  onFocus={() => {
+                    if (setup.playerOne === 'Vos') {
+                      updateSetup({ playerOne: '' });
+                    }
+                  }}
                   onChange={(event) =>
                     updateSetup({ playerOne: event.target.value })
                   }
                   placeholder="Vos"
+                  autoComplete="off"
                 />
-                <select
-                  value={setup.playerOneSexId ?? ''}
-                  onChange={(event) =>
-                    updateSetup({
-                      playerOneSexId: event.target.value || null,
-                    })
-                  }
-                  aria-label="Sexo de la persona 1"
-                >
-                  <option value="">Elegí su sexo</option>
+                <div className="sex-selector" role="group" aria-label="Sexo de la persona 1">
                   {content.sexes.map((sex) => (
-                    <option key={sex.id} value={sex.id}>
+                    <button
+                      key={sex.id}
+                      type="button"
+                      className={setup.playerOneSexId === sex.id ? 'selected' : ''}
+                      onClick={() => updateSetup({ playerOneSexId: sex.id })}
+                      aria-pressed={setup.playerOneSexId === sex.id}
+                    >
                       {sex.name}
-                    </option>
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
 
-              <label>
-                <span>Persona 2</span>
+              <div className="player-field">
+                <label htmlFor="player-two-name">Persona 2</label>
                 <input
+                  id="player-two-name"
                   maxLength={24}
                   value={setup.playerTwo}
+                  onFocus={() => {
+                    if (setup.playerTwo === 'Tu pareja') {
+                      updateSetup({ playerTwo: '' });
+                    }
+                  }}
                   onChange={(event) =>
                     updateSetup({ playerTwo: event.target.value })
                   }
                   placeholder="Tu pareja"
+                  autoComplete="off"
                 />
-                <select
-                  value={setup.playerTwoSexId ?? ''}
-                  onChange={(event) =>
-                    updateSetup({
-                      playerTwoSexId: event.target.value || null,
-                    })
-                  }
-                  aria-label="Sexo de la persona 2"
-                >
-                  <option value="">Elegí su sexo</option>
+                <div className="sex-selector" role="group" aria-label="Sexo de la persona 2">
                   {content.sexes.map((sex) => (
-                    <option key={sex.id} value={sex.id}>
+                    <button
+                      key={sex.id}
+                      type="button"
+                      className={setup.playerTwoSexId === sex.id ? 'selected' : ''}
+                      onClick={() => updateSetup({ playerTwoSexId: sex.id })}
+                      aria-pressed={setup.playerTwoSexId === sex.id}
+                    >
                       {sex.name}
-                    </option>
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              </div>
             </div>
+
+            {!peopleConfigured && (
+              <p className="setup-warning">
+                Elegí el sexo de las dos personas para continuar.
+              </p>
+            )}
 
             <h2 className="subheading">Modo de juego</h2>
             <div className="mode-grid">
@@ -273,6 +289,7 @@ export function SetupScreen({
               <FilterToggle checked={setup.filters.excludePublicPlaces} title="Excluir lugares públicos" onChange={(value) => updateFilters({ excludePublicPlaces: value })} />
               <FilterToggle checked={setup.filters.excludeRestraint} title="Excluir vendas y sujeciones" onChange={(value) => updateFilters({ excludeRestraint: value })} />
               <FilterToggle checked={setup.filters.excludePenetration} title="Excluir penetración" onChange={(value) => updateFilters({ excludePenetration: value })} />
+              <FilterToggle checked={setup.filters.excludeAnal} title="Excluir sexo anal" description="Excluye estimulación externa y penetración anal." onChange={(value) => updateFilters({ excludeAnal: value })} />
               <FilterToggle checked={setup.filters.excludeOral} title="Excluir sexo oral" onChange={(value) => updateFilters({ excludeOral: value })} />
               <FilterToggle checked={setup.filters.excludeNudity} title="Excluir desnudez" onChange={(value) => updateFilters({ excludeNudity: value })} />
               <FilterToggle checked={setup.filters.excludeToys} title="Excluir juguetes" onChange={(value) => updateFilters({ excludeToys: value })} />
@@ -287,7 +304,7 @@ export function SetupScreen({
                 <FilterToggle checked={setup.filters.excludeFood} title="Excluir alimentos" onChange={(value) => updateFilters({ excludeFood: value })} />
                 <FilterToggle checked={setup.filters.excludeTemperature} title="Excluir hielo o temperatura" onChange={(value) => updateFilters({ excludeTemperature: value })} />
                 <FilterToggle checked={setup.filters.excludeRoleplay} title="Excluir juego de roles" onChange={(value) => updateFilters({ excludeRoleplay: value })} />
-                <FilterToggle checked={setup.filters.excludeManualStimulation} title="Excluir estimulación manual" onChange={(value) => updateFilters({ excludeManualStimulation: value })} />
+                <FilterToggle checked={setup.filters.excludeManualStimulation} title="Excluir masturbación" onChange={(value) => updateFilters({ excludeManualStimulation: value })} />
 
                 <label className="range-row"><span><b>Riesgo de privacidad máximo</b><small>{setup.filters.maxPrivacyRisk} de 3</small></span><input type="range" min="0" max="3" value={setup.filters.maxPrivacyRisk} onChange={(event) => updateFilters({ maxPrivacyRisk: Number(event.target.value) })} /></label>
                 <label className="range-row"><span><b>Riesgo físico máximo</b><small>{setup.filters.maxPhysicalRisk} de 3</small></span><input type="range" min="0" max="3" value={setup.filters.maxPhysicalRisk} onChange={(event) => updateFilters({ maxPhysicalRisk: Number(event.target.value) })} /></label>
@@ -308,7 +325,7 @@ export function SetupScreen({
 
         <footer className="setup-footer">
           {step < steps.length - 1 ? (
-            <button className="primary-button wide" type="button" disabled={step === 1 && setup.levelIds.length === 0} onClick={() => setStep((value) => value + 1)}>
+            <button className="primary-button wide" type="button" disabled={(step === 0 && !peopleConfigured) || (step === 1 && setup.levelIds.length === 0)} onClick={() => setStep((value) => value + 1)}>
               Continuar <Icon name="arrow" />
             </button>
           ) : (

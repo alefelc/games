@@ -36,7 +36,7 @@ export function SummaryScreen({
         </div>
       )}
 
-      <div className="summary-note"><Icon name="lock" /><span>Este resumen desaparecerá al iniciar otra partida.</span></div>
+      <div className="summary-note"><Icon name="lock" /><span>Este resumen no se envió a Directus y desaparecerá al iniciar otra partida.</span></div>
       <div className="summary-actions">
         <button className="primary-button wide" type="button" onClick={onRestart}>Configurar otra partida <Icon name="refresh" /></button>
         <button className="text-button" type="button" onClick={onHome}>Volver al inicio</button>

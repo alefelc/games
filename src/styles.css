@@ -230,9 +230,9 @@ h2 { font-size: 1.6rem; }
 .section-copy { max-width: 680px; }
 .subheading { margin: 32px 0 12px; font-family: var(--pc-body-font); font-size: .9rem; text-transform: uppercase; letter-spacing: .12em; color: var(--pc-accent); }
 .player-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 26px 0; }
-.player-grid label { display: grid; gap: 7px; color: var(--pc-muted); font-size: .78rem; }
-.player-grid input, .player-grid select { width: 100%; height: 54px; border-radius: 15px; border: 1px solid color-mix(in srgb, var(--pc-accent) 18%, transparent); background: color-mix(in srgb, var(--pc-surface) 82%, transparent); color: var(--pc-text); padding: 0 16px; }
-.player-grid select { appearance: none; cursor: pointer; }
+.player-field { display: grid; gap: 8px; }
+.player-field > label { color: var(--pc-muted); font-size: .78rem; }
+.player-grid input { width: 100%; height: 54px; border-radius: 15px; border: 1px solid color-mix(in srgb, var(--pc-accent) 18%, transparent); background: color-mix(in srgb, var(--pc-surface) 82%, transparent); color: var(--pc-text); padding: 0 16px; }
 .mode-grid, .level-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .mode-card, .level-card {
   border: 1px solid color-mix(in srgb, var(--pc-accent) 14%, transparent);
@@ -396,4 +396,55 @@ h2 { font-size: 1.6rem; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+.sex-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.sex-selector button {
+  min-height: 44px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--pc-accent) 24%, transparent);
+  background: color-mix(in srgb, var(--pc-surface) 82%, transparent);
+  color: var(--pc-muted);
+  font-weight: 800;
+}
+.sex-selector button.selected {
+  color: var(--pc-text);
+  border-color: var(--pc-accent);
+  background: color-mix(in srgb, var(--pc-primary) 42%, var(--pc-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-accent) 25%, transparent);
+}
+.setup-warning {
+  margin: -10px 0 22px;
+  color: var(--pc-danger);
+  font-size: .78rem;
+}
+.card-logo {
+  width: min(76%, 280px);
+  max-width: calc(100% - 52px);
+  position: relative;
+  z-index: 1;
+}
+.card-logo .brand-image {
+  width: 100%;
+  max-width: 240px;
+  max-height: 118px;
+  object-fit: contain;
+}
+.card-logo .brand-wordmark {
+  max-width: 100%;
+  font-size: clamp(1.25rem, 5vw, 1.85rem);
+  text-align: center;
+}
+@media (max-width: 620px) {
+  .card-logo {
+    width: min(64%, 230px);
+  }
+  .card-logo .brand-image {
+    max-width: 210px;
+    max-height: 105px;
+  }
 }

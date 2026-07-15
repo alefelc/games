@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cardElementSchema, cardSchema, cardTagSchema, cardToySchema, deckCardSchema,
   deckSchema, elementSchema, gameSchema, levelSchema, modeSchema, releaseSchema,
-  settingsSchema, tagSchema, themeSchema, toySchema,
+  settingsSchema, sexSchema, tagSchema, themeSchema, toySchema,
 } from '../api/schemas';
 import type { ContentBundle } from '../types';
 
@@ -26,14 +26,16 @@ describe('contenido inicial', () => {
     bundle.elements.forEach((item) => elementSchema.parse(item));
     bundle.toys.forEach((item) => toySchema.parse(item));
     bundle.tags.forEach((item) => tagSchema.parse(item));
+    bundle.sexes.forEach((item) => sexSchema.parse(item));
     bundle.cards.forEach((item) => cardSchema.parse(item));
     bundle.deckCards.forEach((item) => deckCardSchema.parse(item));
     bundle.cardElements.forEach((item) => cardElementSchema.parse(item));
     bundle.cardToys.forEach((item) => cardToySchema.parse(item));
     bundle.cardTags.forEach((item) => cardTagSchema.parse(item));
 
-    expect(bundle.cards).toHaveLength(91);
-    expect(bundle.levels).toHaveLength(4);
+    expect(bundle.cards).toHaveLength(182);
+    expect(bundle.levels).toHaveLength(7);
+    expect(bundle.sexes).toHaveLength(2);
     expect(bundle.cards.every((card) => card.status === 'published')).toBe(true);
 
     const cardIds = new Set(bundle.cards.map((card) => card.id));

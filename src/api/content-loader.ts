@@ -8,6 +8,28 @@ import {
   themeSchema, toySchema,
 } from './schemas';
 
+
+const FALLBACK_SEXES = [
+  {
+    id: '8476232a-8812-5185-bb3f-6bb3917219e8',
+    game: '',
+    status: 'published',
+    name: 'Hombre',
+    slug: 'hombre',
+    description: null,
+    sort: 1,
+  },
+  {
+    id: 'ab13a0a8-2b37-59a4-a057-d7aff3904314',
+    game: '',
+    status: 'published',
+    name: 'Mujer',
+    slug: 'mujer',
+    description: null,
+    sort: 2,
+  },
+];
+
 function sortByOrder<T extends { sort?: number | null }>(items: T[]): T[] {
   return [...items].sort((a, b) => (a.sort ?? 9999) - (b.sort ?? 9999));
 }
@@ -21,7 +43,10 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   const elements = sortByOrder(raw.elements.map((item) => elementSchema.parse(item)));
   const toys = sortByOrder(raw.toys.map((item) => toySchema.parse(item)));
   const tags = sortByOrder(raw.tags.map((item) => tagSchema.parse(item)));
-  const sexes = sortByOrder(raw.sexes.map((item) => sexSchema.parse(item)));
+  const rawSexes = Array.isArray(raw.sexes) && raw.sexes.length
+    ? raw.sexes
+    : FALLBACK_SEXES.map((sex) => ({ ...sex, game: game.id }));
+  const sexes = sortByOrder(rawSexes.map((item) => sexSchema.parse(item)));
   const cards = sortByOrder(raw.cards.map((item) => cardSchema.parse(item)));
   const deckCards = raw.deckCards.map((item) => deckCardSchema.parse(item));
   const cardElements = raw.cardElements.map((item) => cardElementSchema.parse(item));

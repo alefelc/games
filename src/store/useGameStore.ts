@@ -27,6 +27,25 @@ interface GameStore {
   restart: () => void;
 }
 
+
+function normalizeSetup(content: ContentBundle, setup: GameSetup | null): GameSetup {
+  const defaults = createDefaultSetup(content);
+  if (!setup) return defaults;
+
+  return {
+    ...defaults,
+    ...setup,
+    playerOne: setup.playerOne === 'Vos' ? '' : setup.playerOne,
+    playerTwo: setup.playerTwo === 'Tu pareja' ? '' : setup.playerTwo,
+    playerOneSexId: setup.playerOneSexId ?? null,
+    playerTwoSexId: setup.playerTwoSexId ?? null,
+    filters: {
+      ...defaults.filters,
+      ...setup.filters,
+    },
+  };
+}
+
 const ageAccepted = () => localStorage.getItem('pecadoclub-age-accepted') === 'true';
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -42,7 +61,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       content,
       contentSource: source,
       contentWarning: warning,
-      setup: state.setup ?? createDefaultSetup(content),
+      setup: normalizeSetup(content, state.setup),
     }));
   },
 
@@ -58,7 +77,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   openSetup() {
     const { content, setup } = get();
     if (!content) return;
-    set({ stage: 'setup', setup: setup ?? createDefaultSetup(content), session: null });
+    set({ stage: 'setup', setup: normalizeSetup(content, setup), session: null });
   },
 
   updateSetup(patch) {
