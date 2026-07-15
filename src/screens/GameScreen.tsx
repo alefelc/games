@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { ContentBundle, GameSetup, Id, SessionState } from '../types';
+import type { ContentBundle, GameMasterReaction, GameSetup, Id, SessionState } from '../types';
 import { Brand } from '../components/Brand';
 import { Icon } from '../components/Icon';
 
@@ -52,6 +52,8 @@ export function GameScreen({
   session,
   onReveal,
   onResolve,
+  onReact,
+  gameMasterBusy,
   onPause,
   onSetLevel,
 }: {
@@ -60,6 +62,8 @@ export function GameScreen({
   session: SessionState;
   onReveal: () => void;
   onResolve: (result: 'completed' | 'skipped') => void;
+  onReact: (reaction: GameMasterReaction) => void;
+  gameMasterBusy: boolean;
   onPause: () => void;
   onSetLevel: (levelId: Id) => void;
 }) {
@@ -285,6 +289,13 @@ export function GameScreen({
           <span style={{ width: `${progress}%` }} />
         </div>
 
+        {setup.gameMasterEnabled && session.gmHostMessage && (
+          <div className="game-master-message">
+            <span>Game Master</span>
+            <p>{session.gmHostMessage}</p>
+          </div>
+        )}
+
         <button
           className="card-stage"
           type="button"
@@ -411,24 +422,59 @@ export function GameScreen({
         ) : null}
 
         {session.revealed ? (
-          <div className="game-actions">
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => onResolve('skipped')}
-            >
-              Saltar
-            </button>
+          <>
+            {setup.gameMasterEnabled &&
+              content.settings.game_master_show_reactions && (
+                <div className="game-master-reactions" aria-label="Reacción a la carta">
+                  {([
+                    ['liked', '🔥', 'Me gustó'],
+                    ['too_soft', '⬆️', 'Más intenso'],
+                    ['too_much', '⬇️', 'Bajar'],
+                    ['repeat_style', '🔁', 'Similar'],
+                  ] as const).map(([reaction, icon, label]) => (
+                    <button
+                      key={reaction}
+                      type="button"
+                      className={session.gmReaction === reaction ? 'selected' : ''}
+                      onClick={() => onReact(reaction)}
+                      disabled={gameMasterBusy}
+                      aria-pressed={session.gmReaction === reaction}
+                    >
+                      <span>{icon}</span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            <button
-              className="primary-button"
-              type="button"
-              onClick={() => onResolve('completed')}
-            >
-              Cumplido
-              <Icon name="check" />
-            </button>
-          </div>
+            {gameMasterBusy && (
+              <div className="game-master-thinking">
+                <span />
+                El Game Master prepara la próxima carta…
+              </div>
+            )}
+
+            <div className="game-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => onResolve('skipped')}
+                disabled={gameMasterBusy}
+              >
+                Saltar
+              </button>
+
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => onResolve('completed')}
+                disabled={gameMasterBusy}
+              >
+                Cumplido
+                <Icon name="check" />
+              </button>
+            </div>
+          </>
         ) : (
           <p className="reveal-hint">
             La carta está oculta. Tocala cuando ambos estén listos.

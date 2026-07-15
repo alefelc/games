@@ -206,6 +206,14 @@ export interface Card {
   contains_explicit_language: boolean;
   requires_device: boolean;
   requires_private_space: boolean;
+  gm_escalation_score: number;
+  gm_energy_score: number;
+  gm_intimacy_score: number;
+  gm_humor_score: number;
+  gm_recovery_score: number;
+  gm_novelty_score: number;
+  gm_continuity_group: string | null;
+  gm_scene_role: 'starter' | 'bridge' | 'continuation' | 'climax' | 'recovery' | 'closer' | string;
 }
 
 export interface DeckCard {
@@ -281,6 +289,11 @@ export interface AppSettings {
   setup_step_4_label: string;
   setup_step_4_title: string;
   setup_step_4_subtitle: string;
+  game_master_enabled: boolean;
+  game_master_default_on: boolean;
+  game_master_title: string;
+  game_master_description: string;
+  game_master_show_reactions: boolean;
 }
 
 export interface Release {
@@ -347,6 +360,21 @@ export interface GameSetup {
   filters: SafetyFilters;
   maxCards: number;
   intenseConsent: boolean;
+  gameMasterEnabled: boolean;
+}
+
+export type GameMasterReaction = 'liked' | 'too_soft' | 'too_much' | 'repeat_style' | 'none';
+
+export interface GameMasterEvent {
+  id: string;
+  cardId: Id;
+  result: 'completed' | 'skipped';
+  reaction: GameMasterReaction;
+  playerIndex: 0 | 1;
+  intensity: number;
+  continuityGroup: string | null;
+  sceneRole: string | null;
+  createdAt: string;
 }
 
 export interface SessionState {
@@ -363,6 +391,14 @@ export interface SessionState {
   resolvedCount: number;
   timerStartedAt: string | null;
   timerRemaining: number | null;
+  gmPhase: string;
+  gmTension: number;
+  gmEnergy: number;
+  gmHostMessage: string | null;
+  gmStrategy: string | null;
+  gmReaction: GameMasterReaction;
+  gmEvents: GameMasterEvent[];
+  gmFallbackUsed: boolean;
 }
 
 export interface EligibilityContext {

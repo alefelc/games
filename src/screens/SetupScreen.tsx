@@ -3,6 +3,7 @@ import type { ContentBundle, GameSetup, Id, SafetyFilters } from '../types';
 import { Icon } from '../components/Icon';
 import { TopBar } from '../components/TopBar';
 import { previewEligibleCount } from '../engine/session';
+import { env } from '../env';
 
 function toggleId(values: Id[], id: Id): Id[] {
   return values.includes(id) ? values.filter((value) => value !== id) : [...values, id];
@@ -91,6 +92,7 @@ export function SetupScreen({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const eligibleCount = useMemo(() => previewEligibleCount(content, setup), [content, setup]);
   const requiresIntenseConsent = content.levels.some((level) => setup.levelIds.includes(level.id) && level.requires_confirmation);
+  const gameMasterAvailable = Boolean(env.gameMasterUrl);
   const peopleConfigured = Boolean(
     setup.playerOneSexId && setup.playerTwoSexId
   );
@@ -210,6 +212,28 @@ export function SetupScreen({
                 </button>
               ))}
             </div>
+
+
+            {content.settings.game_master_enabled && (
+              <div className="game-master-setup">
+                <ChoiceToggle
+                  checked={setup.gameMasterEnabled && gameMasterAvailable}
+                  title={content.settings.game_master_title}
+                  description={
+                    gameMasterAvailable
+                      ? content.settings.game_master_description
+                      : 'Estará disponible después de conectar el servicio del Game Master.'
+                  }
+                  onChange={() => {
+                    if (gameMasterAvailable) {
+                      updateSetup({
+                        gameMasterEnabled: !setup.gameMasterEnabled,
+                      });
+                    }
+                  }}
+                />
+              </div>
+            )}
           </section>
         )}
 

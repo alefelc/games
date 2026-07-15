@@ -25,6 +25,7 @@ export default function App() {
   const content = useGameStore((state) => state.content);
   const setup = useGameStore((state) => state.setup);
   const session = useGameStore((state) => state.session);
+  const gameMasterBusy = useGameStore((state) => state.gameMasterBusy);
 
   const setContent = useGameStore((state) => state.setContent);
   const acceptAge = useGameStore((state) => state.acceptAge);
@@ -35,6 +36,7 @@ export default function App() {
   const startGame = useGameStore((state) => state.startGame);
   const revealCard = useGameStore((state) => state.revealCard);
   const resolveCard = useGameStore((state) => state.resolveCard);
+  const reactToCard = useGameStore((state) => state.reactToCard);
   const pause = useGameStore((state) => state.pause);
   const resume = useGameStore((state) => state.resume);
   const finish = useGameStore((state) => state.finish);
@@ -139,20 +141,34 @@ export default function App() {
           content={content}
           setup={setup}
           onBack={goHome}
-          onStart={startGame}
+          onStart={() => void startGame()}
           updateSetup={updateSetup}
           updateFilters={updateFilters}
         />
       ) : <LoadingScreen />;
 
     case 'game':
+      if (setup && session && gameMasterBusy && !session.currentCardId) {
+        return (
+          <LoadingScreen
+            message={
+              setup.gameMasterEnabled
+                ? 'El Game Master prepara la primera carta…'
+                : 'Preparando la primera carta…'
+            }
+          />
+        );
+      }
+
       return setup && session ? (
         <GameScreen
           content={content}
           setup={setup}
           session={session}
           onReveal={revealCard}
-          onResolve={resolveCard}
+          onResolve={(result) => void resolveCard(result)}
+          onReact={reactToCard}
+          gameMasterBusy={gameMasterBusy}
           onPause={pause}
           onSetLevel={setCurrentLevel}
         />

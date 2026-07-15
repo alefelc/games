@@ -152,6 +152,8 @@ const SETTINGS_FIELDS = [
   'setup_step_2_label','setup_step_2_title','setup_step_2_subtitle',
   'setup_step_3_label','setup_step_3_title','setup_step_3_subtitle',
   'setup_step_4_label','setup_step_4_title','setup_step_4_subtitle',
+  'game_master_enabled','game_master_default_on','game_master_title',
+  'game_master_description','game_master_show_reactions',
 ];
 
 const LEVEL_FIELDS = [
@@ -203,7 +205,10 @@ const CARD_FIELDS = [
   'contains_third_parties','contains_photo','contains_video',
   'contains_nudity','contains_roleplay','contains_toy',
   'contains_manual_stimulation','contains_explicit_language',
-  'requires_device','requires_private_space',
+  'requires_device','requires_private_space','gm_escalation_score',
+  'gm_energy_score','gm_intimacy_score','gm_humor_score',
+  'gm_recovery_score','gm_novelty_score','gm_continuity_group',
+  'gm_scene_role',
 ];
 
 const DECK_CARD_FIELDS = [

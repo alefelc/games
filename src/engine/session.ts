@@ -38,6 +38,7 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
     },
     maxCards: Math.min(20, Math.max(1, content.settings.maximum_cards_per_session || 20)),
     intenseConsent: false,
+    gameMasterEnabled: content.settings.game_master_enabled && content.settings.game_master_default_on,
   };
 }
 
@@ -58,6 +59,14 @@ export function createSession(content: ContentBundle, setup: GameSetup): Session
     resolvedCount: 0,
     timerStartedAt: null,
     timerRemaining: null,
+    gmPhase: 'warmup',
+    gmTension: 15,
+    gmEnergy: 25,
+    gmHostMessage: null,
+    gmStrategy: null,
+    gmReaction: 'none',
+    gmEvents: [],
+    gmFallbackUsed: false,
   };
 }
 
@@ -109,16 +118,25 @@ export interface DrawResult {
   exhausted: boolean;
 }
 
-export function drawNextCard(
+export interface DrawCandidatePool {
+  player: 0 | 1;
+  candidates: Card[];
+  exhausted: boolean;
+}
+
+export function getDrawCandidatePool(
   content: ContentBundle,
   setup: GameSetup,
   session: SessionState,
-  random: () => number = Math.random,
-): DrawResult {
-  if (session.resolvedCount >= setup.maxCards) return { session, card: null, exhausted: true };
+): DrawCandidatePool {
+  if (session.resolvedCount >= setup.maxCards) {
+    return { player: session.currentPlayer, candidates: [], exhausted: true };
+  }
 
   const mode = content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
-  if (!mode) return { session, card: null, exhausted: true };
+  if (!mode) {
+    return { player: session.currentPlayer, candidates: [], exhausted: true };
+  }
 
   const contextForPlayer = (player: 0 | 1) => ({
     selectedLevelIds: new Set(setup.levelIds),
@@ -163,7 +181,54 @@ export function drawNextCard(
     }
   }
 
-  const card = weightedPick(candidates, random);
+  return {
+    player: drawPlayer,
+    candidates,
+    exhausted: candidates.length === 0,
+  };
+}
+
+export function applyCardSelection(
+  session: SessionState,
+  card: Card,
+  player: 0 | 1,
+  gameMaster?: {
+    phase?: string;
+    tension?: number;
+    energy?: number;
+    hostMessage?: string | null;
+    strategy?: string | null;
+    fallbackUsed?: boolean;
+  },
+): SessionState {
+  return {
+    ...session,
+    currentPlayer: player,
+    currentCardId: card.id,
+    currentLevelId: card.level,
+    revealed: false,
+    usedCardIds: [...session.usedCardIds, card.id],
+    timerStartedAt: null,
+    timerRemaining: card.duration_seconds,
+    gmPhase: gameMaster?.phase ?? session.gmPhase,
+    gmTension: gameMaster?.tension ?? session.gmTension,
+    gmEnergy: gameMaster?.energy ?? session.gmEnergy,
+    gmHostMessage: gameMaster?.hostMessage ?? null,
+    gmStrategy: gameMaster?.strategy ?? null,
+    gmReaction: 'none',
+    gmFallbackUsed: gameMaster?.fallbackUsed ?? false,
+  };
+}
+
+export function drawNextCard(
+  content: ContentBundle,
+  setup: GameSetup,
+  session: SessionState,
+  random: () => number = Math.random,
+): DrawResult {
+  const pool = getDrawCandidatePool(content, setup, session);
+  const card = weightedPick(pool.candidates, random);
+
   if (!card) {
     return {
       session: { ...session, currentCardId: null },
@@ -172,17 +237,11 @@ export function drawNextCard(
     };
   }
 
-  const nextSession: SessionState = {
-    ...session,
-    currentPlayer: drawPlayer,
-    currentCardId: card.id,
-    currentLevelId: card.level,
-    revealed: false,
-    usedCardIds: [...session.usedCardIds, card.id],
-    timerStartedAt: null,
-    timerRemaining: card.duration_seconds,
+  return {
+    session: applyCardSelection(session, card, pool.player),
+    card,
+    exhausted: false,
   };
-  return { session: nextSession, card, exhausted: false };
 }
 
 export function resolveCurrentCard(
@@ -210,6 +269,7 @@ export function resolveCurrentCard(
     revealed: false,
     timerStartedAt: null,
     timerRemaining: null,
+    gmReaction: 'none',
   };
 }
 
