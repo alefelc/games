@@ -399,6 +399,9 @@ export interface SessionState {
   gmReaction: GameMasterReaction;
   gmEvents: GameMasterEvent[];
   gmFallbackUsed: boolean;
+  gmProvider: 'openai' | 'adaptive_fallback' | 'frontend_fallback' | null;
+  gmModel: string | null;
+  gmLatencyMs: number | null;
 }
 
 export interface EligibilityContext {

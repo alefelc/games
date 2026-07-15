@@ -82,6 +82,31 @@ export function GameScreen({
       ? setup.playerOne || 'Vos'
       : setup.playerTwo || 'Tu pareja';
 
+  const gameMasterStatus =
+    session.gmProvider === 'openai'
+      ? {
+          label: 'IA activa',
+          detail: session.gmModel || 'Game Master',
+          tone: 'online',
+        }
+      : session.gmProvider === 'adaptive_fallback'
+        ? {
+            label: 'Adaptación local',
+            detail: 'La conexión funciona, pero la IA no respondió',
+            tone: 'fallback',
+          }
+        : session.gmProvider === 'frontend_fallback'
+          ? {
+              label: 'Sin conexión al Game Master',
+              detail: 'La partida continúa con selección local',
+              tone: 'offline',
+            }
+          : {
+              label: 'Game Master activado',
+              detail: 'Preparando la dirección de la partida',
+              tone: 'pending',
+            };
+
   const [timerRunning, setTimerRunning] = useState(false);
   const [remaining, setRemaining] = useState(card?.duration_seconds ?? 0);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
@@ -296,6 +321,19 @@ export function GameScreen({
           </div>
         )}
 
+        {setup.gameMasterEnabled && (
+          <div
+            className={`game-master-status ${gameMasterStatus.tone}`}
+            aria-live="polite"
+          >
+            <span />
+            <div>
+              <b>{gameMasterStatus.label}</b>
+              <small>{gameMasterStatus.detail}</small>
+            </div>
+          </div>
+        )}
+
         <button
           className="card-stage"
           type="button"
@@ -386,6 +424,43 @@ export function GameScreen({
         </button>
 
         {session.revealed &&
+          setup.gameMasterEnabled &&
+          content.settings.game_master_show_reactions !== false && (
+            <section className="game-master-feedback">
+              <div className="game-master-feedback-heading">
+                <b>¿Cómo estuvo?</b>
+                <span>Esto guía la próxima carta</span>
+              </div>
+
+              <div
+                className="game-master-reactions"
+                aria-label="Reacción a la carta"
+              >
+                {([
+                  ['liked', '🔥', 'Me gustó'],
+                  ['too_soft', '⬆️', 'Más intenso'],
+                  ['too_much', '⬇️', 'Bajar'],
+                  ['repeat_style', '🔁', 'Similar'],
+                ] as const).map(([reaction, icon, label]) => (
+                  <button
+                    key={reaction}
+                    type="button"
+                    className={
+                      session.gmReaction === reaction ? 'selected' : ''
+                    }
+                    onClick={() => onReact(reaction)}
+                    disabled={gameMasterBusy}
+                    aria-pressed={session.gmReaction === reaction}
+                  >
+                    <span>{icon}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+        {session.revealed &&
         card.duration_seconds &&
         content.settings.show_timer ? (
           <div
@@ -423,30 +498,6 @@ export function GameScreen({
 
         {session.revealed ? (
           <>
-            {setup.gameMasterEnabled &&
-              content.settings.game_master_show_reactions && (
-                <div className="game-master-reactions" aria-label="Reacción a la carta">
-                  {([
-                    ['liked', '🔥', 'Me gustó'],
-                    ['too_soft', '⬆️', 'Más intenso'],
-                    ['too_much', '⬇️', 'Bajar'],
-                    ['repeat_style', '🔁', 'Similar'],
-                  ] as const).map(([reaction, icon, label]) => (
-                    <button
-                      key={reaction}
-                      type="button"
-                      className={session.gmReaction === reaction ? 'selected' : ''}
-                      onClick={() => onReact(reaction)}
-                      disabled={gameMasterBusy}
-                      aria-pressed={session.gmReaction === reaction}
-                    >
-                      <span>{icon}</span>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
             {gameMasterBusy && (
               <div className="game-master-thinking">
                 <span />
