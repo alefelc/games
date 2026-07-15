@@ -91,6 +91,18 @@ export const settingsSchema = z.object({
   allow_offline: bool, maximum_cards_per_session: number, enable_random_level: bool, enable_private_filters: bool,
   analytics_enabled: bool, maintenance_mode: bool, default_exclude_photo_video: bool,
   default_exclude_third_parties: bool, default_exclude_public_places: bool, default_exclude_restraint: bool,
+  setup_step_1_label: z.string().optional().default('Personas y modo'),
+  setup_step_1_title: z.string().optional().default('¿Quiénes juegan y cómo?'),
+  setup_step_1_subtitle: z.string().optional().default('Los nombres son opcionales. Elegí el sexo de cada persona para que las cartas correspondan a quien tiene el turno.'),
+  setup_step_2_label: z.string().optional().default('Niveles y mazos'),
+  setup_step_2_title: z.string().optional().default('Definan la intensidad'),
+  setup_step_2_subtitle: z.string().optional().default('Elijan solamente los niveles que realmente quieran incluir en la partida.'),
+  setup_step_3_label: z.string().optional().default('Elementos'),
+  setup_step_3_title: z.string().optional().default('¿Qué tienen disponible?'),
+  setup_step_3_subtitle: z.string().optional().default('Las cartas que necesiten algo no seleccionado quedarán fuera de la partida.'),
+  setup_step_4_label: z.string().optional().default('Límites'),
+  setup_step_4_title: z.string().optional().default('Marquen los límites'),
+  setup_step_4_subtitle: z.string().optional().default('Activen todo lo que prefieran dejar afuera antes de empezar.'),
 });
 
 export const releaseSchema = z.object({

@@ -28,7 +28,7 @@ RUN npm run build
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.5.0"
+LABEL org.opencontainers.image.version="2.6.0"
 
 COPY deploy/nginx-container.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html

@@ -309,10 +309,36 @@ h2 { font-size: 1.6rem; }
 .progress-track { height: 3px; background: color-mix(in srgb, var(--pc-muted) 20%, transparent); border-radius: 99px; margin: 12px 0 18px; overflow: hidden; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--pc-accent); transition: width .3s ease; }
 .card-stage { width: 100%; min-height: 0; aspect-ratio: 3 / 4; padding: 0; border: 0; background: transparent; perspective: 1200px; }
-.playing-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform var(--pc-animation) cubic-bezier(.2,.8,.2,1); }
+.playing-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform var(--pc-animation) cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+  isolation: isolate;
+}
 .playing-card.revealed { transform: rotateY(180deg); }
-.card-face { position: absolute; inset: 0; border-radius: var(--pc-card-radius); backface-visibility: hidden; overflow: hidden; border: 1px solid color-mix(in srgb, var(--pc-card-border) 65%, transparent); box-shadow: 0 26px 70px rgba(0,0,0,var(--pc-shadow-alpha)); }
-.card-back { background: radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--pc-primary) 55%, transparent), transparent 36%), repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--pc-accent) 5%, transparent) 8px 9px), var(--pc-card); display: grid; place-items: center; }
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--pc-card-radius);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--pc-card-border) 65%, transparent);
+  box-shadow: 0 26px 70px rgba(0,0,0,var(--pc-shadow-alpha));
+}
+.card-back {
+  transform: rotateY(0deg) translateZ(1px);
+  z-index: 2;
+  background: radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--pc-primary) 55%, transparent), transparent 36%), repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--pc-accent) 5%, transparent) 8px 9px), var(--pc-card);
+  display: grid;
+  place-items: center;
+}
 .card-back::before { content: ""; position: absolute; inset: 13px; border: 1px solid color-mix(in srgb, var(--pc-accent) 36%, transparent); border-radius: calc(var(--pc-card-radius) - 10px); }
 .card-logo { display: grid; justify-items: center; gap: 10px; text-transform: uppercase; letter-spacing: .15em; }
 .card-logo svg { width: 76px; height: 76px; color: var(--pc-accent); fill: color-mix(in srgb, var(--pc-primary) 50%, transparent); }
@@ -321,7 +347,33 @@ h2 { font-size: 1.6rem; }
 .corner { position: absolute; color: var(--pc-accent); font-family: Georgia, serif; line-height: .95; font-size: 1rem; }
 .corner.top { top: 26px; left: 26px; }
 .corner.bottom { right: 26px; bottom: 26px; transform: rotate(180deg); }
-.card-front { transform: rotateY(180deg); background: linear-gradient(160deg, color-mix(in srgb, var(--level-color) 18%, var(--pc-card)), var(--pc-card)); padding: clamp(22px, 6vw, 38px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.card-front {
+  transform: rotateY(180deg) translateZ(1px);
+  z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--level-color) 18%, var(--pc-card)), var(--pc-card));
+  padding: clamp(22px, 6vw, 38px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.playing-card.revealed .card-back {
+  animation: hide-card-back var(--pc-animation) linear forwards;
+  pointer-events: none;
+}
+.playing-card.revealed .card-front {
+  animation: show-card-front var(--pc-animation) linear forwards;
+}
+@keyframes hide-card-back {
+  0%, 49% { opacity: 1; visibility: visible; }
+  50%, 100% { opacity: 0; visibility: hidden; }
+}
+@keyframes show-card-front {
+  0%, 49% { opacity: 0; visibility: hidden; }
+  50%, 100% { opacity: 1; visibility: visible; }
+}
 .card-front::before { content: ""; position: absolute; inset: 12px; border: 1px solid color-mix(in srgb, var(--level-color) 42%, transparent); border-radius: calc(var(--pc-card-radius) - 9px); pointer-events: none; }
 .card-topline { position: absolute; top: 28px; left: 30px; right: 30px; display: flex; justify-content: space-between; color: color-mix(in srgb, var(--level-color) 70%, white); font-size: .64rem; text-transform: uppercase; letter-spacing: .12em; }
 .card-text { margin: 0; font-family: var(--pc-card-font); font-size: clamp(1.35rem, 6.2vw, 2.25rem); font-weight: 800; line-height: 1.2; text-align: center; text-wrap: balance; }
@@ -447,4 +499,40 @@ h2 { font-size: 1.6rem; }
     max-width: 210px;
     max-height: 105px;
   }
+}
+
+
+.hero-emblem-animated {
+  position: relative;
+  isolation: isolate;
+}
+.hero-emblem-animated::before,
+.hero-emblem-animated::after {
+  content: "";
+  position: absolute;
+  inset: 17%;
+  border-radius: 50%;
+  z-index: -1;
+  background: color-mix(in srgb, var(--pc-accent) 30%, transparent);
+  filter: blur(18px);
+  animation: flame-glow 2.4s ease-in-out infinite;
+}
+.hero-emblem-animated::after {
+  inset: 28%;
+  animation-delay: -1.1s;
+  opacity: .7;
+}
+.hero-flame {
+  transform-origin: 50% 88%;
+  animation: flame-flicker 1.55s ease-in-out infinite;
+}
+@keyframes flame-flicker {
+  0%, 100% { transform: translateY(0) rotate(-1deg) scale(.98, 1); filter: brightness(1); }
+  25% { transform: translateY(-3px) rotate(2deg) scale(1.03, .97); filter: brightness(1.12); }
+  52% { transform: translateY(-1px) rotate(-2deg) scale(.97, 1.05); filter: brightness(.98); }
+  75% { transform: translateY(-4px) rotate(1deg) scale(1.05, .96); filter: brightness(1.16); }
+}
+@keyframes flame-glow {
+  0%, 100% { transform: scale(.85); opacity: .38; }
+  50% { transform: scale(1.18); opacity: .8; }
 }

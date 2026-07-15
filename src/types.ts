@@ -269,6 +269,18 @@ export interface AppSettings {
   default_exclude_third_parties: boolean;
   default_exclude_public_places: boolean;
   default_exclude_restraint: boolean;
+  setup_step_1_label: string;
+  setup_step_1_title: string;
+  setup_step_1_subtitle: string;
+  setup_step_2_label: string;
+  setup_step_2_title: string;
+  setup_step_2_subtitle: string;
+  setup_step_3_label: string;
+  setup_step_3_title: string;
+  setup_step_3_subtitle: string;
+  setup_step_4_label: string;
+  setup_step_4_title: string;
+  setup_step_4_subtitle: string;
 }
 
 export interface Release {

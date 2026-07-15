@@ -107,6 +107,10 @@ const SETTINGS_FIELDS = [
   'maximum_cards_per_session','enable_random_level','enable_private_filters',
   'analytics_enabled','maintenance_mode','default_exclude_photo_video',
   'default_exclude_third_parties','default_exclude_public_places','default_exclude_restraint',
+  'setup_step_1_label','setup_step_1_title','setup_step_1_subtitle',
+  'setup_step_2_label','setup_step_2_title','setup_step_2_subtitle',
+  'setup_step_3_label','setup_step_3_title','setup_step_3_subtitle',
+  'setup_step_4_label','setup_step_4_title','setup_step_4_subtitle',
 ];
 
 function relationId(value: unknown): string | null {
@@ -200,5 +204,31 @@ export async function readRuntimeConfig(signal?: AbortSignal): Promise<RuntimeCo
   ]);
 
   return { game, theme, settings };
+}
+
+const SEX_FIELDS = [
+  'id','game','status','name','slug','description','sort',
+];
+
+export async function readPublishedSexes(
+  gameId: string,
+  signal?: AbortSignal,
+): Promise<unknown[]> {
+  const params = new URLSearchParams({
+    fields: SEX_FIELDS.join(','),
+    limit: '-1',
+    'filter[game][_eq]': gameId,
+    'filter[status][_eq]': 'published',
+    sort: 'sort',
+    _runtime: String(Date.now()),
+  });
+
+  const result = await getJson<unknown[]>(
+    `/items/pc_sexes?${params.toString()}`,
+    signal,
+    { noStore: true },
+  );
+
+  return Array.isArray(result) ? result : [];
 }
 

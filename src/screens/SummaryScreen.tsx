@@ -36,12 +36,12 @@ export function SummaryScreen({
         </div>
       )}
 
-      <div className="summary-note"><Icon name="lock" /><span>Este resumen no se envió a Directus y desaparecerá al iniciar otra partida.</span></div>
+      <div className="summary-note"><Icon name="lock" /><span>Este resumen queda en este dispositivo y desaparece al iniciar otra partida.</span></div>
       <div className="summary-actions">
         <button className="primary-button wide" type="button" onClick={onRestart}>Configurar otra partida <Icon name="refresh" /></button>
         <button className="text-button" type="button" onClick={onHome}>Volver al inicio</button>
       </div>
-      <small>{setup.playerOne || 'Vos'} y {setup.playerTwo || 'tu pareja'} · versión {content.release.version}</small>
+      <small>{setup.playerOne || 'Vos'} y {setup.playerTwo || 'tu pareja'}</small>
     </main>
   );
 }

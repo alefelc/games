@@ -29,7 +29,7 @@ export function AgeGate({ content, onAccept }: { content: ContentBundle; onAccep
       <button className="primary-button wide" type="button" disabled={!adult || !consent} onClick={onAccept}>
         Entrar al juego <Icon name="arrow" />
       </button>
-      <div className="privacy-inline"><Icon name="lock" /><span>No se guardan respuestas, fotos ni videos en el servidor.</span></div>
+      <div className="privacy-inline"><Icon name="lock" /><span>No se guardan respuestas, fotos ni videos fuera de este dispositivo.</span></div>
     </main>
   );
 }

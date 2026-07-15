@@ -47,8 +47,6 @@ function FilterToggle({
   );
 }
 
-const steps = ['Personas y modo', 'Niveles y mazos', 'Elementos', 'Límites'];
-
 export function SetupScreen({
   content,
   setup,
@@ -65,6 +63,31 @@ export function SetupScreen({
   updateFilters: (patch: Partial<SafetyFilters>) => void;
 }) {
   const [step, setStep] = useState(0);
+  const stepContent = [
+    {
+      label: content.settings.setup_step_1_label,
+      title: content.settings.setup_step_1_title,
+      subtitle: content.settings.setup_step_1_subtitle,
+    },
+    {
+      label: content.settings.setup_step_2_label,
+      title: content.settings.setup_step_2_title,
+      subtitle: content.settings.setup_step_2_subtitle,
+    },
+    {
+      label: content.settings.setup_step_3_label,
+      title: content.settings.setup_step_3_title,
+      subtitle: content.settings.setup_step_3_subtitle,
+    },
+    {
+      label: content.settings.setup_step_4_label,
+      title: content.settings.setup_step_4_title,
+      subtitle: content.settings.setup_step_4_subtitle,
+    },
+  ];
+
+  const steps = stepContent.map((item) => item.label);
+
   const [showAdvanced, setShowAdvanced] = useState(false);
   const eligibleCount = useMemo(() => previewEligibleCount(content, setup), [content, setup]);
   const requiresIntenseConsent = content.levels.some((level) => setup.levelIds.includes(level.id) && level.requires_confirmation);
@@ -104,8 +127,8 @@ export function SetupScreen({
         {step === 0 && (
           <section className="setup-section">
             <p className="eyebrow">PASO 1 DE 4</p>
-            <h1>¿Quiénes juegan y cómo?</h1>
-            <p className="section-copy">Los nombres son opcionales. Elegí Hombre o Mujer para que cada carta corresponda a la persona que tiene el turno.</p>
+            <h1>{stepContent[0].title}</h1>
+            <p className="section-copy">{stepContent[0].subtitle}</p>
 
             <div className="player-grid">
               <div className="player-field">
@@ -193,8 +216,8 @@ export function SetupScreen({
         {step === 1 && (
           <section className="setup-section">
             <p className="eyebrow">PASO 2 DE 4</p>
-            <h1>Definan la intensidad</h1>
-            <p className="section-copy">No seleccionen un nivel por curiosidad. Selecciónenlo solo si ambos quieren que pueda aparecer.</p>
+            <h1>{stepContent[1].title}</h1>
+            <p className="section-copy">{stepContent[1].subtitle}</p>
 
             <div className="level-grid">
               {content.levels.map((level) => {
@@ -227,7 +250,7 @@ export function SetupScreen({
 
             <details className="deck-details">
               <summary>Mazos incluidos <span>{setup.deckIds.length || 'todos'}</span></summary>
-              <p>Los mazos permiten crear ediciones temáticas desde Directus. Si no elegís ninguno, se consideran todos.</p>
+              <p>Los mazos agrupan cartas por temática. Si no elegís ninguno, se consideran todos.</p>
               <div className="choice-list compact">
                 {content.decks.map((deck) => (
                   <ChoiceToggle
@@ -246,8 +269,8 @@ export function SetupScreen({
         {step === 2 && (
           <section className="setup-section">
             <p className="eyebrow">PASO 3 DE 4</p>
-            <h1>¿Qué tienen disponible?</h1>
-            <p className="section-copy">Una carta que requiera algo no seleccionado quedará automáticamente fuera de la partida.</p>
+            <h1>{stepContent[2].title}</h1>
+            <p className="section-copy">{stepContent[2].subtitle}</p>
 
             <h2 className="subheading">Elementos comunes</h2>
             <div className="choice-list two-columns">
@@ -280,8 +303,8 @@ export function SetupScreen({
         {step === 3 && (
           <section className="setup-section">
             <p className="eyebrow">PASO 4 DE 4</p>
-            <h1>Marquen los límites</h1>
-            <p className="section-copy">Activar un filtro significa excluir ese contenido. Estos filtros operan antes de elegir cada carta.</p>
+            <h1>{stepContent[3].title}</h1>
+            <p className="section-copy">{stepContent[3].subtitle}</p>
 
             <div className="filter-list">
               <FilterToggle checked={setup.filters.excludePhotoVideo} title="Excluir fotos y videos" description="Evita creación o envío de contenido íntimo." onChange={(value) => updateFilters({ excludePhotoVideo: value })} />

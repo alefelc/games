@@ -1,7 +1,7 @@
 import { env } from '../env';
 import type { ContentBundle, ContentSource } from '../types';
 import { readCachedContent, writeCachedContent } from '../db/cache';
-import { readPublicBundle, readRuntimeConfig } from './directus';
+import { readPublicBundle, readPublishedSexes, readRuntimeConfig } from './directus';
 import {
   cardElementSchema, cardSchema, cardTagSchema, cardToySchema, deckCardSchema, deckSchema,
   elementSchema, gameSchema, levelSchema, modeSchema, releaseSchema, settingsSchema, sexSchema, tagSchema,
@@ -55,9 +55,9 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   const settings = settingsSchema.parse(raw.settings);
   const release = releaseSchema.parse(raw.release);
 
-  if (!cards.length) throw new Error('Directus no devolvió cartas publicadas.');
-  if (!levels.length) throw new Error('Directus no devolvió niveles publicados.');
-  if (!modes.length) throw new Error('Directus no devolvió modos publicados.');
+  if (!cards.length) throw new Error('No hay cartas disponibles.');
+  if (!levels.length) throw new Error('No hay niveles disponibles.');
+  if (!modes.length) throw new Error('No hay modos disponibles.');
 
   return {
     game, theme, levels, decks, modes, elements, toys, tags, sexes, cards, deckCards,
@@ -69,7 +69,7 @@ function validateBundle(raw: ContentBundle): ContentBundle {
 
 function parseBundle(value: unknown): ContentBundle {
   if (typeof value === 'string') return JSON.parse(value) as ContentBundle;
-  if (!value || typeof value !== 'object') throw new Error('El snapshot público de Directus no contiene un bundle válido.');
+  if (!value || typeof value !== 'object') throw new Error('El contenido del juego no es válido.');
   return value as ContentBundle;
 }
 
@@ -80,11 +80,27 @@ async function mergeRuntimeConfig(
 ): Promise<{ bundle: ContentBundle; updated: boolean; warning: string | null }> {
   try {
     const live = await readRuntimeConfig(signal);
+    const liveGame = gameSchema.parse(live.game);
+
+    let liveSexes = bundle.sexes;
+
+    try {
+      const rows = await readPublishedSexes(liveGame.id, signal);
+      if (rows.length) {
+        liveSexes = sortByOrder(
+          rows.map((item) => sexSchema.parse(item)),
+        );
+      }
+    } catch {
+      // Si la colección no está abierta para lectura, se conserva la copia incluida.
+    }
+
     const merged = validateBundle({
       ...bundle,
-      game: gameSchema.parse(live.game),
+      game: liveGame,
       theme: themeSchema.parse(live.theme),
       settings: settingsSchema.parse(live.settings),
+      sexes: liveSexes,
       fetchedAt: new Date().toISOString(),
     });
 
@@ -93,9 +109,7 @@ async function mergeRuntimeConfig(
     return {
       bundle,
       updated: false,
-      warning:
-        'La configuración en vivo de Directus no está habilitada; se usa la última versión publicada. ' +
-        (error instanceof Error ? error.message : ''),
+      warning: 'No se pudieron aplicar los últimos ajustes. Se usa la configuración guardada.',
     };
   }
 }
@@ -160,7 +174,7 @@ export async function loadContent(options: { force?: boolean; signal?: AbortSign
       return {
         bundle: validateBundle(cached),
         source: 'cache',
-        warning: `No se pudo actualizar desde Directus. Se usa la copia local. ${error instanceof Error ? error.message : ''}`.trim(),
+        warning: 'No se pudieron cargar los últimos cambios. Se usa el contenido guardado.',
       };
     }
 
@@ -170,7 +184,7 @@ export async function loadContent(options: { force?: boolean; signal?: AbortSign
       return {
         bundle,
         source: 'bootstrap',
-        warning: 'Directus todavía no está accesible públicamente. Se usa el contenido inicial incluido en la app.',
+        warning: 'Se está usando el contenido incluido en la aplicación.',
       };
     }
 

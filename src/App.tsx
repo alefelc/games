@@ -23,8 +23,6 @@ export default function App() {
    */
   const stage = useGameStore((state) => state.stage);
   const content = useGameStore((state) => state.content);
-  const contentSource = useGameStore((state) => state.contentSource);
-  const contentWarning = useGameStore((state) => state.contentWarning);
   const setup = useGameStore((state) => state.setup);
   const session = useGameStore((state) => state.session);
 
@@ -108,14 +106,14 @@ export default function App() {
   }, [stage, content?.settings.allow_screen_wake_lock]);
 
   if (loading || !content) {
-    if (error) return <ErrorScreen error={error} onRetry={() => void refresh(true)} />;
+    if (error) return <ErrorScreen onRetry={() => void refresh(true)} />;
     return <LoadingScreen />;
   }
 
   if (content.settings.maintenance_mode) {
     return (
       <ErrorScreen
-        error="El juego está temporalmente en mantenimiento desde el panel de administración."
+        message="El juego está temporalmente pausado."
         onRetry={() => void refresh(true)}
       />
     );
@@ -129,8 +127,6 @@ export default function App() {
       return (
         <HomeScreen
           content={content}
-          source={contentSource}
-          warning={contentWarning}
           onStart={openSetup}
           onRefresh={() => void refresh(true)}
           refreshing={refreshing}
