@@ -1,7 +1,7 @@
 import { env } from '../env';
 import type { ContentBundle, ContentSource } from '../types';
 import { readCachedContent, writeCachedContent } from '../db/cache';
-import { readPublicBundle, readPublishedSexes, readRuntimeConfig } from './directus';
+import { readLiveCatalog, readPublicBundle, readRuntimeConfig } from './content-api';
 import {
   cardElementSchema, cardSchema, cardTagSchema, cardToySchema, deckCardSchema, deckSchema,
   elementSchema, gameSchema, levelSchema, modeSchema, releaseSchema, settingsSchema, sexSchema, tagSchema,
@@ -74,58 +74,53 @@ function parseBundle(value: unknown): ContentBundle {
 }
 
 
-async function mergeRuntimeConfig(
-  bundle: ContentBundle,
+async function buildLiveBundle(
+  snapshot: ContentBundle,
   signal?: AbortSignal,
-): Promise<{ bundle: ContentBundle; updated: boolean; warning: string | null }> {
-  try {
-    const live = await readRuntimeConfig(signal);
-    const liveGame = gameSchema.parse(live.game);
+): Promise<ContentBundle> {
+  const runtime = await readRuntimeConfig(signal);
+  const game = gameSchema.parse(runtime.game);
+  const catalog = await readLiveCatalog(game.id, signal);
 
-    let liveSexes = bundle.sexes;
+  const raw = {
+    ...snapshot,
+    game,
+    theme: themeSchema.parse(runtime.theme),
+    settings: settingsSchema.parse(runtime.settings),
+    levels: catalog.levels,
+    decks: catalog.decks,
+    modes: catalog.modes,
+    elements: catalog.elements,
+    toys: catalog.toys,
+    tags: catalog.tags,
+    sexes: catalog.sexes,
+    cards: catalog.cards,
+    deckCards: catalog.deckCards,
+    cardElements: catalog.cardElements,
+    cardToys: catalog.cardToys,
+    cardTags: catalog.cardTags,
+    fetchedAt: new Date().toISOString(),
+    contentHash: `live-${Date.now()}`,
+  } as unknown as ContentBundle;
 
-    try {
-      const rows = await readPublishedSexes(liveGame.id, signal);
-      if (rows.length) {
-        liveSexes = sortByOrder(
-          rows.map((item) => sexSchema.parse(item)),
-        );
-      }
-    } catch {
-      // Si la colección no está abierta para lectura, se conserva la copia incluida.
-    }
-
-    const merged = validateBundle({
-      ...bundle,
-      game: liveGame,
-      theme: themeSchema.parse(live.theme),
-      settings: settingsSchema.parse(live.settings),
-      sexes: liveSexes,
-      fetchedAt: new Date().toISOString(),
-    });
-
-    return { bundle: merged, updated: true, warning: null };
-  } catch (error) {
-    return {
-      bundle,
-      updated: false,
-      warning: 'No se pudieron aplicar los últimos ajustes. Se usa la configuración guardada.',
-    };
-  }
+  return validateBundle(raw);
 }
 
-async function fetchFullBundle(
+async function fetchCurrentContent(
   signal?: AbortSignal,
-): Promise<{ bundle: ContentBundle; warning: string | null }> {
-  const record = await readPublicBundle({ includeBundle: true, signal });
-  const raw = parseBundle(record.bundle);
+): Promise<ContentBundle> {
+  const record = await readPublicBundle({
+    includeBundle: true,
+    signal,
+  });
+
   const snapshot = validateBundle({
-    ...raw,
+    ...parseBundle(record.bundle),
     contentHash: record.content_hash,
     fetchedAt: new Date().toISOString(),
   });
-  const live = await mergeRuntimeConfig(snapshot, signal);
-  return { bundle: live.bundle, warning: live.warning };
+
+  return buildLiveBundle(snapshot, signal);
 }
 
 async function readBootstrap(): Promise<ContentBundle> {
@@ -145,49 +140,58 @@ export interface LoadResult {
   warning: string | null;
 }
 
-export async function loadContent(options: { force?: boolean; signal?: AbortSignal } = {}): Promise<LoadResult> {
+export async function loadContent(
+  options: {
+    force?: boolean;
+    signal?: AbortSignal;
+  } = {},
+): Promise<LoadResult> {
   const cached = await readCachedContent();
 
-  if (!options.force && cached && !navigator.onLine && isFresh(cached)) {
-    return { bundle: validateBundle(cached), source: 'cache', warning: 'Sin conexión: usando contenido guardado.' };
+  if (
+    cached &&
+    !navigator.onLine &&
+    isFresh(cached)
+  ) {
+    return {
+      bundle: validateBundle(cached),
+      source: 'cache',
+      warning: 'Sin conexión: usando contenido guardado.',
+    };
   }
 
   try {
-    if (!options.force && cached?.contentHash) {
-      const metadata = await readPublicBundle({ includeBundle: false, signal: options.signal });
-      if (metadata.content_hash === cached.contentHash && isFresh(cached)) {
-        const live = await mergeRuntimeConfig(validateBundle(cached), options.signal);
-        await writeCachedContent(live.bundle);
-        return {
-          bundle: live.bundle,
-          source: live.updated ? 'network' : 'cache',
-          warning: live.warning,
-        };
-      }
-    }
+    const bundle = await fetchCurrentContent(options.signal);
+    await writeCachedContent(bundle);
 
-    const loaded = await fetchFullBundle(options.signal);
-    await writeCachedContent(loaded.bundle);
-    return { bundle: loaded.bundle, source: 'network', warning: loaded.warning };
-  } catch (error) {
+    return {
+      bundle,
+      source: 'network',
+      warning: null,
+    };
+  } catch {
     if (cached) {
       return {
         bundle: validateBundle(cached),
         source: 'cache',
-        warning: 'No se pudieron cargar los últimos cambios. Se usa el contenido guardado.',
+        warning:
+          'No se pudieron cargar los últimos cambios. ' +
+          'Se usa el contenido guardado.',
       };
     }
 
     if (env.allowBootstrapFallback) {
       const bundle = await readBootstrap();
       await writeCachedContent(bundle);
+
       return {
         bundle,
         source: 'bootstrap',
-        warning: 'Se está usando el contenido incluido en la aplicación.',
+        warning:
+          'Se está usando el contenido incluido en la aplicación.',
       };
     }
 
-    throw error;
+    throw new Error('No se pudo preparar el juego.');
   }
 }
