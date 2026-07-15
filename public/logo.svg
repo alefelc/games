@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 150" role="img" aria-label="PecadoClub">
-  <g transform="translate(20 8)">
-    <path d="M78 0c12 32-19 42-10 68 5 12 18 17 24 31 11 28-2 49-27 59 9-19 5-32-8-44-11-11-16-23-10-38 6-17 23-26 31-43 4-10 4-21 0-33Z" fill="#D6B16F"/>
-    <path d="M44 35c7 23-16 34-19 55-3 21 9 40 31 51-10-15-8-29 3-42 8-11 11-23 5-35-5-11-14-17-20-29Z" fill="#F8EAD6"/>
-  </g>
-  <text x="140" y="90" fill="#F8EAD6" font-size="64" font-family="Georgia,serif" font-weight="700" letter-spacing="2">PECADO</text>
-  <text x="389" y="90" fill="#D6B16F" font-size="64" font-family="Georgia,serif" font-weight="700" letter-spacing="2">CLUB</text>
-  <text x="143" y="123" fill="#C8AF9B" font-size="15" font-family="Arial,sans-serif" letter-spacing="7">CUANDO SE JUEGA, SE ENCIENDE</text>
-</svg>
