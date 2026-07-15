@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: apiPattern,
               handler: 'NetworkFirst',
               options: {
-                cacheName: 'te-animas-content-v281',
+                cacheName: 'te-animas-content-v282',
                 networkTimeoutSeconds: 5,
                 expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
                 cacheableResponse: { statuses: [0, 200] }
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: assetPattern,
               handler: 'CacheFirst',
               options: {
-                cacheName: 'te-animas-images-v281',
+                cacheName: 'te-animas-images-v282',
                 expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
                 cacheableResponse: { statuses: [0, 200] }
               }

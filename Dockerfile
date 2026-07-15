@@ -19,16 +19,27 @@ RUN npm ci --no-audit --no-fund --prefer-online
 COPY . .
 
 ARG VITE_DIRECTUS_URL=https://websites-games.chn0vc.easypanel.host
+ARG VITE_GAME_MASTER_URL=https://websites-game-master.chn0vc.easypanel.host
 ARG VITE_BASE_PATH=/
+ARG VITE_GAME_SLUG=te-animas
+ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
+ARG VITE_CONTENT_CACHE_HOURS=24
+ARG BUILD_RELEASE=2.8.2
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
-    VITE_BASE_PATH=${VITE_BASE_PATH}
+    VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
+    VITE_BASE_PATH=${VITE_BASE_PATH} \
+    VITE_GAME_SLUG=${VITE_GAME_SLUG} \
+    VITE_ALLOW_BOOTSTRAP_FALLBACK=${VITE_ALLOW_BOOTSTRAP_FALLBACK} \
+    VITE_CONTENT_CACHE_HOURS=${VITE_CONTENT_CACHE_HOURS} \
+    BUILD_RELEASE=${BUILD_RELEASE}
 
-RUN npm run build
+RUN echo "Building release $BUILD_RELEASE with Game Master $VITE_GAME_MASTER_URL" \
+    && npm run build
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.8.1"
+LABEL org.opencontainers.image.version="2.8.2"
 
 COPY deploy/nginx-container.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
