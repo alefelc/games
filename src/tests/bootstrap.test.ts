@@ -33,7 +33,7 @@ describe('contenido inicial', () => {
     bundle.cardToys.forEach((item) => cardToySchema.parse(item));
     bundle.cardTags.forEach((item) => cardTagSchema.parse(item));
 
-    expect(bundle.cards).toHaveLength(182);
+    expect(bundle.cards).toHaveLength(598);
     expect(bundle.levels).toHaveLength(7);
     expect(bundle.sexes).toHaveLength(2);
     expect(bundle.cards.every((card) => card.status === 'published')).toBe(true);

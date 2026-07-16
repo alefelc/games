@@ -20,6 +20,6 @@ describe('Game Master v2.8.1', () => {
     );
 
     expect(engine).toContain('provider: decision.provider');
-    expect(engine).toContain("gmProvider: 'frontend_fallback'");
+    expect(engine).toContain("provider: 'frontend_fallback'");
   });
 });

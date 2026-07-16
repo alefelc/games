@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 import type { ContentBundle } from '../types';
 
-const DB_NAME = 'te-animas-v291';
+const DB_NAME = 'te-animas-v2100';
 const STORE = 'content';
 const ACTIVE_KEY = 'active';
 

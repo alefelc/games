@@ -1,6 +1,7 @@
 import type { Card, ContentBundle, GameMode, GameSetup, Id, SessionState } from '../types';
 import { eligibleCards } from './eligibility';
 import { weightedPick } from './random';
+import { preferFreshCards, recordCardSeen } from './card-history';
 
 export function createDefaultSetup(content: ContentBundle): GameSetup {
   const safeLevels = content.levels.filter((level) => !level.requires_confirmation).map((level) => level.id);
@@ -84,30 +85,85 @@ function resolveStartingLevel(content: ContentBundle, setup: GameSetup, mode?: G
     .sort((a, b) => a.intensity_order - b.intensity_order)[0]?.id ?? null;
 }
 
-function targetLevelForDraw(
+function targetLevelsForDraw(
   content: ContentBundle,
   setup: GameSetup,
   session: SessionState,
   mode: GameMode,
-): Id | null {
+  resolvedEvent?: import('../types').GameMasterEvent | null,
+): Set<Id> | null {
   const selectedLevels = content.levels
     .filter((level) => setup.levelIds.includes(level.id))
     .sort((a, b) => a.intensity_order - b.intensity_order);
 
+  if (!selectedLevels.length) return new Set();
+
   if (mode.slug === 'solo-previa') {
-    return selectedLevels.find((level) => level.slug === 'previa')?.id ?? selectedLevels[0]?.id ?? null;
-  }
-
-  if (mode.automatic_progression && mode.cards_before_level_up > 0) {
-    const index = Math.min(
-      selectedLevels.length - 1,
-      Math.floor(session.resolvedCount / mode.cards_before_level_up),
+    const previa = selectedLevels.find(
+      (level) => level.slug === 'previa',
     );
-    return selectedLevels[Math.max(0, index)]?.id ?? session.currentLevelId;
+    return new Set(previa ? [previa.id] : [selectedLevels[0].id]);
   }
 
-  if (mode.slug === 'clasico') return session.currentLevelId ?? selectedLevels[0]?.id ?? null;
-  return null;
+  if (['modo-fuego', 'aleatorio'].includes(mode.slug)) {
+    return null;
+  }
+
+  let baseIndex = 0;
+  if (mode.automatic_progression && mode.cards_before_level_up > 0) {
+    baseIndex = Math.min(
+      selectedLevels.length - 1,
+      Math.floor(
+        session.resolvedCount / mode.cards_before_level_up,
+      ),
+    );
+  } else if (session.currentLevelId) {
+    const found = selectedLevels.findIndex(
+      (level) => level.id === session.currentLevelId,
+    );
+    baseIndex = found >= 0 ? found : 0;
+  }
+
+  const event = resolvedEvent;
+  const escalationLevels = selectedLevels.filter(
+    (level) => level.slug !== 'cierre',
+  );
+
+  if (event?.reaction === 'too_soft' && escalationLevels.length) {
+    const currentEscalationIndex = Math.max(
+      0,
+      escalationLevels.findIndex(
+        (level) => level.id === selectedLevels[baseIndex]?.id,
+      ),
+    );
+    const recentRequests = session.gmEvents
+      .slice(-4)
+      .filter((item) => item.reaction === 'too_soft')
+      .length;
+    const jump = Math.min(4, 2 + recentRequests);
+    const targetIndex = Math.min(
+      escalationLevels.length - 1,
+      currentEscalationIndex + jump,
+    );
+    const lowerIndex = Math.max(
+      currentEscalationIndex + 1,
+      targetIndex - 1,
+    );
+    return new Set(
+      escalationLevels
+        .slice(lowerIndex, targetIndex + 1)
+        .map((level) => level.id),
+    );
+  }
+
+  if (event?.reaction === 'too_much') {
+    return new Set([
+      selectedLevels[Math.max(0, baseIndex - 1)]?.id,
+      selectedLevels[baseIndex]?.id,
+    ].filter(Boolean) as Id[]);
+  }
+
+  return new Set([selectedLevels[baseIndex]?.id].filter(Boolean) as Id[]);
 }
 
 function nextPlayer(current: 0 | 1, mode: GameMode, random: () => number): 0 | 1 {
@@ -131,6 +187,7 @@ export function getDrawCandidatePool(
   content: ContentBundle,
   setup: GameSetup,
   session: SessionState,
+  resolvedEvent: import('../types').GameMasterEvent | null = null,
 ): DrawCandidatePool {
   if (session.resolvedCount >= setup.maxCards) {
     return { player: session.currentPlayer, candidates: [], exhausted: true };
@@ -153,7 +210,13 @@ export function getDrawCandidatePool(
       player === 0 ? setup.playerTwoSexId : setup.playerOneSexId,
   });
 
-  const targetLevel = targetLevelForDraw(content, setup, session, mode);
+  const targetLevels = targetLevelsForDraw(
+    content,
+    setup,
+    session,
+    mode,
+    resolvedEvent,
+  );
   const used = new Set(session.usedCardIds);
   let drawPlayer = session.currentPlayer;
 
@@ -162,8 +225,10 @@ export function getDrawCandidatePool(
       .filter((card) => !used.has(card.id));
 
   let allEligible = eligibleFor(drawPlayer);
-  let candidates = targetLevel
-    ? allEligible.filter((card) => card.level === targetLevel)
+  let candidates = targetLevels
+    ? allEligible.filter((card) =>
+        targetLevels.has(card.level),
+      )
     : allEligible;
 
   if (!candidates.length && mode.slug !== 'solo-previa') {
@@ -173,8 +238,10 @@ export function getDrawCandidatePool(
   if (!candidates.length) {
     const otherPlayer: 0 | 1 = drawPlayer === 0 ? 1 : 0;
     const otherEligible = eligibleFor(otherPlayer);
-    const otherCandidates = targetLevel
-      ? otherEligible.filter((card) => card.level === targetLevel)
+    const otherCandidates = targetLevels
+      ? otherEligible.filter((card) =>
+          targetLevels.has(card.level),
+        )
       : otherEligible;
 
     if (otherCandidates.length || otherEligible.length) {
@@ -186,7 +253,7 @@ export function getDrawCandidatePool(
 
   return {
     player: drawPlayer,
-    candidates,
+    candidates: preferFreshCards(candidates),
     exhausted: candidates.length === 0,
   };
 }
@@ -207,6 +274,8 @@ export function applyCardSelection(
     latencyMs?: number | null;
   },
 ): SessionState {
+  recordCardSeen(card);
+
   return {
     ...session,
     currentPlayer: player,

@@ -7,6 +7,11 @@ import type {
   GameSetup,
   SessionState,
 } from '../types';
+import {
+  recentAnatomyFocuses,
+  recentCardIds,
+  recentContinuityGroups,
+} from '../engine/card-history';
 
 const responseSchema = z.object({
   selected_card_id: z.string(),
@@ -157,6 +162,11 @@ export async function requestGameMasterDecision({
                   content,
                   setup.playerOneSexId,
                 ),
+          recently_seen_card_ids: recentCardIds(240),
+          recently_seen_groups:
+            recentContinuityGroups(100),
+          recently_seen_anatomy:
+            recentAnatomyFocuses(100),
           selected_toy_slugs: content.toys
             .filter((toy) =>
               setup.toyIds.includes(toy.id),
@@ -168,7 +178,7 @@ export async function requestGameMasterDecision({
             .map(eventPayload),
           resolved_event: resolvedEvent ? eventPayload(resolvedEvent) : null,
           candidates: candidates
-            .slice(0, 50)
+            .slice(0, 60)
             .map((card) => candidatePayload(content, card)),
         }),
         signal: controller.signal,

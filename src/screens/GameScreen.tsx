@@ -109,10 +109,9 @@ export function GameScreen({
         text: card.text,
         actorName,
         targetName,
-        actorIsBoth: card.performer === 'both',
-        hasExplicitTarget:
-          card.target !== 'none' &&
-          card.target !== 'both',
+        partnerName,
+        playerOneName: setup.playerOne || 'Vos',
+        playerTwoName: setup.playerTwo || 'Tu pareja',
       })
     : '';
 
