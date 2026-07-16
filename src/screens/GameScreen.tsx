@@ -77,10 +77,22 @@ export function GameScreen({
     content.modes.find((item) => item.id === setup.modeId) ??
     content.modes[0];
 
-  const player =
+  const currentPlayerName =
     session.currentPlayer === 0
       ? setup.playerOne || 'Vos'
       : setup.playerTwo || 'Tu pareja';
+
+  const partnerName =
+    session.currentPlayer === 0
+      ? setup.playerTwo || 'Tu pareja'
+      : setup.playerOne || 'Vos';
+
+  const player =
+    card?.performer === 'partner'
+      ? partnerName
+      : card?.performer === 'both'
+        ? `${currentPlayerName} y ${partnerName}`
+        : currentPlayerName;
 
   const gameMasterStatus =
     session.gmProvider === 'openai'

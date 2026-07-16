@@ -66,6 +66,18 @@ function candidatePayload(content: ContentBundle, card: Card) {
     intensity: card.intensity,
     performer: card.performer,
     target: card.target,
+    performer_sex: sexSlug(
+      content,
+      card.performer_sex,
+    ),
+    target_sex: sexSlug(
+      content,
+      card.target_sex,
+    ),
+    anatomy_focus: card.anatomy_focus,
+    anatomy_owner: card.anatomy_owner,
+    penetration_method: card.penetration_method,
+    reciprocal_action: card.reciprocal_action,
     tags: tagSlugsForCard(content, card.id),
     gm_escalation_score: card.gm_escalation_score,
     gm_energy_score: card.gm_energy_score,
@@ -125,6 +137,31 @@ export async function requestGameMasterDecision({
             sexSlug(content, setup.playerOneSexId),
             sexSlug(content, setup.playerTwoSexId),
           ],
+          current_player_sex:
+            player === 0
+              ? sexSlug(
+                  content,
+                  setup.playerOneSexId,
+                )
+              : sexSlug(
+                  content,
+                  setup.playerTwoSexId,
+                ),
+          partner_sex:
+            player === 0
+              ? sexSlug(
+                  content,
+                  setup.playerTwoSexId,
+                )
+              : sexSlug(
+                  content,
+                  setup.playerOneSexId,
+                ),
+          selected_toy_slugs: content.toys
+            .filter((toy) =>
+              setup.toyIds.includes(toy.id),
+            )
+            .map((toy) => toy.slug),
           recent_events: session.gmEvents
             .filter((event) => event.id !== resolvedEvent?.id)
             .slice(-10)

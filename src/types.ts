@@ -182,6 +182,29 @@ export interface Card {
   target: string;
   performer_sex: Id | null;
   target_sex: Id | null;
+  anatomy_focus:
+    | 'none'
+    | 'body'
+    | 'pija'
+    | 'concha'
+    | 'tetas'
+    | 'culo'
+    | 'boca'
+    | 'mixed'
+    | string;
+  anatomy_owner:
+    | 'none'
+    | 'performer'
+    | 'target'
+    | 'both'
+    | string;
+  penetration_method:
+    | 'none'
+    | 'dedos'
+    | 'pija'
+    | 'juguete'
+    | string;
+  reciprocal_action: boolean;
   allow_skip: boolean;
   requires_confirmation: boolean;
   safety_note: string | null;

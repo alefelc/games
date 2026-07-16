@@ -48,25 +48,59 @@ function hasRequiredResources(
 }
 
 
+function roleMatchesSex(
+  role: string,
+  requiredSexId: Id | null,
+  currentPlayerSexId: Id,
+  partnerSexId: Id,
+): boolean {
+  if (!requiredSexId) return true;
+
+  if (role === 'current_player') {
+    return currentPlayerSexId === requiredSexId;
+  }
+
+  if (role === 'partner') {
+    return partnerSexId === requiredSexId;
+  }
+
+  if (role === 'both') {
+    return (
+      currentPlayerSexId === requiredSexId &&
+      partnerSexId === requiredSexId
+    );
+  }
+
+  return true;
+}
+
 function matchesSexRequirements(
   card: Card,
   currentPlayerSexId: Id | null | undefined,
   partnerSexId: Id | null | undefined,
 ): boolean {
-  if (!card.performer_sex && !card.target_sex) return true;
-  if (!currentPlayerSexId || !partnerSexId) return false;
+  if (!card.performer_sex && !card.target_sex) {
+    return true;
+  }
 
-  const direct =
-    (!card.performer_sex || card.performer_sex === currentPlayerSexId) &&
-    (!card.target_sex || card.target_sex === partnerSexId);
+  if (!currentPlayerSexId || !partnerSexId) {
+    return false;
+  }
 
-  if (card.performer !== 'both' && card.target !== 'both') return direct;
-
-  const reverse =
-    (!card.performer_sex || card.performer_sex === partnerSexId) &&
-    (!card.target_sex || card.target_sex === currentPlayerSexId);
-
-  return direct || reverse;
+  return (
+    roleMatchesSex(
+      card.performer,
+      card.performer_sex,
+      currentPlayerSexId,
+      partnerSexId,
+    ) &&
+    roleMatchesSex(
+      card.target,
+      card.target_sex,
+      currentPlayerSexId,
+      partnerSexId,
+    )
+  );
 }
 
 export function isCardEligible(

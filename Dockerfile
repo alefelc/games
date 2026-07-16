@@ -24,7 +24,7 @@ ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=2.8.5
+ARG BUILD_RELEASE=2.9.0
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
@@ -39,7 +39,7 @@ RUN echo "Building release $BUILD_RELEASE with adaptive service $VITE_GAME_MASTE
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.8.5"
+LABEL org.opencontainers.image.version="2.9.0"
 
 COPY deploy/nginx-container.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
