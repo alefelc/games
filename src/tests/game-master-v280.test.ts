@@ -15,7 +15,7 @@ describe('Game Master v2.8.0', () => {
   });
 
   it('permite activar el Game Master y reaccionar', () => {
-    expect(setup).toContain('game_master_title');
+    expect(setup).toContain('Dirección adaptativa');
     expect(game).toContain('Más intenso');
     expect(game).toContain('Bajar');
     expect(game).toContain('Similar');

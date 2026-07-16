@@ -113,7 +113,7 @@ export const settingsSchema = z.object({
   setup_step_4_subtitle: z.string().optional().default('Activen todo lo que prefieran dejar afuera antes de empezar.'),
   game_master_enabled: bool.optional().default(false),
   game_master_default_on: bool.optional().default(false),
-  game_master_title: z.string().optional().default('Game Master adaptativo'),
+  game_master_title: z.string().optional().default('Dirección adaptativa'),
   game_master_description: z.string().optional().default('Adapta la intensidad, el ritmo y la continuidad según cómo avanza la partida.'),
   game_master_show_reactions: bool.optional().default(true),
 });

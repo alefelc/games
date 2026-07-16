@@ -86,7 +86,7 @@ export function GameScreen({
     session.gmProvider === 'openai'
       ? {
           label: 'IA activa',
-          detail: session.gmModel || 'Game Master',
+          detail: 'La partida se adapta en tiempo real',
           tone: 'online',
         }
       : session.gmProvider === 'adaptive_fallback'
@@ -97,13 +97,13 @@ export function GameScreen({
           }
         : session.gmProvider === 'frontend_fallback'
           ? {
-              label: 'Sin conexión al Game Master',
-              detail: 'La partida continúa con selección local',
+              label: 'Modo local',
+              detail: 'La partida continúa sin conexión adaptativa',
               tone: 'offline',
             }
           : {
-              label: 'Game Master activado',
-              detail: 'Preparando la dirección de la partida',
+              label: 'Dirección adaptativa activa',
+              detail: 'Preparando la siguiente decisión',
               tone: 'pending',
             };
 
@@ -229,6 +229,16 @@ export function GameScreen({
     mode.slug === 'clasico' &&
     mode.allow_manual_level_change;
 
+  const showSettingsButton =
+    canChangeLevel || setup.gameMasterEnabled;
+
+  const responseTime =
+    session.gmLatencyMs === null
+      ? null
+      : session.gmLatencyMs >= 1000
+        ? `${(session.gmLatencyMs / 1000).toFixed(1)} s`
+        : `${session.gmLatencyMs} ms`;
+
   const levelStyle = {
     '--level-color': level.color,
   } as CSSProperties;
@@ -243,14 +253,15 @@ export function GameScreen({
         />
 
         <div className="game-header-actions">
-          {canChangeLevel && (
+          {showSettingsButton && (
             <button
               className="icon-button"
               type="button"
               onClick={() =>
                 setShowLevelPicker((value) => !value)
               }
-              aria-label="Cambiar nivel"
+              aria-label="Ajustes de partida"
+              aria-expanded={showLevelPicker}
             >
               <Icon name="settings" />
             </button>
@@ -269,27 +280,93 @@ export function GameScreen({
         </div>
       </header>
 
-      {showLevelPicker && canChangeLevel && (
-        <div className="level-picker">
-          <span>Próxima carta:</span>
+      {showLevelPicker && showSettingsButton && (
+        <div className="level-picker game-settings-menu">
+          <div className="settings-menu-heading">
+            <div>
+              <b>Ajustes de partida</b>
+              <span>Información y controles</span>
+            </div>
 
-          {content.levels
-            .filter((item) => setup.levelIds.includes(item.id))
-            .map((item) => (
-              <button
-                key={item.id}
-                className={
-                  session.currentLevelId === item.id ? 'active' : ''
-                }
-                type="button"
-                onClick={() => {
-                  onSetLevel(item.id);
-                  setShowLevelPicker(false);
-                }}
+            <button
+              className="settings-menu-close"
+              type="button"
+              onClick={() => setShowLevelPicker(false)}
+              aria-label="Cerrar ajustes"
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+
+          {setup.gameMasterEnabled && (
+            <section className="settings-menu-section">
+              <span className="settings-menu-label">
+                Estado adaptativo
+              </span>
+
+              <div
+                className={`adaptive-status ${gameMasterStatus.tone}`}
+                aria-live="polite"
               >
-                {item.name}
-              </button>
-            ))}
+                <span className="adaptive-status-dot" />
+
+                <div className="adaptive-status-copy">
+                  <b>{gameMasterStatus.label}</b>
+                  <small>{gameMasterStatus.detail}</small>
+                </div>
+              </div>
+
+              {(session.gmModel || responseTime) && (
+                <dl className="adaptive-technical-data">
+                  {session.gmModel && (
+                    <>
+                      <dt>Modelo</dt>
+                      <dd>{session.gmModel}</dd>
+                    </>
+                  )}
+
+                  {responseTime && (
+                    <>
+                      <dt>Respuesta</dt>
+                      <dd>{responseTime}</dd>
+                    </>
+                  )}
+                </dl>
+              )}
+            </section>
+          )}
+
+          {canChangeLevel && (
+            <section className="settings-menu-section">
+              <span className="settings-menu-label">
+                Intensidad de la próxima carta
+              </span>
+
+              <div className="settings-level-list">
+                {content.levels
+                  .filter((item) =>
+                    setup.levelIds.includes(item.id),
+                  )
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      className={
+                        session.currentLevelId === item.id
+                          ? 'active'
+                          : ''
+                      }
+                      type="button"
+                      onClick={() => {
+                        onSetLevel(item.id);
+                        setShowLevelPicker(false);
+                      }}
+                    >
+                      {item.name}
+                    </button>
+                  ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
 
@@ -316,21 +393,8 @@ export function GameScreen({
 
         {setup.gameMasterEnabled && session.gmHostMessage && (
           <div className="game-master-message">
-            <span>Game Master</span>
+            <span>Ritmo de la partida</span>
             <p>{session.gmHostMessage}</p>
-          </div>
-        )}
-
-        {setup.gameMasterEnabled && (
-          <div
-            className={`game-master-status ${gameMasterStatus.tone}`}
-            aria-live="polite"
-          >
-            <span />
-            <div>
-              <b>{gameMasterStatus.label}</b>
-              <small>{gameMasterStatus.detail}</small>
-            </div>
           </div>
         )}
 
@@ -501,7 +565,7 @@ export function GameScreen({
             {gameMasterBusy && (
               <div className="game-master-thinking">
                 <span />
-                El Game Master prepara la próxima carta…
+                Preparando la próxima carta…
               </div>
             )}
 

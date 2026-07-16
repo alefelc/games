@@ -94,7 +94,7 @@ export async function requestGameMasterDecision({
   resolvedEvent: GameMasterEvent | null;
 }): Promise<GameMasterDecision> {
   if (!env.gameMasterUrl) {
-    throw new Error('El Game Master no está configurado.');
+    throw new Error('La dirección adaptativa no está configurada.');
   }
 
   const controller = new AbortController();
@@ -139,7 +139,7 @@ export async function requestGameMasterDecision({
     );
 
     if (!response.ok) {
-      throw new Error(`El Game Master respondió ${response.status}.`);
+      throw new Error(`La dirección adaptativa respondió ${response.status}.`);
     }
 
     return responseSchema.parse(await response.json());

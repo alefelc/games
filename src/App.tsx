@@ -153,7 +153,7 @@ export default function App() {
           <LoadingScreen
             message={
               setup.gameMasterEnabled
-                ? 'El Game Master prepara la primera carta…'
+                ? 'Preparando una partida a tu medida…'
                 : 'Preparando la primera carta…'
             }
           />

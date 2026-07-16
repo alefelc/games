@@ -237,11 +237,11 @@ export function SetupScreen({
 
                 <ChoiceToggle
                   checked={setup.gameMasterEnabled && gameMasterAvailable}
-                  title={content.settings.game_master_title}
+                  title="Dirección adaptativa"
                   description={
                     gameMasterAvailable
                       ? content.settings.game_master_description
-                      : 'No se pudo conectar el Game Master.'
+                      : 'La dirección adaptativa no está disponible.'
                   }
                   onChange={() => {
                     if (gameMasterAvailable) {
