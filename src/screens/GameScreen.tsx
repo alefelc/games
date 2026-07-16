@@ -78,15 +78,61 @@ export function GameScreen({
     content.modes.find((item) => item.id === setup.modeId) ??
     content.modes[0];
 
+  const playerOneName = setup.playerOne || 'Vos';
+  const playerTwoName = setup.playerTwo || 'Tu pareja';
+
+  const playerOneSex =
+    content.sexes.find(
+      (sex) => sex.id === setup.playerOneSexId,
+    )?.slug ?? null;
+
+  const playerTwoSex =
+    content.sexes.find(
+      (sex) => sex.id === setup.playerTwoSexId,
+    )?.slug ?? null;
+
   const currentPlayerName =
     session.currentPlayer === 0
-      ? setup.playerOne || 'Vos'
-      : setup.playerTwo || 'Tu pareja';
+      ? playerOneName
+      : playerTwoName;
 
   const partnerName =
     session.currentPlayer === 0
-      ? setup.playerTwo || 'Tu pareja'
-      : setup.playerOne || 'Vos';
+      ? playerTwoName
+      : playerOneName;
+
+  const currentPlayerSex =
+    session.currentPlayer === 0
+      ? playerOneSex
+      : playerTwoSex;
+
+  const partnerSex =
+    session.currentPlayer === 0
+      ? playerTwoSex
+      : playerOneSex;
+
+  const sexForRole = (
+    role: string | undefined,
+    explicitSexId: Id | null | undefined,
+  ) => {
+    const explicit =
+      content.sexes.find(
+        (sex) => sex.id === explicitSexId,
+      )?.slug ?? null;
+
+    if (explicit) return explicit;
+    if (role === 'current_player') return currentPlayerSex;
+    if (role === 'partner') return partnerSex;
+
+    if (
+      role === 'both' &&
+      currentPlayerSex === partnerSex
+    ) {
+      return currentPlayerSex;
+    }
+
+    return null;
+  };
 
   const actorName =
     card?.performer === 'partner'
@@ -104,16 +150,41 @@ export function GameScreen({
           ? `${currentPlayerName} y ${partnerName}`
           : partnerName;
 
+  const actorSex = sexForRole(
+    card?.performer,
+    card?.performer_sex,
+  );
+
+  const targetSex = sexForRole(
+    card?.target,
+    card?.target_sex,
+  );
+
+  const renderText = (text: string) =>
+    personalizeCardText({
+      text,
+      actorName,
+      targetName,
+      partnerName,
+      playerOneName,
+      playerTwoName,
+      currentPlayerName,
+      actorSex,
+      targetSex,
+      partnerSex,
+      playerOneSex,
+      playerTwoSex,
+      currentPlayerSex,
+    });
+
   const personalizedCardText = card
-    ? personalizeCardText({
-        text: card.text,
-        actorName,
-        targetName,
-        partnerName,
-        playerOneName: setup.playerOne || 'Vos',
-        playerTwoName: setup.playerTwo || 'Tu pareja',
-      })
+    ? renderText(card.text)
     : '';
+
+  const personalizedHostMessage =
+    session.gmHostMessage
+      ? renderText(session.gmHostMessage)
+      : null;
 
   const gameMasterStatus =
     session.gmProvider === 'openai'
@@ -424,10 +495,10 @@ export function GameScreen({
           <span style={{ width: `${progress}%` }} />
         </div>
 
-        {setup.gameMasterEnabled && session.gmHostMessage && (
+        {setup.gameMasterEnabled && personalizedHostMessage && (
           <div className="game-master-message">
             <span>Ritmo de la partida</span>
-            <p>{session.gmHostMessage}</p>
+            <p>{personalizedHostMessage}</p>
           </div>
         )}
 
