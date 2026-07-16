@@ -1,17 +1,17 @@
-import { z } from 'zod';
-import { env } from '../env';
+import { z } from "zod";
+import { env } from "../env";
 import type {
   Card,
   ContentBundle,
   GameMasterEvent,
   GameSetup,
   SessionState,
-} from '../types';
+} from "../types";
 import {
   recentAnatomyFocuses,
   recentCardIds,
   recentContinuityGroups,
-} from '../engine/card-history';
+} from "../engine/card-history";
 
 const responseSchema = z.object({
   selected_card_id: z.string(),
@@ -21,7 +21,7 @@ const responseSchema = z.object({
   target_energy: z.number(),
   host_message: z.string(),
   confidence: z.number(),
-  provider: z.enum(['openai', 'adaptive_fallback']),
+  provider: z.enum(["openai", "adaptive_fallback"]),
   model: z.string(),
   latency_ms: z.number(),
   fallback_used: z.boolean(),
@@ -69,16 +69,11 @@ function candidatePayload(content: ContentBundle, card: Card) {
     level_order: level?.intensity_order ?? card.intensity,
     card_type: card.card_type,
     intensity: card.intensity,
+    play_scope: card.play_scope,
     performer: card.performer,
     target: card.target,
-    performer_sex: sexSlug(
-      content,
-      card.performer_sex,
-    ),
-    target_sex: sexSlug(
-      content,
-      card.target_sex,
-    ),
+    performer_sex: sexSlug(content, card.performer_sex),
+    target_sex: sexSlug(content, card.target_sex),
     anatomy_focus: card.anatomy_focus,
     anatomy_owner: card.anatomy_owner,
     penetration_method: card.penetration_method,
@@ -111,79 +106,71 @@ export async function requestGameMasterDecision({
   resolvedEvent: GameMasterEvent | null;
 }): Promise<GameMasterDecision> {
   if (!env.gameMasterUrl) {
-    throw new Error('La dirección adaptativa no está configurada.');
+    throw new Error("La dirección adaptativa no está configurada.");
   }
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 16_000);
 
   try {
-    const response = await fetch(
-      `${env.gameMasterUrl}/v1/game-master/next`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          game_id: content.game.id,
-          session_id: session.id,
-          mode_id: setup.modeId,
-          current_player: player,
-          resolved_count: session.resolvedCount,
-          max_cards: setup.maxCards,
-          current_phase: session.gmPhase,
-          current_tension: session.gmTension,
-          current_energy: session.gmEnergy,
-          selected_level_ids: setup.levelIds,
-          selected_deck_ids: setup.deckIds,
-          player_sexes: [
-            sexSlug(content, setup.playerOneSexId),
-            sexSlug(content, setup.playerTwoSexId),
-          ],
-          current_player_sex:
-            player === 0
-              ? sexSlug(
-                  content,
-                  setup.playerOneSexId,
-                )
-              : sexSlug(
-                  content,
-                  setup.playerTwoSexId,
-                ),
-          partner_sex:
-            player === 0
-              ? sexSlug(
-                  content,
-                  setup.playerTwoSexId,
-                )
-              : sexSlug(
-                  content,
-                  setup.playerOneSexId,
-                ),
-          recently_seen_card_ids: recentCardIds(240),
-          recently_seen_groups:
-            recentContinuityGroups(100),
-          recently_seen_anatomy:
-            recentAnatomyFocuses(100),
-          selected_toy_slugs: content.toys
-            .filter((toy) =>
-              setup.toyIds.includes(toy.id),
-            )
-            .map((toy) => toy.slug),
-          recent_events: session.gmEvents
-            .filter((event) => event.id !== resolvedEvent?.id)
-            .slice(-10)
-            .map(eventPayload),
-          resolved_event: resolvedEvent ? eventPayload(resolvedEvent) : null,
-          candidates: candidates
-            .slice(0, 60)
-            .map((card) => candidatePayload(content, card)),
-        }),
-        signal: controller.signal,
+    const mode = content.modes.find((item) => item.id === setup.modeId);
+    const isSolo = mode?.slug === "solitario" || mode?.turn_mode === "single";
+    const currentSex =
+      player === 0
+        ? sexSlug(content, setup.playerOneSexId)
+        : sexSlug(content, setup.playerTwoSexId);
+    const partnerSex = isSolo
+      ? null
+      : player === 0
+        ? sexSlug(content, setup.playerTwoSexId)
+        : sexSlug(content, setup.playerOneSexId);
+
+    const response = await fetch(`${env.gameMasterUrl}/v1/game-master/next`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
+      body: JSON.stringify({
+        game_id: content.game.id,
+        session_id: session.id,
+        mode_id: setup.modeId,
+        mode_slug: mode?.slug ?? "",
+        player_count: isSolo ? 1 : 2,
+        current_player: isSolo ? 0 : player,
+        resolved_count: session.resolvedCount,
+        max_cards: setup.maxCards,
+        current_phase: session.gmPhase,
+        current_tension: session.gmTension,
+        current_energy: session.gmEnergy,
+        selected_level_ids: setup.levelIds,
+        selected_deck_ids: setup.deckIds,
+        player_sexes: [
+          sexSlug(content, setup.playerOneSexId),
+          isSolo ? null : sexSlug(content, setup.playerTwoSexId),
+        ],
+        current_player_sex: currentSex,
+        partner_sex: partnerSex,
+        recently_seen_card_ids: recentCardIds(240),
+        recently_seen_groups: recentContinuityGroups(100),
+        recently_seen_anatomy: recentAnatomyFocuses(100),
+        selected_toy_slugs: content.toys
+          .filter((toy) => setup.toyIds.includes(toy.id))
+          .map((toy) => toy.slug),
+        selected_element_slugs: content.elements
+          .filter((item) => setup.elementIds.includes(item.id))
+          .map((item) => item.slug),
+        recent_events: session.gmEvents
+          .filter((event) => event.id !== resolvedEvent?.id)
+          .slice(-10)
+          .map(eventPayload),
+        resolved_event: resolvedEvent ? eventPayload(resolvedEvent) : null,
+        candidates: candidates
+          .slice(0, 60)
+          .map((card) => candidatePayload(content, card)),
+      }),
+      signal: controller.signal,
+    });
 
     if (!response.ok) {
       throw new Error(`La dirección adaptativa respondió ${response.status}.`);

@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadContent } from './api/content-loader';
-import { useGameStore } from './store/useGameStore';
-import { applyTheme } from './theme/applyTheme';
-import { LoadingScreen } from './screens/LoadingScreen';
-import { ErrorScreen } from './screens/ErrorScreen';
-import { AgeGate } from './screens/AgeGate';
-import { HomeScreen } from './screens/HomeScreen';
-import { SetupScreen } from './screens/SetupScreen';
-import { GameScreen } from './screens/GameScreen';
-import { PauseScreen } from './screens/PauseScreen';
-import { SummaryScreen } from './screens/SummaryScreen';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { loadContent } from "./api/content-loader";
+import { useGameStore } from "./store/useGameStore";
+import { applyTheme } from "./theme/applyTheme";
+import { LoadingScreen } from "./screens/LoadingScreen";
+import { ErrorScreen } from "./screens/ErrorScreen";
+import { AgeGate } from "./screens/AgeGate";
+import { HomeScreen } from "./screens/HomeScreen";
+import { SetupScreen } from "./screens/SetupScreen";
+import { GameScreen } from "./screens/GameScreen";
+import { PauseScreen } from "./screens/PauseScreen";
+import { SummaryScreen } from "./screens/SummaryScreen";
 
 export default function App() {
   /*
@@ -48,31 +48,38 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const requestSequence = useRef(0);
 
-  const refresh = useCallback(async (force = false, signal?: AbortSignal) => {
-    const requestId = ++requestSequence.current;
+  const refresh = useCallback(
+    async (force = false, signal?: AbortSignal) => {
+      const requestId = ++requestSequence.current;
 
-    if (force) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
+      if (force) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
 
-    try {
-      const result = await loadContent({ force, signal });
+      try {
+        const result = await loadContent({ force, signal });
 
-      // Evita que una respuesta anterior pise una solicitud más reciente.
-      if (requestId !== requestSequence.current || signal?.aborted) return;
+        // Evita que una respuesta anterior pise una solicitud más reciente.
+        if (requestId !== requestSequence.current || signal?.aborted) return;
 
-      setContent(result.bundle, result.source, result.warning);
-      applyTheme(result.bundle.theme, result.bundle.game);
-    } catch (cause) {
-      if (signal?.aborted || requestId !== requestSequence.current) return;
-      setError(cause instanceof Error ? cause.message : 'Error desconocido al cargar el contenido.');
-    } finally {
-      if (requestId === requestSequence.current && !signal?.aborted) {
-        setLoading(false);
-        setRefreshing(false);
+        setContent(result.bundle, result.source, result.warning);
+        applyTheme(result.bundle.theme, result.bundle.game);
+      } catch (cause) {
+        if (signal?.aborted || requestId !== requestSequence.current) return;
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Error desconocido al cargar el contenido.",
+        );
+      } finally {
+        if (requestId === requestSequence.current && !signal?.aborted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
-    }
-  }, [setContent]);
+    },
+    [setContent],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -84,15 +91,15 @@ export default function App() {
   }, [refresh]);
 
   useEffect(() => {
-    if (stage !== 'game' || !content?.settings.allow_screen_wake_lock) return;
-    if (!('wakeLock' in navigator)) return;
+    if (stage !== "game" || !content?.settings.allow_screen_wake_lock) return;
+    if (!("wakeLock" in navigator)) return;
 
     let sentinel: WakeLockSentinel | null = null;
     let cancelled = false;
 
     const acquire = async () => {
       try {
-        sentinel = await navigator.wakeLock.request('screen');
+        sentinel = await navigator.wakeLock.request("screen");
         if (cancelled) await sentinel?.release();
       } catch {
         // El navegador puede rechazar Wake Lock por ahorro de energía o falta de interacción.
@@ -122,10 +129,10 @@ export default function App() {
   }
 
   switch (stage) {
-    case 'age':
+    case "age":
       return <AgeGate content={content} onAccept={acceptAge} />;
 
-    case 'home':
+    case "home":
       return (
         <HomeScreen
           content={content}
@@ -135,7 +142,7 @@ export default function App() {
         />
       );
 
-    case 'setup':
+    case "setup":
       return setup ? (
         <SetupScreen
           content={content}
@@ -145,17 +152,19 @@ export default function App() {
           updateSetup={updateSetup}
           updateFilters={updateFilters}
         />
-      ) : <LoadingScreen content={content} />;
+      ) : (
+        <LoadingScreen content={content} />
+      );
 
-    case 'game':
+    case "game":
       if (setup && session && gameMasterBusy && !session.currentCardId) {
         return (
           <LoadingScreen
             content={content}
             message={
               setup.gameMasterEnabled
-                ? 'Preparando una partida a tu medida…'
-                : 'Preparando la primera carta…'
+                ? "Preparando una partida a tu medida…"
+                : "Preparando la primera carta…"
             }
           />
         );
@@ -173,12 +182,23 @@ export default function App() {
           onPause={pause}
           onSetLevel={setCurrentLevel}
         />
-      ) : <LoadingScreen content={content} />;
+      ) : (
+        <LoadingScreen content={content} />
+      );
 
-    case 'paused':
-      return <PauseScreen content={content} onResume={resume} onFinish={finish} />;
+    case "paused":
+      return setup ? (
+        <PauseScreen
+          content={content}
+          setup={setup}
+          onResume={resume}
+          onFinish={finish}
+        />
+      ) : (
+        <LoadingScreen content={content} />
+      );
 
-    case 'summary':
+    case "summary":
       return setup ? (
         <SummaryScreen
           content={content}
@@ -187,7 +207,9 @@ export default function App() {
           onRestart={restart}
           onHome={goHome}
         />
-      ) : <LoadingScreen content={content} />;
+      ) : (
+        <LoadingScreen content={content} />
+      );
 
     default:
       return <LoadingScreen />;

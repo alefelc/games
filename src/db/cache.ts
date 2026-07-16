@@ -1,14 +1,15 @@
-import { openDB } from 'idb';
-import type { ContentBundle } from '../types';
+import { openDB } from "idb";
+import type { ContentBundle } from "../types";
 
-const DB_NAME = 'te-animas-v2101';
-const STORE = 'content';
-const ACTIVE_KEY = 'active';
+const DB_NAME = "te-animas-v2110";
+const STORE = "content";
+const ACTIVE_KEY = "active";
 
 async function db() {
   return openDB(DB_NAME, 1, {
     upgrade(database) {
-      if (!database.objectStoreNames.contains(STORE)) database.createObjectStore(STORE);
+      if (!database.objectStoreNames.contains(STORE))
+        database.createObjectStore(STORE);
     },
   });
 }

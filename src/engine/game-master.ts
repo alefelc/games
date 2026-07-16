@@ -1,18 +1,18 @@
-import { requestGameMasterDecision } from '../api/game-master';
+import { requestGameMasterDecision } from "../api/game-master";
 import type {
   Card,
   ContentBundle,
   GameMasterEvent,
   GameSetup,
   SessionState,
-} from '../types';
+} from "../types";
 import {
   applyCardSelection,
   drawNextCard,
   getDrawCandidatePool,
   type DrawResult,
-} from './session';
-import { cardHistoryPenalty } from './card-history';
+} from "./session";
+import { cardHistoryPenalty } from "./card-history";
 
 function rankCandidates(
   candidates: Card[],
@@ -34,34 +34,29 @@ function rankCandidates(
           event.continuityGroup === card.gm_continuity_group,
       ).length;
 
-    if (resolvedEvent?.reaction !== 'repeat_style') {
+    if (resolvedEvent?.reaction !== "repeat_style") {
       value -= recentGroupRepeats * 3.5;
     }
 
-    if (
-      continuity &&
-      card.gm_continuity_group === continuity
-    ) {
-      if (resolvedEvent?.reaction === 'repeat_style') value += 8;
-      else if (resolvedEvent?.reaction === 'change_style') value -= 14;
+    if (continuity && card.gm_continuity_group === continuity) {
+      if (resolvedEvent?.reaction === "repeat_style") value += 8;
+      else if (resolvedEvent?.reaction === "change_style") value -= 14;
       else value += 1.5;
     }
 
-    if (resolvedEvent?.reaction === 'change_style') {
+    if (resolvedEvent?.reaction === "change_style") {
       value += card.gm_novelty_score * 1.5;
     }
 
-    if (resolvedEvent?.reaction === 'too_much') {
+    if (resolvedEvent?.reaction === "too_much") {
       value += card.gm_recovery_score * 2;
       value -= Math.max(0, card.gm_escalation_score) * 3;
     }
 
-    if (resolvedEvent?.reaction === 'too_soft') {
+    if (resolvedEvent?.reaction === "too_soft") {
       value += card.gm_escalation_score * 5;
-      value += Math.max(
-        0,
-        card.intensity - (resolvedEvent?.intensity || 0),
-      ) * 3;
+      value +=
+        Math.max(0, card.intensity - (resolvedEvent?.intensity || 0)) * 3;
     }
 
     value -= session.usedCardIds.includes(card.id) ? 100 : 0;
@@ -79,8 +74,8 @@ function rankCandidates(
   const add = (card: Card, force = false) => {
     if (ids.has(card.id) || selected.length >= 60) return false;
 
-    const group = card.gm_continuity_group || 'none';
-    const anatomy = card.anatomy_focus || 'none';
+    const group = card.gm_continuity_group || "none";
+    const anatomy = card.anatomy_focus || "none";
     const groupCount = groupCounts.get(group) || 0;
     const anatomyCount = anatomyCounts.get(anatomy) || 0;
 
@@ -111,14 +106,12 @@ function rankCandidates(
     const key = [
       item.card.level,
       item.card.anatomy_focus,
-      item.card.gm_continuity_group || 'none',
-    ].join('|');
+      item.card.gm_continuity_group || "none",
+    ].join("|");
     groups.set(key, [...(groups.get(key) || []), item]);
   }
 
-  const groupList = [...groups.values()].sort(
-    () => Math.random() - 0.5,
-  );
+  const groupList = [...groups.values()].sort(() => Math.random() - 0.5);
   for (let round = 0; round < 4; round += 1) {
     for (const group of groupList) {
       const item = group[round];
@@ -143,22 +136,13 @@ export async function drawAdaptiveCard(
     return drawNextCard(content, setup, session);
   }
 
-  const pool = getDrawCandidatePool(
-    content,
-    setup,
-    session,
-    resolvedEvent,
-  );
+  const pool = getDrawCandidatePool(content, setup, session, resolvedEvent);
   if (pool.exhausted || !pool.candidates.length) {
     return { session, card: null, exhausted: true };
   }
 
   try {
-    const candidates = rankCandidates(
-      pool.candidates,
-      session,
-      resolvedEvent,
-    );
+    const candidates = rankCandidates(pool.candidates, session, resolvedEvent);
 
     const decision = await requestGameMasterDecision({
       content,
@@ -174,31 +158,26 @@ export async function drawAdaptiveCard(
     );
 
     if (!selected) {
-      throw new Error('La carta elegida ya no está disponible.');
+      throw new Error("La carta elegida ya no está disponible.");
     }
 
     return {
-      session: applyCardSelection(
-        session,
-        selected,
-        pool.player,
-        {
-          phase: decision.phase,
-          tension: decision.target_tension,
-          energy: decision.target_energy,
-          hostMessage: decision.host_message || null,
-          strategy: decision.strategy,
-          fallbackUsed: decision.fallback_used,
-          provider: decision.provider,
-          model: decision.model,
-          latencyMs: decision.latency_ms,
-        },
-      ),
+      session: applyCardSelection(session, selected, pool.player, {
+        phase: decision.phase,
+        tension: decision.target_tension,
+        energy: decision.target_energy,
+        hostMessage: decision.host_message || null,
+        strategy: decision.strategy,
+        fallbackUsed: decision.fallback_used,
+        provider: decision.provider,
+        model: decision.model,
+        latencyMs: decision.latency_ms,
+      }),
       card: selected,
       exhausted: false,
     };
   } catch (error) {
-    console.warn('Se continuó con la selección local.', error);
+    console.warn("Se continuó con la selección local.", error);
 
     const localCandidates = rankCandidates(
       pool.candidates,
@@ -216,31 +195,23 @@ export async function drawAdaptiveCard(
     }
 
     return {
-      session: applyCardSelection(
-        session,
-        selected,
-        pool.player,
-        {
-          phase: session.gmPhase,
-          tension: Math.max(
-            session.gmTension,
-            selected.intensity * 14,
-          ),
-          energy: selected.gm_energy_score * 20,
-          hostMessage:
-            resolvedEvent?.reaction === 'too_soft'
-              ? 'Subimos el ritmo de verdad.'
-              : 'La partida sigue con una alternativa distinta.',
-          strategy:
-            resolvedEvent?.reaction === 'too_soft'
-              ? 'escalate'
-              : 'continue_scene',
-          fallbackUsed: true,
-          provider: 'frontend_fallback',
-          model: 'local-browser',
-          latencyMs: null,
-        },
-      ),
+      session: applyCardSelection(session, selected, pool.player, {
+        phase: session.gmPhase,
+        tension: Math.max(session.gmTension, selected.intensity * 14),
+        energy: selected.gm_energy_score * 20,
+        hostMessage:
+          resolvedEvent?.reaction === "too_soft"
+            ? "Subimos el ritmo de verdad."
+            : "La partida sigue con una alternativa distinta.",
+        strategy:
+          resolvedEvent?.reaction === "too_soft"
+            ? "escalate"
+            : "continue_scene",
+        fallbackUsed: true,
+        provider: "frontend_fallback",
+        model: "local-browser",
+        latencyMs: null,
+      }),
       card: selected,
       exhausted: false,
     };

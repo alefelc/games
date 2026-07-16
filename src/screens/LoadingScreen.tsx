@@ -1,32 +1,24 @@
-import { assetUrl } from '../env';
-import { getSavedBrand } from '../theme/applyTheme';
-import type { ContentBundle } from '../types';
-import { Icon } from '../components/Icon';
+import { assetUrl } from "../env";
+import { getSavedBrand } from "../theme/applyTheme";
+import type { ContentBundle } from "../types";
+import { Icon } from "../components/Icon";
 
 export function LoadingScreen({
   content,
-  message = 'Preparando el juego…',
+  message = "Preparando el juego…",
 }: {
   content?: ContentBundle | null;
   message?: string;
 }) {
   const savedBrand = getSavedBrand();
 
-  const fallbackLogo =
-    `${import.meta.env.BASE_URL}te-animas-symbol.svg`;
+  const fallbackLogo = `${import.meta.env.BASE_URL}te-animas-symbol.svg`;
 
-  const configuredLogo =
-    assetUrl(content?.theme.logo_file ?? null);
+  const configuredLogo = assetUrl(content?.theme.logo_file ?? null);
 
-  const logoUrl =
-    configuredLogo ||
-    savedBrand.logoUrl ||
-    fallbackLogo;
+  const logoUrl = configuredLogo || savedBrand.logoUrl || fallbackLogo;
 
-  const brandName =
-    content?.game.name ||
-    savedBrand.name ||
-    '¿Te animás?';
+  const brandName = content?.game.name || savedBrand.name || "¿Te animás?";
 
   return (
     <main className="center-screen loading-screen loading-screen-modern">
@@ -36,9 +28,7 @@ export function LoadingScreen({
         <Icon name="flame" className="hero-flame" />
       </div>
 
-      <p className="eyebrow loading-eyebrow">
-        CUANDO SE JUEGA, SE ENCIENDE
-      </p>
+      <p className="eyebrow loading-eyebrow">CUANDO SE JUEGA, SE ENCIENDE</p>
 
       <div className="loading-brand">
         <img
@@ -48,7 +38,7 @@ export function LoadingScreen({
           onError={(event) => {
             const image = event.currentTarget;
 
-            if (!image.src.endsWith('te-animas-symbol.svg')) {
+            if (!image.src.endsWith("te-animas-symbol.svg")) {
               image.src = fallbackLogo;
             }
           }}

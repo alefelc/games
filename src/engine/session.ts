@@ -1,22 +1,47 @@
-import type { Card, ContentBundle, GameMode, GameSetup, Id, SessionState } from '../types';
-import { eligibleCards } from './eligibility';
-import { weightedPick } from './random';
-import { preferFreshCards, recordCardSeen } from './card-history';
+import type {
+  Card,
+  ContentBundle,
+  GameMode,
+  GameSetup,
+  Id,
+  SessionState,
+} from "../types";
+import { eligibleCards } from "./eligibility";
+import { weightedPick } from "./random";
+import { preferFreshCards, recordCardSeen } from "./card-history";
 
 export function createDefaultSetup(content: ContentBundle): GameSetup {
-  const safeLevels = content.levels.filter((level) => !level.requires_confirmation).map((level) => level.id);
-  const fallbackLevel = content.settings.default_level ?? content.levels[0]?.id ?? '';
+  const safeLevels = content.levels
+    .filter((level) => !level.requires_confirmation)
+    .map((level) => level.id);
+  const fallbackLevel =
+    content.settings.default_level ?? content.levels[0]?.id ?? "";
   const defaultLevels = safeLevels.length ? safeLevels : [fallbackLevel];
-  const defaultMode = content.settings.default_mode ?? content.modes[0]?.id ?? '';
+  const defaultMode =
+    content.settings.default_mode ?? content.modes[0]?.id ?? "";
+
+  const defaultModeRecord = content.modes.find(
+    (mode) => mode.id === defaultMode,
+  );
+  const defaultSolo = defaultModeRecord?.slug === "solitario";
+  const compatibleDecks = content.decks.filter(
+    (deck) =>
+      deck.active &&
+      (defaultSolo
+        ? Number(deck.minimum_players ?? 2) <= 1 &&
+          Number(deck.maximum_players ?? 2) >= 1
+        : Number(deck.minimum_players ?? 2) <= 2 &&
+          Number(deck.maximum_players ?? 2) >= 2),
+  );
 
   return {
-    playerOne: '',
-    playerTwo: '',
+    playerOne: "",
+    playerTwo: "",
     playerOneSexId: null,
     playerTwoSexId: null,
     modeId: defaultMode,
     levelIds: defaultLevels,
-    deckIds: content.decks.filter((deck) => deck.active).map((deck) => deck.id),
+    deckIds: compatibleDecks.map((deck) => deck.id),
     elementIds: [],
     toyIds: [],
     filters: {
@@ -37,14 +62,23 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
       maxPrivacyRisk: 1,
       maxPhysicalRisk: 1,
     },
-    maxCards: Math.min(20, Math.max(1, content.settings.maximum_cards_per_session || 20)),
+    maxCards: Math.min(
+      20,
+      Math.max(1, content.settings.maximum_cards_per_session || 20),
+    ),
     intenseConsent: false,
-    gameMasterEnabled: content.settings.game_master_enabled && content.settings.game_master_default_on,
+    gameMasterEnabled:
+      content.settings.game_master_enabled &&
+      content.settings.game_master_default_on,
   };
 }
 
-export function createSession(content: ContentBundle, setup: GameSetup): SessionState {
-  const mode = content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
+export function createSession(
+  content: ContentBundle,
+  setup: GameSetup,
+): SessionState {
+  const mode =
+    content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   const startingLevel = resolveStartingLevel(content, setup, mode);
   return {
     id: crypto.randomUUID(),
@@ -60,12 +94,12 @@ export function createSession(content: ContentBundle, setup: GameSetup): Session
     resolvedCount: 0,
     timerStartedAt: null,
     timerRemaining: null,
-    gmPhase: 'warmup',
+    gmPhase: "warmup",
     gmTension: 15,
     gmEnergy: 25,
     gmHostMessage: null,
     gmStrategy: null,
-    gmReaction: 'none',
+    gmReaction: "none",
     gmEvents: [],
     gmFallbackUsed: false,
     gmProvider: null,
@@ -74,15 +108,26 @@ export function createSession(content: ContentBundle, setup: GameSetup): Session
   };
 }
 
-function resolveStartingLevel(content: ContentBundle, setup: GameSetup, mode?: GameMode): Id | null {
+function resolveStartingLevel(
+  content: ContentBundle,
+  setup: GameSetup,
+  mode?: GameMode,
+): Id | null {
   const selected = new Set(setup.levelIds);
-  if (mode?.slug === 'solo-previa') {
-    return content.levels.find((level) => level.slug === 'previa')?.id ?? setup.levelIds[0] ?? null;
+  if (mode?.slug === "solo-previa") {
+    return (
+      content.levels.find((level) => level.slug === "previa")?.id ??
+      setup.levelIds[0] ??
+      null
+    );
   }
-  if (mode?.starting_level && selected.has(mode.starting_level)) return mode.starting_level;
-  return content.levels
-    .filter((level) => selected.has(level.id))
-    .sort((a, b) => a.intensity_order - b.intensity_order)[0]?.id ?? null;
+  if (mode?.starting_level && selected.has(mode.starting_level))
+    return mode.starting_level;
+  return (
+    content.levels
+      .filter((level) => selected.has(level.id))
+      .sort((a, b) => a.intensity_order - b.intensity_order)[0]?.id ?? null
+  );
 }
 
 function targetLevelsForDraw(
@@ -90,7 +135,7 @@ function targetLevelsForDraw(
   setup: GameSetup,
   session: SessionState,
   mode: GameMode,
-  resolvedEvent?: import('../types').GameMasterEvent | null,
+  resolvedEvent?: import("../types").GameMasterEvent | null,
 ): Set<Id> | null {
   const selectedLevels = content.levels
     .filter((level) => setup.levelIds.includes(level.id))
@@ -98,14 +143,12 @@ function targetLevelsForDraw(
 
   if (!selectedLevels.length) return new Set();
 
-  if (mode.slug === 'solo-previa') {
-    const previa = selectedLevels.find(
-      (level) => level.slug === 'previa',
-    );
+  if (mode.slug === "solo-previa") {
+    const previa = selectedLevels.find((level) => level.slug === "previa");
     return new Set(previa ? [previa.id] : [selectedLevels[0].id]);
   }
 
-  if (['modo-fuego', 'aleatorio'].includes(mode.slug)) {
+  if (["modo-fuego", "aleatorio"].includes(mode.slug)) {
     return null;
   }
 
@@ -113,9 +156,7 @@ function targetLevelsForDraw(
   if (mode.automatic_progression && mode.cards_before_level_up > 0) {
     baseIndex = Math.min(
       selectedLevels.length - 1,
-      Math.floor(
-        session.resolvedCount / mode.cards_before_level_up,
-      ),
+      Math.floor(session.resolvedCount / mode.cards_before_level_up),
     );
   } else if (session.currentLevelId) {
     const found = selectedLevels.findIndex(
@@ -126,10 +167,10 @@ function targetLevelsForDraw(
 
   const event = resolvedEvent;
   const escalationLevels = selectedLevels.filter(
-    (level) => level.slug !== 'cierre',
+    (level) => level.slug !== "cierre",
   );
 
-  if (event?.reaction === 'too_soft' && escalationLevels.length) {
+  if (event?.reaction === "too_soft" && escalationLevels.length) {
     const currentEscalationIndex = Math.max(
       0,
       escalationLevels.findIndex(
@@ -138,17 +179,13 @@ function targetLevelsForDraw(
     );
     const recentRequests = session.gmEvents
       .slice(-4)
-      .filter((item) => item.reaction === 'too_soft')
-      .length;
+      .filter((item) => item.reaction === "too_soft").length;
     const jump = Math.min(4, 2 + recentRequests);
     const targetIndex = Math.min(
       escalationLevels.length - 1,
       currentEscalationIndex + jump,
     );
-    const lowerIndex = Math.max(
-      currentEscalationIndex + 1,
-      targetIndex - 1,
-    );
+    const lowerIndex = Math.max(currentEscalationIndex + 1, targetIndex - 1);
     return new Set(
       escalationLevels
         .slice(lowerIndex, targetIndex + 1)
@@ -156,18 +193,25 @@ function targetLevelsForDraw(
     );
   }
 
-  if (event?.reaction === 'too_much') {
-    return new Set([
-      selectedLevels[Math.max(0, baseIndex - 1)]?.id,
-      selectedLevels[baseIndex]?.id,
-    ].filter(Boolean) as Id[]);
+  if (event?.reaction === "too_much") {
+    return new Set(
+      [
+        selectedLevels[Math.max(0, baseIndex - 1)]?.id,
+        selectedLevels[baseIndex]?.id,
+      ].filter(Boolean) as Id[],
+    );
   }
 
   return new Set([selectedLevels[baseIndex]?.id].filter(Boolean) as Id[]);
 }
 
-function nextPlayer(current: 0 | 1, mode: GameMode, random: () => number): 0 | 1 {
-  if (mode.turn_mode === 'random') return random() < 0.5 ? 0 : 1;
+function nextPlayer(
+  current: 0 | 1,
+  mode: GameMode,
+  random: () => number,
+): 0 | 1 {
+  if (mode.turn_mode === "single" || mode.slug === "solitario") return 0;
+  if (mode.turn_mode === "random") return random() < 0.5 ? 0 : 1;
   return current === 0 ? 1 : 0;
 }
 
@@ -187,18 +231,21 @@ export function getDrawCandidatePool(
   content: ContentBundle,
   setup: GameSetup,
   session: SessionState,
-  resolvedEvent: import('../types').GameMasterEvent | null = null,
+  resolvedEvent: import("../types").GameMasterEvent | null = null,
 ): DrawCandidatePool {
   if (session.resolvedCount >= setup.maxCards) {
     return { player: session.currentPlayer, candidates: [], exhausted: true };
   }
 
-  const mode = content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
+  const mode =
+    content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   if (!mode) {
     return { player: session.currentPlayer, candidates: [], exhausted: true };
   }
 
+  const isSolo = mode.slug === "solitario" || mode.turn_mode === "single";
   const contextForPlayer = (player: 0 | 1) => ({
+    playerCount: isSolo ? (1 as const) : (2 as const),
     selectedLevelIds: new Set(setup.levelIds),
     selectedDeckIds: new Set(setup.deckIds),
     selectedElementIds: new Set(setup.elementIds),
@@ -206,8 +253,11 @@ export function getDrawCandidatePool(
     filters: setup.filters,
     currentPlayerSexId:
       player === 0 ? setup.playerOneSexId : setup.playerTwoSexId,
-    partnerSexId:
-      player === 0 ? setup.playerTwoSexId : setup.playerOneSexId,
+    partnerSexId: isSolo
+      ? null
+      : player === 0
+        ? setup.playerTwoSexId
+        : setup.playerOneSexId,
   });
 
   const targetLevels = targetLevelsForDraw(
@@ -221,27 +271,24 @@ export function getDrawCandidatePool(
   let drawPlayer = session.currentPlayer;
 
   const eligibleFor = (player: 0 | 1) =>
-    eligibleCards(content, contextForPlayer(player))
-      .filter((card) => !used.has(card.id));
+    eligibleCards(content, contextForPlayer(player)).filter(
+      (card) => !used.has(card.id),
+    );
 
   let allEligible = eligibleFor(drawPlayer);
   let candidates = targetLevels
-    ? allEligible.filter((card) =>
-        targetLevels.has(card.level),
-      )
+    ? allEligible.filter((card) => targetLevels.has(card.level))
     : allEligible;
 
-  if (!candidates.length && mode.slug !== 'solo-previa') {
+  if (!candidates.length && mode.slug !== "solo-previa") {
     candidates = allEligible;
   }
 
-  if (!candidates.length) {
+  if (!candidates.length && !isSolo) {
     const otherPlayer: 0 | 1 = drawPlayer === 0 ? 1 : 0;
     const otherEligible = eligibleFor(otherPlayer);
     const otherCandidates = targetLevels
-      ? otherEligible.filter((card) =>
-          targetLevels.has(card.level),
-        )
+      ? otherEligible.filter((card) => targetLevels.has(card.level))
       : otherEligible;
 
     if (otherCandidates.length || otherEligible.length) {
@@ -269,7 +316,7 @@ export function applyCardSelection(
     hostMessage?: string | null;
     strategy?: string | null;
     fallbackUsed?: boolean;
-    provider?: 'openai' | 'adaptive_fallback' | 'frontend_fallback' | null;
+    provider?: "openai" | "adaptive_fallback" | "frontend_fallback" | null;
     model?: string | null;
     latencyMs?: number | null;
   },
@@ -290,7 +337,7 @@ export function applyCardSelection(
     gmEnergy: gameMaster?.energy ?? session.gmEnergy,
     gmHostMessage: gameMaster?.hostMessage ?? null,
     gmStrategy: gameMaster?.strategy ?? null,
-    gmReaction: 'none',
+    gmReaction: "none",
     gmFallbackUsed: gameMaster?.fallbackUsed ?? false,
     gmProvider: gameMaster?.provider ?? null,
     gmModel: gameMaster?.model ?? null,
@@ -326,28 +373,31 @@ export function resolveCurrentCard(
   content: ContentBundle,
   setup: GameSetup,
   session: SessionState,
-  result: 'completed' | 'skipped',
+  result: "completed" | "skipped",
   random: () => number = Math.random,
 ): SessionState {
   if (!session.currentCardId) return session;
-  const mode = content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
+  const mode =
+    content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   if (!mode) return session;
 
   return {
     ...session,
     currentCardId: null,
     currentPlayer: nextPlayer(session.currentPlayer, mode, random),
-    completedCardIds: result === 'completed'
-      ? [...session.completedCardIds, session.currentCardId]
-      : session.completedCardIds,
-    skippedCardIds: result === 'skipped'
-      ? [...session.skippedCardIds, session.currentCardId]
-      : session.skippedCardIds,
+    completedCardIds:
+      result === "completed"
+        ? [...session.completedCardIds, session.currentCardId]
+        : session.completedCardIds,
+    skippedCardIds:
+      result === "skipped"
+        ? [...session.skippedCardIds, session.currentCardId]
+        : session.skippedCardIds,
     resolvedCount: session.resolvedCount + 1,
     revealed: false,
     timerStartedAt: null,
     timerRemaining: null,
-    gmReaction: 'none',
+    gmReaction: "none",
   };
 }
 
@@ -355,7 +405,10 @@ export function previewEligibleCount(
   content: ContentBundle,
   setup: GameSetup,
 ): number {
+  const mode = content.modes.find((item) => item.id === setup.modeId);
+  const isSolo = mode?.slug === "solitario" || mode?.turn_mode === "single";
   const common = {
+    playerCount: isSolo ? (1 as const) : (2 as const),
     selectedLevelIds: new Set(setup.levelIds),
     selectedDeckIds: new Set(setup.deckIds),
     selectedElementIds: new Set(setup.elementIds),
@@ -366,8 +419,10 @@ export function previewEligibleCount(
   const one = eligibleCards(content, {
     ...common,
     currentPlayerSexId: setup.playerOneSexId,
-    partnerSexId: setup.playerTwoSexId,
+    partnerSexId: isSolo ? null : setup.playerTwoSexId,
   });
+
+  if (isSolo) return one.length;
 
   const two = eligibleCards(content, {
     ...common,

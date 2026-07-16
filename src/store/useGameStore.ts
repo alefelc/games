@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import type {
   ContentBundle,
   ContentSource,
@@ -7,15 +7,15 @@ import type {
   GameSetup,
   Id,
   SessionState,
-} from '../types';
+} from "../types";
 import {
   createDefaultSetup,
   createSession,
   resolveCurrentCard,
-} from '../engine/session';
-import { drawAdaptiveCard } from '../engine/game-master';
+} from "../engine/session";
+import { drawAdaptiveCard } from "../engine/game-master";
 
-export type AppStage = 'age' | 'home' | 'setup' | 'game' | 'paused' | 'summary';
+export type AppStage = "age" | "home" | "setup" | "game" | "paused" | "summary";
 
 interface GameStore {
   stage: AppStage;
@@ -25,16 +25,20 @@ interface GameStore {
   setup: GameSetup | null;
   session: SessionState | null;
   gameMasterBusy: boolean;
-  setContent: (content: ContentBundle, source: ContentSource, warning: string | null) => void;
+  setContent: (
+    content: ContentBundle,
+    source: ContentSource,
+    warning: string | null,
+  ) => void;
   acceptAge: () => void;
   goHome: () => void;
   openSetup: () => void;
   updateSetup: (patch: Partial<GameSetup>) => void;
-  updateFilters: (patch: Partial<GameSetup['filters']>) => void;
+  updateFilters: (patch: Partial<GameSetup["filters"]>) => void;
   startGame: () => Promise<void>;
   revealCard: () => void;
   reactToCard: (reaction: GameMasterReaction) => void;
-  resolveCard: (result: 'completed' | 'skipped') => Promise<void>;
+  resolveCard: (result: "completed" | "skipped") => Promise<void>;
   pause: () => void;
   resume: () => void;
   finish: () => void;
@@ -42,15 +46,18 @@ interface GameStore {
   restart: () => void;
 }
 
-function normalizeSetup(content: ContentBundle, setup: GameSetup | null): GameSetup {
+function normalizeSetup(
+  content: ContentBundle,
+  setup: GameSetup | null,
+): GameSetup {
   const defaults = createDefaultSetup(content);
   if (!setup) return defaults;
 
   return {
     ...defaults,
     ...setup,
-    playerOne: setup.playerOne === 'Vos' ? '' : setup.playerOne,
-    playerTwo: setup.playerTwo === 'Tu pareja' ? '' : setup.playerTwo,
+    playerOne: setup.playerOne === "Vos" ? "" : setup.playerOne,
+    playerTwo: setup.playerTwo === "Tu pareja" ? "" : setup.playerTwo,
     playerOneSexId: setup.playerOneSexId ?? null,
     playerTwoSexId: setup.playerTwoSexId ?? null,
     gameMasterEnabled:
@@ -66,11 +73,9 @@ function normalizeSetup(content: ContentBundle, setup: GameSetup | null): GameSe
 function eventFromCurrentCard(
   content: ContentBundle,
   session: SessionState,
-  result: 'completed' | 'skipped',
+  result: "completed" | "skipped",
 ): GameMasterEvent | null {
-  const card = content.cards.find(
-    (item) => item.id === session.currentCardId,
-  );
+  const card = content.cards.find((item) => item.id === session.currentCardId);
 
   if (!card) return null;
 
@@ -88,10 +93,10 @@ function eventFromCurrentCard(
 }
 
 const ageAccepted = () =>
-  localStorage.getItem('pecadoclub-age-accepted') === 'true';
+  localStorage.getItem("pecadoclub-age-accepted") === "true";
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  stage: ageAccepted() ? 'home' : 'age',
+  stage: ageAccepted() ? "home" : "age",
   content: null,
   contentSource: null,
   contentWarning: null,
@@ -109,12 +114,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   acceptAge() {
-    localStorage.setItem('pecadoclub-age-accepted', 'true');
-    set({ stage: 'home' });
+    localStorage.setItem("pecadoclub-age-accepted", "true");
+    set({ stage: "home" });
   },
 
   goHome() {
-    set({ stage: 'home', session: null, gameMasterBusy: false });
+    set({ stage: "home", session: null, gameMasterBusy: false });
   },
 
   openSetup() {
@@ -122,7 +127,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!content) return;
 
     set({
-      stage: 'setup',
+      stage: "setup",
       setup: normalizeSetup(content, setup),
       session: null,
       gameMasterBusy: false,
@@ -153,21 +158,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     let session = createSession(content, setup);
     set({
-      stage: 'game',
+      stage: "game",
       session,
       gameMasterBusy: true,
     });
 
-    const draw = await drawAdaptiveCard(
-      content,
-      setup,
-      session,
-      null,
-    );
+    const draw = await drawAdaptiveCard(content, setup, session, null);
 
     session = draw.session;
     set({
-      stage: draw.exhausted ? 'summary' : 'game',
+      stage: draw.exhausted ? "summary" : "game",
       session,
       gameMasterBusy: false,
     });
@@ -186,34 +186,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       session: {
         ...session,
-        gmReaction:
-          session.gmReaction === reaction ? 'none' : reaction,
+        gmReaction: session.gmReaction === reaction ? "none" : reaction,
       },
     });
   },
 
   async resolveCard(result) {
-    const {
-      content,
-      setup,
-      session,
-      gameMasterBusy,
-    } = get();
+    const { content, setup, session, gameMasterBusy } = get();
 
     if (!content || !setup || !session || gameMasterBusy) return;
 
-    const resolvedEvent = eventFromCurrentCard(
-      content,
-      session,
-      result,
-    );
+    const resolvedEvent = eventFromCurrentCard(content, session, result);
 
-    let resolved = resolveCurrentCard(
-      content,
-      setup,
-      session,
-      result,
-    );
+    let resolved = resolveCurrentCard(content, setup, session, result);
 
     if (resolvedEvent) {
       resolved = {
@@ -235,24 +220,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     );
 
     set({
-      stage: draw.exhausted ? 'summary' : 'game',
+      stage: draw.exhausted ? "summary" : "game",
       session: draw.session,
       gameMasterBusy: false,
     });
   },
 
   pause() {
-    if (get().stage === 'game') set({ stage: 'paused' });
+    if (get().stage === "game") set({ stage: "paused" });
   },
 
   resume() {
-    if (get().stage === 'paused') set({ stage: 'game' });
+    if (get().stage === "paused") set({ stage: "game" });
   },
 
   finish() {
     const session = get().session;
     set({
-      stage: 'summary',
+      stage: "summary",
       session: session
         ? { ...session, endedAt: new Date().toISOString() }
         : session,
@@ -269,7 +254,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   restart() {
     const { content } = get();
     set({
-      stage: 'setup',
+      stage: "setup",
       session: null,
       setup: content ? createDefaultSetup(content) : null,
       gameMasterBusy: false,

@@ -1,5 +1,5 @@
 export type Id = string;
-export type ContentSource = 'network' | 'cache' | 'bootstrap';
+export type ContentSource = "network" | "cache" | "bootstrap";
 
 export interface Game {
   id: Id;
@@ -49,7 +49,7 @@ export interface Theme {
   enable_vibration: boolean;
   enable_sounds: boolean;
   enable_particles: boolean;
-  animation_speed: 'slow' | 'normal' | 'fast' | string;
+  animation_speed: "slow" | "normal" | "fast" | string;
   logo_file: Id | null;
   favicon_file: Id | null;
   app_icon_file: Id | null;
@@ -99,7 +99,7 @@ export interface GameMode {
   automatic_progression: boolean;
   cards_before_level_up: number;
   allow_manual_level_change: boolean;
-  turn_mode: 'alternating' | 'random' | string;
+  turn_mode: "alternating" | "random" | string;
   skip_limit: number;
   session_duration_minutes: number;
   repetition_policy: string;
@@ -118,6 +118,8 @@ export interface ElementItem {
   safety_instructions: string | null;
   is_consumable: boolean;
   is_optional: boolean;
+  solo_compatible: boolean;
+  solo_gender_scope: string;
   sort: number | null;
   image: Id | null;
 }
@@ -136,6 +138,8 @@ export interface Toy {
   requires_cleaning: boolean;
   cleaning_instructions: string | null;
   requires_lubricant: boolean;
+  solo_compatible: boolean;
+  solo_gender_scope: string;
   sort: number | null;
   image: Id | null;
 }
@@ -178,32 +182,23 @@ export interface Card {
   intensity: number;
   minimum_players: number;
   maximum_players: number;
+  play_scope: "couple" | "solo" | "universal" | string;
   performer: string;
   target: string;
   performer_sex: Id | null;
   target_sex: Id | null;
   anatomy_focus:
-    | 'none'
-    | 'body'
-    | 'pija'
-    | 'concha'
-    | 'tetas'
-    | 'culo'
-    | 'boca'
-    | 'mixed'
+    | "none"
+    | "body"
+    | "pija"
+    | "concha"
+    | "tetas"
+    | "culo"
+    | "boca"
+    | "mixed"
     | string;
-  anatomy_owner:
-    | 'none'
-    | 'performer'
-    | 'target'
-    | 'both'
-    | string;
-  penetration_method:
-    | 'none'
-    | 'dedos'
-    | 'pija'
-    | 'juguete'
-    | string;
+  anatomy_owner: "none" | "performer" | "target" | "both" | string;
+  penetration_method: "none" | "dedos" | "pija" | "juguete" | string;
   reciprocal_action: boolean;
   allow_skip: boolean;
   requires_confirmation: boolean;
@@ -236,7 +231,14 @@ export interface Card {
   gm_recovery_score: number;
   gm_novelty_score: number;
   gm_continuity_group: string | null;
-  gm_scene_role: 'starter' | 'bridge' | 'continuation' | 'climax' | 'recovery' | 'closer' | string;
+  gm_scene_role:
+    | "starter"
+    | "bridge"
+    | "continuation"
+    | "climax"
+    | "recovery"
+    | "closer"
+    | string;
 }
 
 export interface DeckCard {
@@ -251,7 +253,7 @@ export interface CardElement {
   id: Id;
   card: Id;
   element: Id;
-  requirement: 'required' | 'optional' | 'alternative' | string;
+  requirement: "required" | "optional" | "alternative" | string;
   quantity: number;
   preparation_note: string | null;
   sort: number | null;
@@ -261,7 +263,7 @@ export interface CardToy {
   id: Id;
   card: Id;
   toy: Id;
-  requirement: 'required' | 'optional' | 'alternative' | string;
+  requirement: "required" | "optional" | "alternative" | string;
   quantity: number;
   preparation_note: string | null;
   sort: number | null;
@@ -387,17 +389,17 @@ export interface GameSetup {
 }
 
 export type GameMasterReaction =
-  | 'liked'
-  | 'too_soft'
-  | 'too_much'
-  | 'repeat_style'
-  | 'change_style'
-  | 'none';
+  | "liked"
+  | "too_soft"
+  | "too_much"
+  | "repeat_style"
+  | "change_style"
+  | "none";
 
 export interface GameMasterEvent {
   id: string;
   cardId: Id;
-  result: 'completed' | 'skipped';
+  result: "completed" | "skipped";
   reaction: GameMasterReaction;
   playerIndex: 0 | 1;
   intensity: number;
@@ -428,12 +430,13 @@ export interface SessionState {
   gmReaction: GameMasterReaction;
   gmEvents: GameMasterEvent[];
   gmFallbackUsed: boolean;
-  gmProvider: 'openai' | 'adaptive_fallback' | 'frontend_fallback' | null;
+  gmProvider: "openai" | "adaptive_fallback" | "frontend_fallback" | null;
   gmModel: string | null;
   gmLatencyMs: number | null;
 }
 
 export interface EligibilityContext {
+  playerCount: 1 | 2;
   selectedLevelIds: Set<Id>;
   selectedDeckIds: Set<Id>;
   selectedElementIds: Set<Id>;

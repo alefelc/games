@@ -1,16 +1,47 @@
-import type { ContentBundle } from '../types';
-import { Icon } from '../components/Icon';
+import type { ContentBundle, GameSetup } from "../types";
+import { Icon } from "../components/Icon";
 
-export function PauseScreen({ content, onResume, onFinish }: { content: ContentBundle; onResume: () => void; onFinish: () => void }) {
+export function PauseScreen({
+  content,
+  setup,
+  onResume,
+  onFinish,
+}: {
+  content: ContentBundle;
+  setup: GameSetup;
+  onResume: () => void;
+  onFinish: () => void;
+}) {
+  const mode = content.modes.find((item) => item.id === setup.modeId);
+  const isSolo = mode?.slug === "solitario" || mode?.turn_mode === "single";
+
   return (
     <main className="center-screen pause-screen">
-      <div className="pause-mark"><Icon name="pause" /></div>
+      <div className="pause-mark">
+        <Icon name="pause" />
+      </div>
       <p className="eyebrow">{content.settings.stop_word}</p>
       <h1>La partida está pausada</h1>
-      <p>No se continúa hasta que ambos quieran. No hace falta justificar la pausa ni negociar en este momento.</p>
+      <p>
+        {isSolo
+          ? "Retomá solamente cuando tengas ganas. También podés terminar la sesión ahora."
+          : "No se continúa hasta que ambos quieran. No hace falta justificar la pausa ni negociar en este momento."}
+      </p>
       <div className="pause-actions">
-        <button className="primary-button wide" type="button" onClick={onResume}>Ambos queremos continuar</button>
-        <button className="secondary-button wide" type="button" onClick={onFinish}>Terminar la partida</button>
+        <button
+          className="primary-button wide"
+          type="button"
+          onClick={onResume}
+        >
+          {isSolo ? "Quiero continuar" : "Ambos queremos continuar"}
+        </button>
+        <button
+          className="secondary-button wide"
+          type="button"
+          onClick={onFinish}
+        >
+          Terminar la partida
+        </button>
       </div>
     </main>
   );

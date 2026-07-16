@@ -1,23 +1,23 @@
-import { describe, expect, it } from 'vitest';
-import { createDefaultSetup } from '../engine/session';
-import { isCardEligible } from '../engine/eligibility';
-import type { Card, ContentBundle, EligibilityContext } from '../types';
-import bootstrap from '../../public/bootstrap-content.json';
+import { describe, expect, it } from "vitest";
+import { createDefaultSetup } from "../engine/session";
+import { isCardEligible } from "../engine/eligibility";
+import type { Card, ContentBundle, EligibilityContext } from "../types";
+import bootstrap from "../../public/bootstrap-content.json";
 
 const content = bootstrap as unknown as ContentBundle;
 
-describe('v2.5.0', () => {
-  it('usa placeholders reales y no valores falsos', () => {
+describe("v2.5.0", () => {
+  it("usa placeholders reales y no valores falsos", () => {
     const setup = createDefaultSetup(content);
-    expect(setup.playerOne).toBe('');
-    expect(setup.playerTwo).toBe('');
+    expect(setup.playerOne).toBe("");
+    expect(setup.playerTwo).toBe("");
   });
 
-  it('incluye los selectores de sexo', () => {
-    expect(content.sexes.map((x) => x.name)).toEqual(['Hombre', 'Mujer']);
+  it("incluye los selectores de sexo", () => {
+    expect(content.sexes.map((x) => x.name)).toEqual(["Hombre", "Mujer"]);
   });
 
-  it('excluye cartas anal cuando el filtro está activo', () => {
+  it("excluye cartas anal cuando el filtro está activo", () => {
     const anal = content.cards.find((x) => x.contains_anal) as Card;
     const context: EligibilityContext = {
       selectedLevelIds: new Set([anal.level]),

@@ -1,31 +1,36 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
-import type { ContentBundle, GameMasterReaction, GameSetup, Id, SessionState } from '../types';
-import { Brand } from '../components/Brand';
-import { Icon } from '../components/Icon';
-import { personalizeCardText } from '../utils/personalize-card-text';
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import type {
+  ContentBundle,
+  GameMasterReaction,
+  GameSetup,
+  Id,
+  SessionState,
+} from "../types";
+import { Brand } from "../components/Brand";
+import { Icon } from "../components/Icon";
+import { personalizeCardText } from "../utils/personalize-card-text";
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
 
-  return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
-
 
 function readAnimationDuration(): number {
   const fallback = 320;
 
   try {
     const value = getComputedStyle(document.documentElement)
-      .getPropertyValue('--pc-animation')
+      .getPropertyValue("--pc-animation")
       .trim();
 
-    if (value.endsWith('ms')) {
+    if (value.endsWith("ms")) {
       return Number.parseFloat(value) || fallback;
     }
 
-    if (value.endsWith('s')) {
+    if (value.endsWith("s")) {
       return (Number.parseFloat(value) || fallback / 1000) * 1000;
     }
   } catch {
@@ -62,7 +67,7 @@ export function GameScreen({
   setup: GameSetup;
   session: SessionState;
   onReveal: () => void;
-  onResolve: (result: 'completed' | 'skipped') => void;
+  onResolve: (result: "completed" | "skipped") => void;
   onReact: (reaction: GameMasterReaction) => void;
   gameMasterBusy: boolean;
   onPause: () => void;
@@ -71,43 +76,44 @@ export function GameScreen({
   const card =
     content.cards.find((item) => item.id === session.currentCardId) ?? null;
 
-  const level =
-    content.levels.find((item) => item.id === card?.level) ?? null;
+  const level = content.levels.find((item) => item.id === card?.level) ?? null;
 
   const mode =
-    content.modes.find((item) => item.id === setup.modeId) ??
-    content.modes[0];
+    content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
 
-  const playerOneName = setup.playerOne || 'Vos';
-  const playerTwoName = setup.playerTwo || 'Tu pareja';
+  const isSolo = mode?.slug === "solitario" || mode?.turn_mode === "single";
+  const playerOneName = setup.playerOne || "Vos";
+  const playerTwoName = isSolo ? playerOneName : setup.playerTwo || "Tu pareja";
 
   const playerOneSex =
-    content.sexes.find(
-      (sex) => sex.id === setup.playerOneSexId,
-    )?.slug ?? null;
+    content.sexes.find((sex) => sex.id === setup.playerOneSexId)?.slug ?? null;
 
-  const playerTwoSex =
-    content.sexes.find(
-      (sex) => sex.id === setup.playerTwoSexId,
-    )?.slug ?? null;
+  const playerTwoSex = isSolo
+    ? playerOneSex
+    : (content.sexes.find((sex) => sex.id === setup.playerTwoSexId)?.slug ??
+      null);
 
-  const currentPlayerName =
-    session.currentPlayer === 0
+  const currentPlayerName = isSolo
+    ? playerOneName
+    : session.currentPlayer === 0
       ? playerOneName
       : playerTwoName;
 
-  const partnerName =
-    session.currentPlayer === 0
+  const partnerName = isSolo
+    ? playerOneName
+    : session.currentPlayer === 0
       ? playerTwoName
       : playerOneName;
 
-  const currentPlayerSex =
-    session.currentPlayer === 0
+  const currentPlayerSex = isSolo
+    ? playerOneSex
+    : session.currentPlayer === 0
       ? playerOneSex
       : playerTwoSex;
 
-  const partnerSex =
-    session.currentPlayer === 0
+  const partnerSex = isSolo
+    ? playerOneSex
+    : session.currentPlayer === 0
       ? playerTwoSex
       : playerOneSex;
 
@@ -116,18 +122,13 @@ export function GameScreen({
     explicitSexId: Id | null | undefined,
   ) => {
     const explicit =
-      content.sexes.find(
-        (sex) => sex.id === explicitSexId,
-      )?.slug ?? null;
+      content.sexes.find((sex) => sex.id === explicitSexId)?.slug ?? null;
 
     if (explicit) return explicit;
-    if (role === 'current_player') return currentPlayerSex;
-    if (role === 'partner') return partnerSex;
+    if (role === "current_player" || role === "self") return currentPlayerSex;
+    if (role === "partner") return partnerSex;
 
-    if (
-      role === 'both' &&
-      currentPlayerSex === partnerSex
-    ) {
+    if (role === "both" && currentPlayerSex === partnerSex) {
       return currentPlayerSex;
     }
 
@@ -135,30 +136,28 @@ export function GameScreen({
   };
 
   const actorName =
-    card?.performer === 'partner'
-      ? partnerName
-      : card?.performer === 'both'
-        ? `${currentPlayerName} y ${partnerName}`
-        : currentPlayerName;
+    card?.performer === "self"
+      ? currentPlayerName
+      : card?.performer === "partner"
+        ? partnerName
+        : card?.performer === "both"
+          ? `${currentPlayerName} y ${partnerName}`
+          : currentPlayerName;
 
   const targetName =
-    card?.target === 'current_player'
+    card?.target === "self"
       ? currentPlayerName
-      : card?.target === 'partner'
-        ? partnerName
-        : card?.target === 'both'
-          ? `${currentPlayerName} y ${partnerName}`
-          : partnerName;
+      : card?.target === "current_player"
+        ? currentPlayerName
+        : card?.target === "partner"
+          ? partnerName
+          : card?.target === "both"
+            ? `${currentPlayerName} y ${partnerName}`
+            : partnerName;
 
-  const actorSex = sexForRole(
-    card?.performer,
-    card?.performer_sex,
-  );
+  const actorSex = sexForRole(card?.performer, card?.performer_sex);
 
-  const targetSex = sexForRole(
-    card?.target,
-    card?.target_sex,
-  );
+  const targetSex = sexForRole(card?.target, card?.target_sex);
 
   const renderText = (text: string) =>
     personalizeCardText({
@@ -169,46 +168,45 @@ export function GameScreen({
       playerOneName,
       playerTwoName,
       currentPlayerName,
+      playerName: playerOneName,
       actorSex,
       targetSex,
       partnerSex,
       playerOneSex,
       playerTwoSex,
       currentPlayerSex,
+      playerSex: playerOneSex,
     });
 
-  const personalizedCardText = card
-    ? renderText(card.text)
-    : '';
+  const personalizedCardText = card ? renderText(card.text) : "";
 
-  const personalizedHostMessage =
-    session.gmHostMessage
-      ? renderText(session.gmHostMessage)
-      : null;
+  const personalizedHostMessage = session.gmHostMessage
+    ? renderText(session.gmHostMessage)
+    : null;
 
   const gameMasterStatus =
-    session.gmProvider === 'openai'
+    session.gmProvider === "openai"
       ? {
-          label: 'IA activa',
-          detail: 'La partida se adapta en tiempo real',
-          tone: 'online',
+          label: "IA activa",
+          detail: "La partida se adapta en tiempo real",
+          tone: "online",
         }
-      : session.gmProvider === 'adaptive_fallback'
+      : session.gmProvider === "adaptive_fallback"
         ? {
-            label: 'Adaptación local',
-            detail: 'La conexión funciona, pero la IA no respondió',
-            tone: 'fallback',
+            label: "Adaptación local",
+            detail: "La conexión funciona, pero la IA no respondió",
+            tone: "fallback",
           }
-        : session.gmProvider === 'frontend_fallback'
+        : session.gmProvider === "frontend_fallback"
           ? {
-              label: 'Modo local',
-              detail: 'La partida continúa sin conexión adaptativa',
-              tone: 'offline',
+              label: "Modo local",
+              detail: "La partida continúa sin conexión adaptativa",
+              tone: "offline",
             }
           : {
-              label: 'Dirección adaptativa activa',
-              detail: 'Preparando la siguiente decisión',
-              tone: 'pending',
+              label: "Dirección adaptativa activa",
+              detail: "Preparando la siguiente decisión",
+              tone: "pending",
             };
 
   const [timerRunning, setTimerRunning] = useState(false);
@@ -244,7 +242,7 @@ export function GameScreen({
 
           if (
             content.settings.allow_vibration &&
-            typeof navigator.vibrate === 'function'
+            typeof navigator.vibrate === "function"
           ) {
             navigator.vibrate([100, 80, 180]);
           }
@@ -257,11 +255,7 @@ export function GameScreen({
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [
-    timerRunning,
-    remaining,
-    content.settings.allow_vibration,
-  ]);
+  }, [timerRunning, remaining, content.settings.allow_vibration]);
 
   const requirements = useMemo(() => {
     if (!card) return [];
@@ -269,17 +263,13 @@ export function GameScreen({
     const elements = content.cardElements
       .filter((row) => row.card === card.id)
       .map(
-        (row) =>
-          content.elements.find((item) => item.id === row.element)?.name,
+        (row) => content.elements.find((item) => item.id === row.element)?.name,
       )
       .filter(Boolean) as string[];
 
     const toys = content.cardToys
       .filter((row) => row.card === card.id)
-      .map(
-        (row) =>
-          content.toys.find((item) => item.id === row.toy)?.name,
-      )
+      .map((row) => content.toys.find((item) => item.id === row.toy)?.name)
       .filter(Boolean) as string[];
 
     return [...elements, ...toys];
@@ -316,7 +306,7 @@ export function GameScreen({
     if (
       content.theme.enable_vibration &&
       content.settings.allow_vibration &&
-      typeof navigator.vibrate === 'function'
+      typeof navigator.vibrate === "function"
     ) {
       navigator.vibrate(35);
     }
@@ -330,11 +320,9 @@ export function GameScreen({
   );
 
   const canChangeLevel =
-    mode.slug === 'clasico' &&
-    mode.allow_manual_level_change;
+    mode.slug === "clasico" && mode.allow_manual_level_change;
 
-  const showSettingsButton =
-    canChangeLevel || setup.gameMasterEnabled;
+  const showSettingsButton = canChangeLevel || setup.gameMasterEnabled;
 
   const responseTime =
     session.gmLatencyMs === null
@@ -344,26 +332,20 @@ export function GameScreen({
         : `${session.gmLatencyMs} ms`;
 
   const levelStyle = {
-    '--level-color': level.color,
+    "--level-color": level.color,
   } as CSSProperties;
 
   return (
     <div className="game-shell">
       <header className="game-header">
-        <Brand
-          game={content.game}
-          theme={content.theme}
-          compact
-        />
+        <Brand game={content.game} theme={content.theme} compact />
 
         <div className="game-header-actions">
           {showSettingsButton && (
             <button
               className="icon-button"
               type="button"
-              onClick={() =>
-                setShowLevelPicker((value) => !value)
-              }
+              onClick={() => setShowLevelPicker((value) => !value)}
               aria-label="Ajustes de partida"
               aria-expanded={showLevelPicker}
             >
@@ -404,9 +386,7 @@ export function GameScreen({
 
           {setup.gameMasterEnabled && (
             <section className="settings-menu-section">
-              <span className="settings-menu-label">
-                Estado adaptativo
-              </span>
+              <span className="settings-menu-label">Estado adaptativo</span>
 
               <div
                 className={`adaptive-status ${gameMasterStatus.tone}`}
@@ -448,16 +428,12 @@ export function GameScreen({
 
               <div className="settings-level-list">
                 {content.levels
-                  .filter((item) =>
-                    setup.levelIds.includes(item.id),
-                  )
+                  .filter((item) => setup.levelIds.includes(item.id))
                   .map((item) => (
                     <button
                       key={item.id}
                       className={
-                        session.currentLevelId === item.id
-                          ? 'active'
-                          : ''
+                        session.currentLevelId === item.id ? "active" : ""
                       }
                       type="button"
                       onClick={() => {
@@ -477,10 +453,7 @@ export function GameScreen({
       <main className="game-main">
         <div className="game-meta">
           <div>
-            <span
-              className="level-pill"
-              style={levelStyle}
-            >
+            <span className="level-pill" style={levelStyle}>
               {level.name}
             </span>
           </div>
@@ -506,73 +479,62 @@ export function GameScreen({
           className="card-stage"
           type="button"
           onClick={reveal}
-          aria-label={
-            session.revealed
-              ? 'Carta revelada'
-              : 'Revelar carta'
-          }
+          aria-label={session.revealed ? "Carta revelada" : "Revelar carta"}
         >
           <article
             className={`playing-card ${
-              isFlipping ? 'flipping' : ''
-            } ${visualRevealed ? 'revealed' : ''}`}
+              isFlipping ? "flipping" : ""
+            } ${visualRevealed ? "revealed" : ""}`}
             style={levelStyle}
           >
             {!visualRevealed ? (
               <div className="card-face card-back">
                 <div className="card-logo">
-                  <Brand
-                    game={content.game}
-                    theme={content.theme}
-                  />
+                  <Brand game={content.game} theme={content.theme} />
                   <small>Tocá para revelar</small>
                 </div>
               </div>
             ) : (
               <div className="card-face card-front">
-              <p className="card-text">
-                {personalizedCardText}
-              </p>
+                <p className="card-text">{personalizedCardText}</p>
 
-              {card.instructions && (
-                <p className="card-instructions">
-                  {card.instructions}
-                </p>
-              )}
+                {card.instructions && (
+                  <p className="card-instructions">{card.instructions}</p>
+                )}
 
-              {requirements.length > 0 && (
-                <div className="requirement-chips">
-                  {requirements.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
+                {requirements.length > 0 && (
+                  <div className="requirement-chips">
+                    {requirements.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                )}
+
+                {card.safety_note && (
+                  <div className="card-safety">
+                    <Icon name="info" />
+                    {card.safety_note}
+                  </div>
+                )}
+
+                <div className="card-ornament">
+                  <span />
+                  <img
+                    src={`${import.meta.env.BASE_URL}te-animas-symbol.svg`}
+                    alt=""
+                    aria-hidden="true"
+                    className="card-ornament-logo"
+                    style={{
+                      width: "clamp(1.65rem, 5vw, 2.15rem)",
+                      height: "clamp(1.65rem, 5vw, 2.15rem)",
+                      display: "block",
+                      objectFit: "contain",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span />
                 </div>
-              )}
-
-              {card.safety_note && (
-                <div className="card-safety">
-                  <Icon name="info" />
-                  {card.safety_note}
-                </div>
-              )}
-
-              <div className="card-ornament">
-                <span />
-                <img
-                  src={`${import.meta.env.BASE_URL}te-animas-symbol.svg`}
-                  alt=""
-                  aria-hidden="true"
-                  className="card-ornament-logo"
-                  style={{
-                    width: 'clamp(1.65rem, 5vw, 2.15rem)',
-                    height: 'clamp(1.65rem, 5vw, 2.15rem)',
-                    display: 'block',
-                    objectFit: 'contain',
-                    flexShrink: 0,
-                  }}
-                />
-                <span />
               </div>
-            </div>
             )}
           </article>
         </button>
@@ -590,36 +552,34 @@ export function GameScreen({
                 className="game-master-reactions"
                 aria-label="Cómo querés continuar"
               >
-                {([
-                  ['too_soft', 'flameUp', 'Más intenso', 'intense'],
-                  ['too_much', 'moon', 'Bajar', 'soften'],
-                  ['repeat_style', 'hearts', 'Más de esto', 'continue'],
-                  ['change_style', 'dice', 'Cambiar', 'change'],
-                ] as const).map(
-                  ([reaction, icon, label, tone]) => (
-                    <button
-                      key={reaction}
-                      type="button"
-                      className={[
-                        'reaction-button',
-                        `reaction-${tone}`,
-                        session.gmReaction === reaction
-                          ? 'selected'
-                          : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      onClick={() => onReact(reaction)}
-                      disabled={gameMasterBusy}
-                      aria-pressed={session.gmReaction === reaction}
-                    >
-                      <span className="reaction-icon">
-                        <Icon name={icon} />
-                      </span>
-                      <span className="reaction-label">{label}</span>
-                    </button>
-                  ),
-                )}
+                {(
+                  [
+                    ["too_soft", "flameUp", "Más intenso", "intense"],
+                    ["too_much", "moon", "Bajar", "soften"],
+                    ["repeat_style", "hearts", "Más de esto", "continue"],
+                    ["change_style", "dice", "Cambiar", "change"],
+                  ] as const
+                ).map(([reaction, icon, label, tone]) => (
+                  <button
+                    key={reaction}
+                    type="button"
+                    className={[
+                      "reaction-button",
+                      `reaction-${tone}`,
+                      session.gmReaction === reaction ? "selected" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => onReact(reaction)}
+                    disabled={gameMasterBusy}
+                    aria-pressed={session.gmReaction === reaction}
+                  >
+                    <span className="reaction-icon">
+                      <Icon name={icon} />
+                    </span>
+                    <span className="reaction-label">{label}</span>
+                  </button>
+                ))}
               </div>
             </section>
           )}
@@ -627,17 +587,11 @@ export function GameScreen({
         {session.revealed &&
         card.duration_seconds &&
         content.settings.show_timer ? (
-          <div
-            className={`timer-panel ${
-              remaining === 0 ? 'finished' : ''
-            }`}
-          >
+          <div className={`timer-panel ${remaining === 0 ? "finished" : ""}`}>
             <div>
               <b>{formatTime(remaining)}</b>
               <span>
-                {remaining === 0
-                  ? 'Tiempo cumplido'
-                  : 'Temporizador sugerido'}
+                {remaining === 0 ? "Tiempo cumplido" : "Temporizador sugerido"}
               </span>
             </div>
 
@@ -652,10 +606,10 @@ export function GameScreen({
               }}
             >
               {remaining === 0
-                ? 'Reiniciar'
+                ? "Reiniciar"
                 : timerRunning
-                  ? 'Pausar'
-                  : 'Iniciar'}
+                  ? "Pausar"
+                  : "Iniciar"}
             </button>
           </div>
         ) : null}
@@ -673,7 +627,7 @@ export function GameScreen({
               <button
                 className="secondary-button"
                 type="button"
-                onClick={() => onResolve('skipped')}
+                onClick={() => onResolve("skipped")}
                 disabled={gameMasterBusy}
               >
                 Saltar
@@ -682,7 +636,7 @@ export function GameScreen({
               <button
                 className="primary-button"
                 type="button"
-                onClick={() => onResolve('completed')}
+                onClick={() => onResolve("completed")}
                 disabled={gameMasterBusy}
               >
                 Cumplido
@@ -696,11 +650,7 @@ export function GameScreen({
           </p>
         )}
 
-        <button
-          className="stop-button"
-          type="button"
-          onClick={onPause}
-        >
+        <button className="stop-button" type="button" onClick={onPause}>
           <b>{content.settings.stop_word}</b>
           <span>Pausar sin explicar</span>
         </button>
