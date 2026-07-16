@@ -1,4 +1,4 @@
-# Te Animás? PWA v2.2.4 — teanimas.com
+# PecadoClub PWA v2.2.4 — census.ar
 
 Frontend React + TypeScript preparado para consumir el snapshot público seguro de Directus:
 
