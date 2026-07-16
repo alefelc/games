@@ -988,3 +988,10 @@ h2 { font-size: 1.6rem; }
     max-height: 78px;
   }
 }
+
+
+/* v2.9.1: los nombres forman parte de la pregunta o acción. */
+.card-front .card-text {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}

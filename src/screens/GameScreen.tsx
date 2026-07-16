@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import type { ContentBundle, GameMasterReaction, GameSetup, Id, SessionState } from '../types';
 import { Brand } from '../components/Brand';
 import { Icon } from '../components/Icon';
+import { personalizeCardText } from '../utils/personalize-card-text';
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -87,12 +88,33 @@ export function GameScreen({
       ? setup.playerTwo || 'Tu pareja'
       : setup.playerOne || 'Vos';
 
-  const player =
+  const actorName =
     card?.performer === 'partner'
       ? partnerName
       : card?.performer === 'both'
         ? `${currentPlayerName} y ${partnerName}`
         : currentPlayerName;
+
+  const targetName =
+    card?.target === 'current_player'
+      ? currentPlayerName
+      : card?.target === 'partner'
+        ? partnerName
+        : card?.target === 'both'
+          ? `${currentPlayerName} y ${partnerName}`
+          : partnerName;
+
+  const personalizedCardText = card
+    ? personalizeCardText({
+        text: card.text,
+        actorName,
+        targetName,
+        actorIsBoth: card.performer === 'both',
+        hasExplicitTarget:
+          card.target !== 'none' &&
+          card.target !== 'both',
+      })
+    : '';
 
   const gameMasterStatus =
     session.gmProvider === 'openai'
@@ -438,23 +460,9 @@ export function GameScreen({
               </div>
             ) : (
               <div className="card-face card-front">
-              <div
-                className="card-player-name"
-                style={{
-                  alignSelf: 'stretch',
-                  textAlign: 'left',
-                  fontSize: 'clamp(1.25rem, 4.5vw, 1.75rem)',
-                  fontWeight: 800,
-                  lineHeight: 1.1,
-                  color: 'var(--pc-accent)',
-                  marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {player}
-              </div>
-
-              <p className="card-text">{card.text}</p>
+              <p className="card-text">
+                {personalizedCardText}
+              </p>
 
               {card.instructions && (
                 <p className="card-instructions">
