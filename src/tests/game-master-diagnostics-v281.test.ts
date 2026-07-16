@@ -8,8 +8,8 @@ describe('Game Master v2.8.1', () => {
       'utf8',
     );
 
-    expect(screen).toContain('¿Cómo estuvo?');
-    expect(screen).toContain('Esto guía la próxima carta');
+    expect(screen).toContain('¿Qué querés ahora?');
+    expect(screen).toContain('Guía la próxima carta');
     expect(screen).toContain("session.gmProvider === 'openai'");
   });
 

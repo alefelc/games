@@ -492,34 +492,44 @@ export function GameScreen({
           content.settings.game_master_show_reactions !== false && (
             <section className="game-master-feedback">
               <div className="game-master-feedback-heading">
-                <b>¿Cómo estuvo?</b>
-                <span>Esto guía la próxima carta</span>
+                <b>¿Qué querés ahora?</b>
+                <span>Guía la próxima carta</span>
               </div>
 
               <div
                 className="game-master-reactions"
-                aria-label="Reacción a la carta"
+                aria-label="Cómo querés continuar"
               >
                 {([
-                  ['liked', '🔥', 'Me gustó'],
-                  ['too_soft', '⬆️', 'Más intenso'],
-                  ['too_much', '⬇️', 'Bajar'],
-                  ['repeat_style', '🔁', 'Similar'],
-                ] as const).map(([reaction, icon, label]) => (
-                  <button
-                    key={reaction}
-                    type="button"
-                    className={
-                      session.gmReaction === reaction ? 'selected' : ''
-                    }
-                    onClick={() => onReact(reaction)}
-                    disabled={gameMasterBusy}
-                    aria-pressed={session.gmReaction === reaction}
-                  >
-                    <span>{icon}</span>
-                    {label}
-                  </button>
-                ))}
+                  ['too_soft', 'flameUp', 'Más intenso', 'intense'],
+                  ['too_much', 'moon', 'Bajar', 'soften'],
+                  ['repeat_style', 'hearts', 'Más de esto', 'continue'],
+                  ['change_style', 'dice', 'Cambiar', 'change'],
+                ] as const).map(
+                  ([reaction, icon, label, tone]) => (
+                    <button
+                      key={reaction}
+                      type="button"
+                      className={[
+                        'reaction-button',
+                        `reaction-${tone}`,
+                        session.gmReaction === reaction
+                          ? 'selected'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => onReact(reaction)}
+                      disabled={gameMasterBusy}
+                      aria-pressed={session.gmReaction === reaction}
+                    >
+                      <span className="reaction-icon">
+                        <Icon name={icon} />
+                      </span>
+                      <span className="reaction-label">{label}</span>
+                    </button>
+                  ),
+                )}
               </div>
             </section>
           )}

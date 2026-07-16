@@ -9,7 +9,7 @@ function escapeRegExp(value: string) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const base = env.VITE_BASE_PATH || '/';
-  const directus = (env.VITE_DIRECTUS_URL || 'https://websites-games.chn0vc.easypanel.host').replace(/\/$/, '');
+  const directus = (env.VITE_DIRECTUS_URL || 'https://admin.teanimas.com').replace(/\/$/, '');
   const apiPattern = new RegExp(`^${escapeRegExp(directus)}/items/`);
   const assetPattern = new RegExp(`^${escapeRegExp(directus)}/assets/`);
 
@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: apiPattern,
               handler: 'NetworkFirst',
               options: {
-                cacheName: 'te-animas-content-v284',
+                cacheName: 'te-animas-content-v285',
                 networkTimeoutSeconds: 5,
                 expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
                 cacheableResponse: { statuses: [0, 200] }
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: assetPattern,
               handler: 'CacheFirst',
               options: {
-                cacheName: 'te-animas-images-v284',
+                cacheName: 'te-animas-images-v285',
                 expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
                 cacheableResponse: { statuses: [0, 200] }
               }

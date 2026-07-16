@@ -29,7 +29,22 @@ function rankCandidates(
         continuity &&
         card.gm_continuity_group === continuity
       ) {
-        value += resolvedEvent?.reaction === 'repeat_style' ? 6 : 2;
+        if (resolvedEvent?.reaction === 'repeat_style') {
+          value += 6;
+        } else if (
+          resolvedEvent?.reaction === 'change_style'
+        ) {
+          value -= 12;
+        } else {
+          value += 2;
+        }
+      }
+
+      if (
+        resolvedEvent?.reaction === 'change_style' &&
+        card.gm_continuity_group !== continuity
+      ) {
+        value += card.gm_novelty_score * 1.2;
       }
 
       if (resolvedEvent?.reaction === 'too_much') {

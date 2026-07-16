@@ -363,7 +363,13 @@ export interface GameSetup {
   gameMasterEnabled: boolean;
 }
 
-export type GameMasterReaction = 'liked' | 'too_soft' | 'too_much' | 'repeat_style' | 'none';
+export type GameMasterReaction =
+  | 'liked'
+  | 'too_soft'
+  | 'too_much'
+  | 'repeat_style'
+  | 'change_style'
+  | 'none';
 
 export interface GameMasterEvent {
   id: string;

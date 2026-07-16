@@ -18,6 +18,8 @@ describe('Game Master v2.8.0', () => {
     expect(setup).toContain('Dirección adaptativa');
     expect(game).toContain('Más intenso');
     expect(game).toContain('Bajar');
-    expect(game).toContain('Similar');
+    expect(game).toContain('Más de esto');
+    expect(game).toContain('Cambiar');
+    expect(game).not.toContain('Me gustó');
   });
 });

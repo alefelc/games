@@ -7,4 +7,4 @@ npm install
 npm run test
 npm run build
 Write-Host "Build listo en: $PWD\dist" -ForegroundColor Green
-Write-Host "Subí el CONTENIDO de dist a la raíz pública de census.ar." -ForegroundColor Yellow
+Write-Host "Subí el CONTENIDO de dist a la raíz pública de teanimas.com." -ForegroundColor Yellow

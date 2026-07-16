@@ -749,34 +749,49 @@ h2 { font-size: 1.6rem; }
   width: min(100%, 520px);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 7px;
+  gap: 8px;
   margin: 10px auto 4px;
 }
-.game-master-reactions button {
-  min-height: 48px;
-  padding: 7px 4px;
-  border: 1px solid color-mix(in srgb, var(--pc-accent) 20%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--pc-surface) 88%, transparent);
-  color: var(--pc-muted);
-  font-size: .68rem;
-  font-weight: 800;
-}
-.game-master-reactions button span {
-  display: block;
-  margin-bottom: 2px;
-  font-size: 1rem;
-}
-.game-master-reactions button.selected {
-  border-color: var(--pc-accent);
-  background: color-mix(in srgb, var(--pc-primary) 44%, var(--pc-surface));
+.reaction-button {
+  --reaction-color: var(--pc-accent);
+  min-width: 0;
+  min-height: 78px;
+  padding: 9px 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--reaction-color) 32%, transparent);
+  border-radius: 15px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--reaction-color) 11%, var(--pc-surface)), color-mix(in srgb, var(--pc-background) 62%, var(--pc-surface)));
   color: var(--pc-text);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  font-size: .68rem;
+  font-weight: 850;
+  line-height: 1.12;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 8px 22px rgba(0,0,0,.13);
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
-.game-master-reactions button:disabled,
-.game-actions button:disabled {
-  cursor: wait;
-  opacity: .55;
+.reaction-button:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--reaction-color) 64%, transparent); }
+.reaction-button:active { transform: translateY(1px) scale(.985); }
+.reaction-intense { --reaction-color: #ff6948; }
+.reaction-soften { --reaction-color: #7c9cff; }
+.reaction-continue { --reaction-color: #ef68ad; }
+.reaction-change { --reaction-color: #c58aff; }
+.reaction-icon {
+  width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
+  color: var(--reaction-color); background: color-mix(in srgb, var(--reaction-color) 15%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--reaction-color) 18%, transparent), 0 7px 20px color-mix(in srgb, var(--reaction-color) 12%, transparent);
 }
+.reaction-icon svg { width: 21px; height: 21px; stroke-width: 1.9; }
+.reaction-label { min-width: 0; display: block; }
+.reaction-button.selected {
+  border-color: var(--reaction-color);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--reaction-color) 28%, var(--pc-surface)), color-mix(in srgb, var(--reaction-color) 10%, var(--pc-background)));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--reaction-color) 18%, transparent), 0 12px 30px color-mix(in srgb, var(--reaction-color) 18%, transparent);
+}
+.reaction-button.selected .reaction-icon { color: #fff; background: var(--reaction-color); }
+.reaction-button:disabled, .game-actions button:disabled { cursor: wait; opacity: .55; }
 .game-master-thinking {
   width: min(100%, 520px);
   min-height: 38px;
@@ -799,10 +814,10 @@ h2 { font-size: 1.6rem; }
   0%, 100% { transform: scale(.7); opacity: .45; }
   50% { transform: scale(1.15); opacity: 1; }
 }
-@media (max-width: 420px) {
-  .game-master-reactions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+@media (max-width: 520px) {
+  .game-master-reactions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reaction-button { min-height: 66px; grid-template-columns: 34px minmax(0, 1fr); justify-items: start; padding: 8px 10px; text-align: left; }
+  .reaction-label { text-align: left; }
 }
 
 
