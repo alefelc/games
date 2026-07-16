@@ -145,12 +145,13 @@ export default function App() {
           updateSetup={updateSetup}
           updateFilters={updateFilters}
         />
-      ) : <LoadingScreen />;
+      ) : <LoadingScreen content={content} />;
 
     case 'game':
       if (setup && session && gameMasterBusy && !session.currentCardId) {
         return (
           <LoadingScreen
+            content={content}
             message={
               setup.gameMasterEnabled
                 ? 'Preparando una partida a tu medida…'
@@ -172,7 +173,7 @@ export default function App() {
           onPause={pause}
           onSetLevel={setCurrentLevel}
         />
-      ) : <LoadingScreen />;
+      ) : <LoadingScreen content={content} />;
 
     case 'paused':
       return <PauseScreen content={content} onResume={resume} onFinish={finish} />;
@@ -186,7 +187,7 @@ export default function App() {
           onRestart={restart}
           onHome={goHome}
         />
-      ) : <LoadingScreen />;
+      ) : <LoadingScreen content={content} />;
 
     default:
       return <LoadingScreen />;

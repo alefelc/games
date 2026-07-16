@@ -2,11 +2,12 @@ import { assetUrl } from '../env';
 import type { Game, Theme } from '../types';
 
 const fontLinks = new Set<string>();
-const THEME_STORAGE_KEY = 'te-animas-visual-theme-v1';
+const THEME_STORAGE_KEY = 'te-animas-visual-theme-v2';
 
 interface StoredVisualTheme {
   theme: Theme;
   game: Pick<Game, 'name'>;
+  logoUrl: string | null;
 }
 
 function loadFont(url: string | null) {
@@ -66,6 +67,31 @@ function applyVariables(theme: Theme) {
   loadFont(theme.card_font_url);
 }
 
+export function getSavedBrand() {
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY);
+
+    if (!raw) {
+      return {
+        name: '¿Te animás?',
+        logoUrl: null,
+      };
+    }
+
+    const stored = JSON.parse(raw) as StoredVisualTheme;
+
+    return {
+      name: stored?.game?.name || '¿Te animás?',
+      logoUrl: stored?.logoUrl || null,
+    };
+  } catch {
+    return {
+      name: '¿Te animás?',
+      logoUrl: null,
+    };
+  }
+}
+
 export function applySavedTheme() {
   try {
     const raw = localStorage.getItem(THEME_STORAGE_KEY);
@@ -82,7 +108,10 @@ export function applySavedTheme() {
 
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', stored.theme.primary_color);
+      ?.setAttribute(
+        'content',
+        stored.theme.primary_color,
+      );
   } catch {
     // Usa el aspecto predeterminado hasta cargar el contenido.
   }
@@ -97,6 +126,7 @@ export function applyTheme(theme: Theme, game: Game) {
     ?.setAttribute('content', theme.primary_color);
 
   const favicon = assetUrl(theme.favicon_file);
+  const logoUrl = assetUrl(theme.logo_file);
 
   if (favicon) {
     document
@@ -108,6 +138,7 @@ export function applyTheme(theme: Theme, game: Game) {
     const stored: StoredVisualTheme = {
       theme,
       game: { name: game.name },
+      logoUrl,
     };
 
     localStorage.setItem(

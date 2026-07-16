@@ -37,7 +37,7 @@ describe('interfaz adaptativa v2.8.3', () => {
       'utf8',
     );
 
-    expect(loading).toContain('loading-wordmark');
+    expect(loading).toContain('loading-brand-logo');
     expect(loading).toContain('hero-emblem-animated');
     expect(loading).not.toContain('loading-ring');
   });

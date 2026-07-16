@@ -940,3 +940,36 @@ h2 { font-size: 1.6rem; }
     opacity: 1;
   }
 }
+
+
+.loading-brand {
+  width: min(78vw, 360px);
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px auto 0;
+}
+
+.loading-brand-logo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(
+    0 12px 28px rgba(0, 0, 0, .3)
+  );
+}
+
+@media (max-width: 640px) {
+  .loading-brand {
+    width: min(74vw, 290px);
+    min-height: 72px;
+  }
+
+  .loading-brand-logo {
+    max-height: 78px;
+  }
+}

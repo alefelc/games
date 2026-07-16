@@ -1,0 +1,13 @@
+PARCHE v2.8.4 — LOGO EN PANTALLAS DE CARGA
+
+Copiá todos los archivos respetando exactamente sus carpetas y reemplazá
+los existentes.
+
+Después:
+
+1. Commit.
+2. Deploy.
+3. Borrá una vez los datos del sitio o reinstalá la PWA.
+
+La pantalla usa el logo configurado. Si todavía no pudo cargarlo, muestra
+el símbolo gráfico incluido y nunca vuelve a mostrar el nombre escrito.
