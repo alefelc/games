@@ -11,7 +11,9 @@ import type {
 import {
   createDefaultSetup,
   createSession,
+  drawNextCard,
   resolveCurrentCard,
+  type DrawResult,
 } from "../engine/session";
 import { drawAdaptiveCard } from "../engine/game-master";
 
@@ -92,6 +94,32 @@ function eventFromCurrentCard(
   };
 }
 
+function recoverWithLocalDraw(
+  content: ContentBundle,
+  setup: GameSetup,
+  session: SessionState,
+): DrawResult {
+  try {
+    return drawNextCard(content, setup, session);
+  } catch (error) {
+    console.error("También falló la selección local de emergencia.", error);
+    return {
+      session: {
+        ...session,
+        currentCardId: null,
+        gmFallbackUsed: true,
+        gmProvider: "frontend_fallback",
+        gmModel: "local-browser-emergency",
+        gmLatencyMs: null,
+        gmHostMessage:
+          "No se pudo preparar otra carta con esta configuración.",
+      },
+      card: null,
+      exhausted: true,
+    };
+  }
+}
+
 const ageAccepted = () =>
   localStorage.getItem("pecadoclub-age-accepted") === "true";
 
@@ -156,21 +184,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { content, setup, gameMasterBusy } = get();
     if (!content || !setup || gameMasterBusy) return;
 
-    let session = createSession(content, setup);
+    const session = createSession(content, setup);
     set({
       stage: "game",
       session,
       gameMasterBusy: true,
     });
 
-    const draw = await drawAdaptiveCard(content, setup, session, null);
+    try {
+      const draw = await drawAdaptiveCard(content, setup, session, null);
 
-    session = draw.session;
-    set({
-      stage: draw.exhausted ? "summary" : "game",
-      session,
-      gameMasterBusy: false,
-    });
+      if (get().session?.id !== session.id) return;
+
+      set({
+        stage: draw.exhausted ? "summary" : "game",
+        session: draw.session,
+      });
+    } catch (error) {
+      console.error(
+        "Falló la preparación adaptativa inicial. Se usa recuperación local.",
+        error,
+      );
+
+      if (get().session?.id !== session.id) return;
+
+      const draw = recoverWithLocalDraw(content, setup, session);
+      set({
+        stage: draw.exhausted ? "summary" : "game",
+        session: draw.session,
+      });
+    } finally {
+      if (get().session?.id === session.id) {
+        set({ gameMasterBusy: false });
+      }
+    }
   },
 
   revealCard() {
@@ -212,18 +259,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameMasterBusy: true,
     });
 
-    const draw = await drawAdaptiveCard(
-      content,
-      setup,
-      resolved,
-      resolvedEvent,
-    );
+    try {
+      const draw = await drawAdaptiveCard(
+        content,
+        setup,
+        resolved,
+        resolvedEvent,
+      );
 
-    set({
-      stage: draw.exhausted ? "summary" : "game",
-      session: draw.session,
-      gameMasterBusy: false,
-    });
+      if (get().session?.id !== resolved.id) return;
+
+      set({
+        stage: draw.exhausted ? "summary" : "game",
+        session: draw.session,
+      });
+    } catch (error) {
+      console.error(
+        "Falló la siguiente selección adaptativa. Se usa recuperación local.",
+        error,
+      );
+
+      if (get().session?.id !== resolved.id) return;
+
+      const draw = recoverWithLocalDraw(content, setup, resolved);
+      set({
+        stage: draw.exhausted ? "summary" : "game",
+        session: draw.session,
+      });
+    } finally {
+      if (get().session?.id === resolved.id) {
+        set({ gameMasterBusy: false });
+      }
+    }
   },
 
   pause() {
