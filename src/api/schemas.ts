@@ -18,6 +18,19 @@ const nullableNumber = z.coerce
   .transform((value) => value ?? null);
 const bool = z.coerce.boolean();
 const number = z.coerce.number();
+const cardFields = z.preprocess((value) => {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== "string") return [];
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) return parsed.map(String);
+  } catch {
+    // CSV and legacy values may use comma-separated fields.
+  }
+  return trimmed.split(",").map((item) => item.trim()).filter(Boolean);
+}, z.array(z.string()));
 
 export const gameSchema = z.object({
   id,
@@ -138,6 +151,10 @@ export const elementSchema = z.object({
   is_optional: bool,
   solo_compatible: bool.optional().default(true),
   solo_gender_scope: z.string().optional().default("neutral"),
+  visible_in_setup: bool.optional().default(true),
+  default_selected: bool.optional().default(false),
+  selection_priority: number.optional().default(0),
+  guarantee_in_session: bool.optional().default(false),
   sort: nullableNumber,
   image: relationId,
 });
@@ -158,8 +175,32 @@ export const toySchema = z.object({
   requires_lubricant: bool,
   solo_compatible: bool.optional().default(true),
   solo_gender_scope: z.string().optional().default("neutral"),
+  visible_in_setup: bool.optional().default(true),
+  default_selected: bool.optional().default(false),
+  selection_priority: number.optional().default(0),
+  guarantee_in_session: bool.optional().default(false),
   sort: nullableNumber,
   image: relationId,
+});
+
+export const dynamicFilterSchema = z.object({
+  id,
+  game: id.optional(),
+  status: z.string().optional().default("published"),
+  key: z.string().min(1),
+  label: z.string().min(1),
+  description: nullableString,
+  icon: nullableString,
+  filter_kind: z.enum(["boolean_exclusion", "max_number"]),
+  card_fields: cardFields.optional().default([]),
+  numeric_field: nullableString,
+  default_enabled: bool.optional().default(false),
+  default_number: nullableNumber,
+  min_value: nullableNumber,
+  max_value: nullableNumber,
+  visible: bool.optional().default(true),
+  advanced: bool.optional().default(false),
+  sort: number.optional().default(0),
 });
 
 export const tagSchema = z.object({
@@ -331,6 +372,10 @@ export const settingsSchema = z.object({
     .string()
     .optional()
     .default("Activen todo lo que prefieran dejar afuera antes de empezar."),
+  cross_session_history_limit: number.optional().default(800),
+  inventory_guarantee_after_cards: number.optional().default(4),
+  inventory_minimum_cards_per_session: number.optional().default(1),
+  inventory_preference_multiplier: number.optional().default(4),
   game_master_enabled: bool.optional().default(false),
   game_master_default_on: bool.optional().default(false),
   game_master_title: z.string().optional().default("Dirección adaptativa"),

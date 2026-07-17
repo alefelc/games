@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#6E0F2A"/>
-  <path d="M38 8c5 14-8 18-4 29 2 5 8 7 10 13 3 8-1 13-8 16 3-8 1-13-5-18-5-5-7-11-4-17 3-7 10-11 13-18 1-2 1-4-2-5Z" fill="#D6B16F"/>
-  <path d="M24 20c3 10-7 15-8 24-1 9 4 17 13 22-4-7-3-13 1-19 4-5 5-10 2-16-2-5-6-7-8-11Z" fill="#F8EAD6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="¿Te animás?">
+  <defs>
+    <linearGradient id="g" x1="8" y1="7" x2="57" y2="59" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E83F73"/>
+      <stop offset="1" stop-color="#2D1932"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#13070B"/>
+  <path fill="url(#g)" d="M59.1 29.3C61.4 11.6 41.3 4.6 31.1 18.4 31.3 1.2 11-5.3 2.2 10.2-5.7 24.3 17.7 58.5 17.7 58.5s39.2-13.3 41.4-29.2Z" transform="translate(1 1)"/>
 </svg>

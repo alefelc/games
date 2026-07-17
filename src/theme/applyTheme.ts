@@ -16,7 +16,7 @@ function loadFont(url: string | null) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = url;
-  link.dataset.pecadoclubFont = "true";
+  link.dataset.teAnimasFont = "true";
   document.head.appendChild(link);
   fontLinks.add(url);
 }

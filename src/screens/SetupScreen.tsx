@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ContentBundle, GameSetup, Id, SafetyFilters } from "../types";
 import { Icon } from "../components/Icon";
+import { DynamicLimits } from "../components/DynamicLimits";
 import { TopBar } from "../components/TopBar";
 import { previewEligibleCount } from "../engine/session";
-import { env } from "../env";
+import { checkGameMasterAvailability } from "../api/game-master";
 
 function toggleId(values: Id[], id: Id): Id[] {
   return values.includes(id)
@@ -35,33 +36,6 @@ function ChoiceToggle({
         {description && <small>{description}</small>}
       </span>
     </button>
-  );
-}
-
-function FilterToggle({
-  checked,
-  title,
-  description,
-  onChange,
-}: {
-  checked: boolean;
-  title: string;
-  description?: string;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="filter-row">
-      <span>
-        <b>{title}</b>
-        {description && <small>{description}</small>}
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <i aria-hidden="true" />
-    </label>
   );
 }
 
@@ -132,8 +106,12 @@ export function SetupScreen({
         ? deck.minimum_players <= 1 && deck.maximum_players >= 1
         : deck.minimum_players <= 2 && deck.maximum_players >= 2),
   );
-  const availableElements = content.elements.filter(matchesSoloResource);
-  const availableToys = content.toys.filter(matchesSoloResource);
+  const availableElements = content.elements
+    .filter((item) => item.visible_in_setup && matchesSoloResource(item))
+    .sort((a, b) => a.selection_priority - b.selection_priority);
+  const availableToys = content.toys
+    .filter((item) => item.visible_in_setup && matchesSoloResource(item))
+    .sort((a, b) => a.selection_priority - b.selection_priority);
   const eligibleCount = useMemo(
     () => previewEligibleCount(content, setup),
     [content, setup],
@@ -141,7 +119,24 @@ export function SetupScreen({
   const requiresIntenseConsent = content.levels.some(
     (level) => setup.levelIds.includes(level.id) && level.requires_confirmation,
   );
-  const gameMasterAvailable = Boolean(env.gameMasterUrl);
+  const [gameMasterStatus, setGameMasterStatus] = useState<
+    "checking" | "online" | "offline"
+  >("checking");
+  const [gameMasterReason, setGameMasterReason] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void checkGameMasterAvailability().then((result) => {
+      if (!active) return;
+      setGameMasterStatus(result.status);
+      setGameMasterReason(result.status === "offline" ? result.reason : null);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const gameMasterAvailable = gameMasterStatus === "online";
   const peopleConfigured = Boolean(
     setup.playerOneSexId && (isSolo || setup.playerTwoSexId),
   );
@@ -371,37 +366,42 @@ export function SetupScreen({
                 <div className="game-master-availability">
                   <span
                     className={
-                      gameMasterAvailable
-                        ? setup.gameMasterEnabled
-                          ? "online"
-                          : "disabled"
-                        : "offline"
+                      gameMasterStatus === "checking"
+                        ? "checking"
+                        : gameMasterAvailable
+                          ? setup.gameMasterEnabled
+                            ? "online"
+                            : "disabled"
+                          : "offline"
                     }
                   />
                   <b>
-                    {gameMasterAvailable
-                      ? setup.gameMasterEnabled
-                        ? "Conectado y activado"
-                        : "Conectado, pero desactivado"
-                      : "No conectado"}
+                    {gameMasterStatus === "checking"
+                      ? "Comprobando conexión"
+                      : gameMasterAvailable
+                        ? setup.gameMasterEnabled
+                          ? "IA conectada y activada"
+                          : "IA disponible, modo local elegido"
+                        : "IA no disponible"}
                   </b>
                 </div>
 
                 <ChoiceToggle
-                  checked={setup.gameMasterEnabled && gameMasterAvailable}
+                  checked={setup.gameMasterEnabled}
                   title="Dirección adaptativa"
                   description={
                     gameMasterAvailable
                       ? content.settings.game_master_description
-                      : "La dirección adaptativa no está disponible."
+                      : setup.gameMasterEnabled
+                        ? gameMasterReason ||
+                          "Se volverá a intentar al iniciar y en cada carta. Si falla, la partida seguirá sin cortarse."
+                        : "Modo local elegido. Podés activar la IA aunque ahora figure sin conexión; se volverá a comprobar al iniciar."
                   }
-                  onChange={() => {
-                    if (gameMasterAvailable) {
-                      updateSetup({
-                        gameMasterEnabled: !setup.gameMasterEnabled,
-                      });
-                    }
-                  }}
+                  onChange={() =>
+                    updateSetup({
+                      gameMasterEnabled: !setup.gameMasterEnabled,
+                    })
+                  }
                 />
               </div>
             )}
@@ -544,144 +544,23 @@ export function SetupScreen({
             <h1>{stepContent[3].title}</h1>
             <p className="section-copy">{stepContent[3].subtitle}</p>
 
-            <div className="filter-list">
-              <FilterToggle
-                checked={setup.filters.excludePhotoVideo}
-                title="Excluir fotos y videos"
-                description="Evita creación o envío de contenido íntimo."
-                onChange={(value) =>
-                  updateFilters({ excludePhotoVideo: value })
-                }
-              />
-              <FilterToggle
-                checked={setup.filters.excludeThirdParties}
-                title="Excluir terceras personas"
-                onChange={(value) =>
-                  updateFilters({ excludeThirdParties: value })
-                }
-              />
-              <FilterToggle
-                checked={setup.filters.excludePublicPlaces}
-                title="Excluir lugares públicos"
-                onChange={(value) =>
-                  updateFilters({ excludePublicPlaces: value })
-                }
-              />
-              <FilterToggle
-                checked={setup.filters.excludeRestraint}
-                title="Excluir vendas y sujeciones"
-                onChange={(value) => updateFilters({ excludeRestraint: value })}
-              />
-              <FilterToggle
-                checked={setup.filters.excludePenetration}
-                title="Excluir penetración"
-                onChange={(value) =>
-                  updateFilters({ excludePenetration: value })
-                }
-              />
-              <FilterToggle
-                checked={setup.filters.excludeAnal}
-                title="Excluir sexo anal"
-                description="Excluye estimulación externa y penetración anal."
-                onChange={(value) => updateFilters({ excludeAnal: value })}
-              />
-              <FilterToggle
-                checked={setup.filters.excludeOral}
-                title="Excluir sexo oral"
-                onChange={(value) => updateFilters({ excludeOral: value })}
-              />
-              <FilterToggle
-                checked={setup.filters.excludeNudity}
-                title="Excluir desnudez"
-                onChange={(value) => updateFilters({ excludeNudity: value })}
-              />
-              <FilterToggle
-                checked={setup.filters.excludeToys}
-                title="Excluir juguetes"
-                onChange={(value) => updateFilters({ excludeToys: value })}
-              />
-            </div>
+            <DynamicLimits
+              definitions={content.filters}
+              values={setup.filters}
+              onChange={(values) => updateFilters(values)}
+              showAdvanced={showAdvanced}
+            />
 
-            <button
-              className="advanced-toggle"
-              type="button"
-              onClick={() => setShowAdvanced((value) => !value)}
-            >
-              {showAdvanced
-                ? "Ocultar filtros avanzados"
-                : "Ver filtros avanzados"}
-            </button>
-            {showAdvanced && (
-              <div className="filter-list advanced">
-                <FilterToggle
-                  checked={setup.filters.excludeExplicitLanguage}
-                  title="Excluir lenguaje explícito"
-                  onChange={(value) =>
-                    updateFilters({ excludeExplicitLanguage: value })
-                  }
-                />
-                <FilterToggle
-                  checked={setup.filters.excludeFood}
-                  title="Excluir alimentos"
-                  onChange={(value) => updateFilters({ excludeFood: value })}
-                />
-                <FilterToggle
-                  checked={setup.filters.excludeTemperature}
-                  title="Excluir hielo o temperatura"
-                  onChange={(value) =>
-                    updateFilters({ excludeTemperature: value })
-                  }
-                />
-                <FilterToggle
-                  checked={setup.filters.excludeRoleplay}
-                  title="Excluir juego de roles"
-                  onChange={(value) =>
-                    updateFilters({ excludeRoleplay: value })
-                  }
-                />
-                <FilterToggle
-                  checked={setup.filters.excludeManualStimulation}
-                  title="Excluir masturbación"
-                  onChange={(value) =>
-                    updateFilters({ excludeManualStimulation: value })
-                  }
-                />
-
-                <label className="range-row">
-                  <span>
-                    <b>Riesgo de privacidad máximo</b>
-                    <small>{setup.filters.maxPrivacyRisk} de 3</small>
-                  </span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    value={setup.filters.maxPrivacyRisk}
-                    onChange={(event) =>
-                      updateFilters({
-                        maxPrivacyRisk: Number(event.target.value),
-                      })
-                    }
-                  />
-                </label>
-                <label className="range-row">
-                  <span>
-                    <b>Riesgo físico máximo</b>
-                    <small>{setup.filters.maxPhysicalRisk} de 3</small>
-                  </span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    value={setup.filters.maxPhysicalRisk}
-                    onChange={(event) =>
-                      updateFilters({
-                        maxPhysicalRisk: Number(event.target.value),
-                      })
-                    }
-                  />
-                </label>
-              </div>
+            {content.filters.some((definition) => definition.advanced) && (
+              <button
+                className="advanced-toggle"
+                type="button"
+                onClick={() => setShowAdvanced((value) => !value)}
+              >
+                {showAdvanced
+                  ? "Ocultar filtros avanzados"
+                  : "Ver filtros avanzados"}
+              </button>
             )}
 
             <label className="range-row cards-range">

@@ -175,7 +175,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       setup: {
         ...setup,
-        filters: { ...setup.filters, ...patch },
+        filters: { ...setup.filters, ...patch } as GameSetup["filters"],
       },
     });
   },

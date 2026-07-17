@@ -1,68 +1,26 @@
-# PecadoClub PWA v2.2.4 — census.ar
+# ¿Te animás? — Frontend 2.12.0
 
-Frontend React + TypeScript preparado para consumir el snapshot público seguro de Directus:
+PWA React + TypeScript con catálogo en vivo, filtros dinámicos y dirección adaptativa opcional.
 
-```text
-GET /items/pc_public_bundle
-```
+## Comandos
 
-No requiere ni incluye tokens de Directus.
-
-## Corrección v2.2.4 para EasyPanel
-
-Esta versión corrige dos problemas del paquete anterior:
-
-1. La etapa de build ya no usa `node:22-alpine`; usa `node:22-bookworm-slim`.
-2. `package-lock.json` ya no contiene URLs del registro interno usado durante la generación del proyecto. Todas las dependencias apuntan al registro público oficial de npm.
-
-## Despliegue en EasyPanel
-
-Subí el contenido de esta carpeta a la raíz del repositorio. Deben verse directamente:
-
-```text
-Dockerfile
-package.json
-package-lock.json
-.npmrc
-.dockerignore
-src/
-public/
-deploy/
-```
-
-En EasyPanel:
-
-- Método: Dockerfile
-- Puerto interno: `80`
-- Dominio: `census.ar`
-- Build context: raíz del repositorio
-
-No hace falta agregar un token de Directus.
-
-## Desarrollo local
-
-```powershell
+```bash
 npm ci
-npm run test
-npm run dev
-```
-
-## Build local
-
-```powershell
+npm test
 npm run build
 ```
 
-## Publicar cambios de contenido
+## Variables
 
-Después de editar contenido en Directus:
+Copiar `.env.example` y ajustar los dominios. En producción el navegador usa `/api/game-master`; Nginx reenvía esa ruta al servicio adaptativo para evitar problemas de CORS y configuraciones PWA antiguas.
 
-```powershell
-node .\publish-public-bundle.mjs
-node .\validate-public-api.mjs
-```
+## Cambios de esta versión
 
-
-## Corrección de ejecución v2.2.4
-
-Se eliminó un bucle de carga causado por la suscripción al store completo de Zustand. Ver `CORRECCION-PANTALLA-V2.2.4.md`.
+- distingue IA activa, modo local elegido y recuperación temporal;
+- comprueba `/health` del servicio adaptativo;
+- vuelve a intentar la IA en cada carta tras un fallo temporal;
+- consume `pc_filters` y elimina límites hardcodeados;
+- aplica historial persistente y cobertura de objetos seleccionados;
+- integra los campos nuevos de elementos y juguetes;
+- añade límite de error global;
+- renueva nombres de caché PWA.

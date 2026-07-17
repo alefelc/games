@@ -1,3 +1,5 @@
+import type { DynamicFilterDefinition, DynamicFilterValues } from "./lib/dynamicFilters";
+
 export type Id = string;
 export type ContentSource = "network" | "cache" | "bootstrap";
 
@@ -120,6 +122,10 @@ export interface ElementItem {
   is_optional: boolean;
   solo_compatible: boolean;
   solo_gender_scope: string;
+  visible_in_setup: boolean;
+  default_selected: boolean;
+  selection_priority: number;
+  guarantee_in_session: boolean;
   sort: number | null;
   image: Id | null;
 }
@@ -140,6 +146,10 @@ export interface Toy {
   requires_lubricant: boolean;
   solo_compatible: boolean;
   solo_gender_scope: string;
+  visible_in_setup: boolean;
+  default_selected: boolean;
+  selection_priority: number;
+  guarantee_in_session: boolean;
   sort: number | null;
   image: Id | null;
 }
@@ -314,6 +324,10 @@ export interface AppSettings {
   setup_step_4_label: string;
   setup_step_4_title: string;
   setup_step_4_subtitle: string;
+  cross_session_history_limit: number;
+  inventory_guarantee_after_cards: number;
+  inventory_minimum_cards_per_session: number;
+  inventory_preference_multiplier: number;
   game_master_enabled: boolean;
   game_master_default_on: boolean;
   game_master_title: string;
@@ -341,6 +355,7 @@ export interface ContentBundle {
   elements: ElementItem[];
   toys: Toy[];
   tags: Tag[];
+  filters: DynamicFilterDefinition[];
   sexes: Sex[];
   cards: Card[];
   deckCards: DeckCard[];
@@ -353,24 +368,7 @@ export interface ContentBundle {
   contentHash?: string;
 }
 
-export interface SafetyFilters {
-  excludePhotoVideo: boolean;
-  excludeThirdParties: boolean;
-  excludePublicPlaces: boolean;
-  excludeRestraint: boolean;
-  excludePenetration: boolean;
-  excludeAnal: boolean;
-  excludeOral: boolean;
-  excludeNudity: boolean;
-  excludeExplicitLanguage: boolean;
-  excludeFood: boolean;
-  excludeTemperature: boolean;
-  excludeRoleplay: boolean;
-  excludeManualStimulation: boolean;
-  excludeToys: boolean;
-  maxPrivacyRisk: number;
-  maxPhysicalRisk: number;
-}
+export type SafetyFilters = DynamicFilterValues;
 
 export interface GameSetup {
   playerOne: string;
@@ -430,7 +428,12 @@ export interface SessionState {
   gmReaction: GameMasterReaction;
   gmEvents: GameMasterEvent[];
   gmFallbackUsed: boolean;
-  gmProvider: "openai" | "adaptive_fallback" | "frontend_fallback" | null;
+  gmProvider:
+    | "openai"
+    | "adaptive_fallback"
+    | "frontend_fallback"
+    | "local"
+    | null;
   gmModel: string | null;
   gmLatencyMs: number | null;
 }
@@ -442,6 +445,7 @@ export interface EligibilityContext {
   selectedElementIds: Set<Id>;
   selectedToyIds: Set<Id>;
   filters: SafetyFilters;
+  filterDefinitions?: DynamicFilterDefinition[];
   currentPlayerSexId?: Id | null;
   partnerSexId?: Id | null;
 }

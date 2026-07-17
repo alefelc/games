@@ -13,6 +13,7 @@ import {
   cardToySchema,
   deckCardSchema,
   deckSchema,
+  dynamicFilterSchema,
   elementSchema,
   gameSchema,
   levelSchema,
@@ -24,6 +25,7 @@ import {
   themeSchema,
   toySchema,
 } from "./schemas";
+import { fallbackFilterDefinitions } from "../lib/dynamicFilters";
 
 const FALLBACK_SEXES = [
   {
@@ -61,6 +63,12 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   );
   const toys = sortByOrder(raw.toys.map((item) => toySchema.parse(item)));
   const tags = sortByOrder(raw.tags.map((item) => tagSchema.parse(item)));
+  const rawFilters = Array.isArray(raw.filters) && raw.filters.length
+    ? raw.filters
+    : fallbackFilterDefinitions(raw.settings);
+  const filters = sortByOrder(
+    rawFilters.map((item) => dynamicFilterSchema.parse(item)),
+  );
   const rawSexes =
     Array.isArray(raw.sexes) && raw.sexes.length
       ? raw.sexes
@@ -89,6 +97,7 @@ function validateBundle(raw: ContentBundle): ContentBundle {
     elements,
     toys,
     tags,
+    filters,
     sexes,
     cards,
     deckCards,
@@ -128,6 +137,9 @@ async function buildLiveBundle(
     elements: catalog.elements,
     toys: catalog.toys,
     tags: catalog.tags,
+    filters: catalog.filters.length
+      ? catalog.filters
+      : fallbackFilterDefinitions(settingsSchema.parse(runtime.settings)),
     sexes: catalog.sexes,
     cards: catalog.cards,
     deckCards: catalog.deckCards,

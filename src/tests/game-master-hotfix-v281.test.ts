@@ -1,46 +1,28 @@
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
 
-describe('Game Master hotfix v2.8.1', () => {
-  it('no queda activado por defecto', () => {
-    const session = readFileSync(
-      'src/engine/session.ts',
-      'utf8',
-    );
-
-    expect(session).toContain(
-      'gameMasterEnabled: false',
-    );
+describe("dirección adaptativa v2.12.0", () => {
+  it("comprueba disponibilidad real", () => {
+    const api = readFileSync("src/api/game-master.ts", "utf8");
+    expect(api).toContain("checkGameMasterAvailability");
+    expect(api).toContain("/health");
+    expect(api).toContain("4_500");
   });
 
-  it('comprueba disponibilidad antes de usarlo', () => {
-    const api = readFileSync(
-      'src/api/game-master.ts',
-      'utf8',
-    );
-
-    expect(api).toContain(
-      'checkGameMasterAvailability',
-    );
-    expect(api).toContain('2_200');
-    expect(api).toContain('4_500');
+  it("respeta el modo local elegido", () => {
+    const engine = readFileSync("src/engine/game-master.ts", "utf8");
+    expect(engine).toContain("if (!setup.gameMasterEnabled)");
+    expect(engine).toContain("drawNextCard");
   });
 
-  it('mantiene el sorteo normal cuando está apagado', () => {
-    const store = readFileSync(
-      'src/store/useGameStore.ts',
-      'utf8',
-    );
-
-    expect(store).toContain(
-      'if (!setup.gameMasterEnabled)',
-    );
-    expect(store).toContain('drawNextCard');
+  it("no deja una pantalla vacía", () => {
+    const main = readFileSync("src/main.tsx", "utf8");
+    expect(main).toContain("AppErrorBoundary");
   });
 
-  it('evita una pantalla completamente vacía', () => {
-    const main = readFileSync('src/main.tsx', 'utf8');
-
-    expect(main).toContain('AppErrorBoundary');
+  it("distingue caída temporal de modo local", () => {
+    const screen = readFileSync("src/screens/GameScreen.tsx", "utf8");
+    expect(screen).toContain("Recuperación temporal");
+    expect(screen).toContain("Modo local elegido");
   });
 });

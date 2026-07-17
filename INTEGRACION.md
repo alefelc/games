@@ -1,68 +1,33 @@
-# Integración frontend v2.11.0
+# Integración 2.12.0
 
-## 1. Carga de Directus
+## Catálogo
 
-Agregar `pc_filters` al bundle de contenido y solicitar:
-
-```text
-id,key,label,description,icon,filter_kind,card_fields,numeric_field,default_enabled,default_number,min_value,max_value,visible,advanced,sort,status
-```
-
-Filtro de lectura: `game = juego actual`, `status = published`; orden `sort`.
-
-También ampliar las consultas de `pc_elements` y `pc_toys` con:
+El frontend obtiene la configuración y el catálogo publicado. Incluye `pc_filters` con los campos:
 
 ```text
-visible_in_setup,default_selected,selection_priority,guarantee_in_session
+id,game,status,key,label,description,icon,filter_kind,card_fields,numeric_field,default_enabled,default_number,min_value,max_value,visible,advanced,sort
 ```
 
-Y `pc_app_settings` con los campos creados por el instalador.
+Si un bundle viejo todavía no contiene filtros, la aplicación crea temporalmente los 16 límites compatibles y continúa funcionando.
 
-## 2. Tipos
+## Dirección adaptativa
 
-Añadir al `ContentBundle`:
+En producción el navegador llama a:
 
-```ts
-filters: DynamicFilterDefinition[];
+```text
+/api/game-master/health
+/api/game-master/v1/game-master/next
 ```
 
-Añadir a elementos y juguetes los cuatro campos opcionales indicados arriba. Añadir a configuración los campos de historial, cobertura e IA.
+El Nginx incluido reenvía esas rutas a `https://gm.teanimas.com/`. La preferencia del usuario se respeta:
 
-## 3. “Marquen los límites”
+- activada: intenta la IA en cada carta;
+- desactivada: usa selección local intencional;
+- error temporal: usa una carta local sólo para ese turno y vuelve a intentar la IA en el siguiente.
 
-Reemplazar la lista fija de interruptores por `DynamicLimits.tsx`. Los valores iniciales salen de `buildDynamicFilterDefaults(content.filters)` y no de constantes del frontend.
+## Despliegue
 
-El significado de `default_enabled` es directo: el límite aparece marcado y excluye esas cartas por defecto.
-
-## 4. Elegibilidad
-
-La función `eligibleCards` debe aplicar `cardPassesDynamicFilters(card, content.filters, setup.filters)`.
-
-Para objetos:
-
-- vínculo `required`: la carta solo es elegible si el elemento/juguete está seleccionado;
-- vínculo `alternative`: es elegible si al menos una alternativa vinculada está seleccionada;
-- seleccionar objetos no debe convertirlos en un filtro de inclusión exclusiva;
-- `excludeToys=true` siempre excluye `contains_toy=true`.
-
-## 5. Sorteo
-
-Reemplazar `src/lib/session.ts` por `session.v5.2.2.ts` y copiar `persistentHistory.ts` e `inventoryCoverage.ts` a `src/lib`.
-
-La memoria se guarda por juego + modo + cantidad de jugadores. No se reinicia al iniciar una nueva partida. Solo se reinicia cuando el conjunto compatible ya se agotó.
-
-## 6. IA
-
-Usar `resilientGameMaster.ts`. El bloque `catch` no puede ejecutar ninguna variante de:
-
-```ts
-setUseAI(false)
-setMode('local')
-localStorage.setItem('...', 'local')
-```
-
-El resultado `temporary-local` debe mostrarse, como máximo, con un aviso discreto para esa carta. En el siguiente sorteo se vuelve a llamar automáticamente al game-master.
-
-## 7. Caché PWA
-
-Subir la versión del service worker y del cache name. Si no se hace, el navegador puede seguir ejecutando el selector anterior aunque el servidor ya tenga la compilación nueva.
+1. Publicar primero `te-animas-game-master`.
+2. Verificar `/health` y `/ready`.
+3. Publicar el frontend.
+4. Abrir la app en una ventana privada o borrar la PWA anterior una vez para forzar la renovación inicial del service worker.

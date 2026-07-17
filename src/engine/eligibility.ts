@@ -1,4 +1,5 @@
 import type { Card, ContentBundle, EligibilityContext, Id } from "../types";
+import { cardPassesDynamicFilters } from "../lib/dynamicFilters";
 
 function indexByCard<T extends { card: Id }>(rows: T[]): Map<Id, T[]> {
   const map = new Map<Id, T[]>();
@@ -149,26 +150,15 @@ export function isCardEligible(
       return false;
   }
 
-  const filters = context.filters;
-  if (filters.excludePhotoVideo && (card.contains_photo || card.contains_video))
+  if (
+    !cardPassesDynamicFilters(
+      card as unknown as Record<string, unknown>,
+      context.filterDefinitions,
+      context.filters,
+    )
+  ) {
     return false;
-  if (filters.excludeThirdParties && card.contains_third_parties) return false;
-  if (filters.excludePublicPlaces && card.contains_public_place) return false;
-  if (filters.excludeRestraint && card.contains_restraint) return false;
-  if (filters.excludeAnal && card.contains_anal) return false;
-  if (filters.excludePenetration && card.contains_penetration) return false;
-  if (filters.excludeOral && card.contains_oral) return false;
-  if (filters.excludeNudity && card.contains_nudity) return false;
-  if (filters.excludeExplicitLanguage && card.contains_explicit_language)
-    return false;
-  if (filters.excludeFood && card.contains_food) return false;
-  if (filters.excludeTemperature && card.contains_temperature) return false;
-  if (filters.excludeRoleplay && card.contains_roleplay) return false;
-  if (filters.excludeManualStimulation && card.contains_manual_stimulation)
-    return false;
-  if (filters.excludeToys && card.contains_toy) return false;
-  if (card.privacy_risk > filters.maxPrivacyRisk) return false;
-  if (card.physical_risk > filters.maxPhysicalRisk) return false;
+  }
 
   if (
     !hasRequiredResources(

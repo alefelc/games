@@ -209,6 +209,10 @@ const SETTINGS_FIELDS = [
   "setup_step_4_label",
   "setup_step_4_title",
   "setup_step_4_subtitle",
+  "cross_session_history_limit",
+  "inventory_guarantee_after_cards",
+  "inventory_minimum_cards_per_session",
+  "inventory_preference_multiplier",
   "game_master_enabled",
   "game_master_default_on",
   "game_master_title",
@@ -281,6 +285,10 @@ const ELEMENT_FIELDS = [
   "is_optional",
   "solo_compatible",
   "solo_gender_scope",
+  "visible_in_setup",
+  "default_selected",
+  "selection_priority",
+  "guarantee_in_session",
   "sort",
   "image",
 ];
@@ -301,6 +309,10 @@ const TOY_FIELDS = [
   "requires_lubricant",
   "solo_compatible",
   "solo_gender_scope",
+  "visible_in_setup",
+  "default_selected",
+  "selection_priority",
+  "guarantee_in_session",
   "sort",
   "image",
 ];
@@ -313,6 +325,26 @@ const TAG_FIELDS = [
   "slug",
   "category",
   "color",
+  "sort",
+];
+
+const FILTER_FIELDS = [
+  "id",
+  "game",
+  "status",
+  "key",
+  "label",
+  "description",
+  "icon",
+  "filter_kind",
+  "card_fields",
+  "numeric_field",
+  "default_enabled",
+  "default_number",
+  "min_value",
+  "max_value",
+  "visible",
+  "advanced",
   "sort",
 ];
 
@@ -538,6 +570,7 @@ export interface LiveCatalogRecord {
   elements: unknown[];
   toys: unknown[];
   tags: unknown[];
+  filters: unknown[];
   sexes: unknown[];
   cards: unknown[];
   deckCards: unknown[];
@@ -563,6 +596,7 @@ export async function readLiveCatalog(
     elements,
     toys,
     tags,
+    filters,
     sexes,
     cards,
     deckCards,
@@ -584,6 +618,7 @@ export async function readLiveCatalog(
     readMany("pc_elements", ELEMENT_FIELDS, common, signal),
     readMany("pc_toys", TOY_FIELDS, common, signal),
     readMany("pc_tags", TAG_FIELDS, common, signal),
+    readMany("pc_filters", FILTER_FIELDS, common, signal),
     readMany("pc_sexes", SEX_FIELDS, common, signal),
     readMany("pc_cards", CARD_FIELDS, common, signal),
     readMany(
@@ -643,6 +678,7 @@ export async function readLiveCatalog(
     elements,
     toys,
     tags,
+    filters,
     sexes,
     cards,
     deckCards: deckCards.filter((row) => {

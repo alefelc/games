@@ -165,6 +165,49 @@ async function requestOnce(
   }
 }
 
+export type GameMasterAvailability =
+  | { status: "online"; version: string | null }
+  | { status: "offline"; reason: string };
+
+export async function checkGameMasterAvailability(
+  timeoutMs = 4_500,
+): Promise<GameMasterAvailability> {
+  if (!env.gameMasterUrl) {
+    return { status: "offline", reason: "La dirección adaptativa no está configurada." };
+  }
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${env.gameMasterUrl}/health`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      return {
+        status: "offline",
+        reason: `El servicio respondió ${response.status}.`,
+      };
+    }
+    const payload = (await response.json()) as { version?: unknown };
+    return {
+      status: "online",
+      version: typeof payload.version === "string" ? payload.version : null,
+    };
+  } catch (error) {
+    const reason =
+      error instanceof DOMException && error.name === "AbortError"
+        ? "La comprobación excedió el tiempo permitido."
+        : "No se pudo contactar al servicio adaptativo.";
+    return { status: "offline", reason };
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 export async function requestGameMasterDecision({
   content,
   setup,

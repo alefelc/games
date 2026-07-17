@@ -9,6 +9,30 @@ import type {
 import { eligibleCards } from "./eligibility";
 import { weightedPick } from "./random";
 import { preferFreshCards, recordCardSeen } from "./card-history";
+import {
+  buildDynamicFilterDefaults,
+  fallbackFilterDefinitions,
+} from "../lib/dynamicFilters";
+import { chooseInventoryPool } from "../lib/inventoryCoverage";
+import {
+  buildHistoryKey,
+  readCardHistory,
+  rememberCard,
+  resetCardHistory,
+} from "../lib/persistentHistory";
+
+function historyContext(content: ContentBundle, setup: GameSetup) {
+  const mode = content.modes.find((item) => item.id === setup.modeId);
+  const players: 1 | 2 =
+    mode?.slug === "solitario" || mode?.turn_mode === "single" ? 1 : 2;
+  return {
+    key: buildHistoryKey(content.game?.id ?? "default", setup.modeId, players),
+    limit: Math.max(
+      50,
+      content.settings?.cross_session_history_limit || 800,
+    ),
+  };
+}
 
 export function createDefaultSetup(content: ContentBundle): GameSetup {
   const safeLevels = content.levels
@@ -42,26 +66,19 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
     modeId: defaultMode,
     levelIds: defaultLevels,
     deckIds: compatibleDecks.map((deck) => deck.id),
-    elementIds: [],
-    toyIds: [],
-    filters: {
-      excludePhotoVideo: content.settings.default_exclude_photo_video,
-      excludeThirdParties: content.settings.default_exclude_third_parties,
-      excludePublicPlaces: content.settings.default_exclude_public_places,
-      excludeRestraint: content.settings.default_exclude_restraint,
-      excludePenetration: false,
-      excludeAnal: false,
-      excludeOral: false,
-      excludeNudity: false,
-      excludeExplicitLanguage: false,
-      excludeFood: false,
-      excludeTemperature: false,
-      excludeRoleplay: false,
-      excludeManualStimulation: false,
-      excludeToys: false,
-      maxPrivacyRisk: 1,
-      maxPhysicalRisk: 1,
-    },
+    elementIds: (content.elements ?? [])
+      .filter((item) => item.visible_in_setup && item.default_selected)
+      .sort((a, b) => a.selection_priority - b.selection_priority)
+      .map((item) => item.id),
+    toyIds: (content.toys ?? [])
+      .filter((item) => item.visible_in_setup && item.default_selected)
+      .sort((a, b) => a.selection_priority - b.selection_priority)
+      .map((item) => item.id),
+    filters: buildDynamicFilterDefaults(
+      content.filters?.length
+        ? content.filters
+        : fallbackFilterDefinitions(content.settings),
+    ),
     maxCards: Math.min(
       20,
       Math.max(1, content.settings.maximum_cards_per_session || 20),
@@ -80,6 +97,7 @@ export function createSession(
   const mode =
     content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   const startingLevel = resolveStartingLevel(content, setup, mode);
+  const { key } = historyContext(content, setup);
   return {
     id: crypto.randomUUID(),
     startedAt: new Date().toISOString(),
@@ -88,7 +106,7 @@ export function createSession(
     currentLevelId: startingLevel,
     currentPlayer: 0,
     revealed: false,
-    usedCardIds: [],
+    usedCardIds: readCardHistory(key),
     completedCardIds: [],
     skippedCardIds: [],
     resolvedCount: 0,
@@ -251,6 +269,9 @@ export function getDrawCandidatePool(
     selectedElementIds: new Set(setup.elementIds),
     selectedToyIds: new Set(setup.toyIds),
     filters: setup.filters,
+    filterDefinitions: content.filters?.length
+      ? content.filters
+      : fallbackFilterDefinitions(content.settings),
     currentPlayerSexId:
       player === 0 ? setup.playerOneSexId : setup.playerTwoSexId,
     partnerSexId: isSolo
@@ -267,7 +288,7 @@ export function getDrawCandidatePool(
     mode,
     resolvedEvent,
   );
-  const used = new Set(session.usedCardIds);
+  let used = new Set(session.usedCardIds);
   let drawPlayer = session.currentPlayer;
 
   const eligibleFor = (player: 0 | 1) =>
@@ -298,10 +319,35 @@ export function getDrawCandidatePool(
     }
   }
 
+  if (!candidates.length && session.usedCardIds.length) {
+    const currentSessionIds = new Set([
+      ...session.completedCardIds,
+      ...session.skippedCardIds,
+    ]);
+    used = currentSessionIds;
+    resetCardHistory(historyContext(content, setup).key);
+    drawPlayer = session.currentPlayer;
+    allEligible = eligibleFor(drawPlayer);
+    candidates = targetLevels
+      ? allEligible.filter((card) => targetLevels.has(card.level))
+      : allEligible;
+    if (!candidates.length && mode.slug !== "solo-previa") {
+      candidates = allEligible;
+    }
+  }
+
+  const inventoryAware = chooseInventoryPool(
+    candidates,
+    allEligible,
+    content,
+    setup,
+    session,
+  );
+
   return {
     player: drawPlayer,
-    candidates: preferFreshCards(candidates),
-    exhausted: candidates.length === 0,
+    candidates: preferFreshCards(inventoryAware),
+    exhausted: inventoryAware.length === 0,
   };
 }
 
@@ -316,7 +362,12 @@ export function applyCardSelection(
     hostMessage?: string | null;
     strategy?: string | null;
     fallbackUsed?: boolean;
-    provider?: "openai" | "adaptive_fallback" | "frontend_fallback" | null;
+    provider?:
+      | "openai"
+      | "adaptive_fallback"
+      | "frontend_fallback"
+      | "local"
+      | null;
     model?: string | null;
     latencyMs?: number | null;
   },
@@ -362,8 +413,16 @@ export function drawNextCard(
     };
   }
 
+  const { key, limit } = historyContext(content, setup);
+  rememberCard(key, card.id, limit);
+
   return {
-    session: applyCardSelection(session, card, pool.player),
+    session: applyCardSelection(session, card, pool.player, {
+      fallbackUsed: false,
+      provider: "local",
+      model: "local-browser",
+      latencyMs: 0,
+    }),
     card,
     exhausted: false,
   };
@@ -414,6 +473,9 @@ export function previewEligibleCount(
     selectedElementIds: new Set(setup.elementIds),
     selectedToyIds: new Set(setup.toyIds),
     filters: setup.filters,
+    filterDefinitions: content.filters?.length
+      ? content.filters
+      : fallbackFilterDefinitions(content.settings),
   };
 
   const one = eligibleCards(content, {

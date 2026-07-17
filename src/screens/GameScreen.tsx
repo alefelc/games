@@ -199,11 +199,17 @@ export function GameScreen({
           }
         : session.gmProvider === "frontend_fallback"
           ? {
-              label: "Modo local",
-              detail: "La partida continúa sin conexión adaptativa",
+              label: "Recuperación temporal",
+              detail: "Falló esta carta; la IA se reintentará en la próxima",
               tone: "offline",
             }
-          : {
+          : session.gmProvider === "local"
+            ? {
+                label: "Modo local elegido",
+                detail: "La selección se realiza en este dispositivo",
+                tone: "fallback",
+              }
+            : {
               label: "Dirección adaptativa activa",
               detail: "Preparando la siguiente decisión",
               tone: "pending",
@@ -384,8 +390,7 @@ export function GameScreen({
             </button>
           </div>
 
-          {setup.gameMasterEnabled && (
-            <section className="settings-menu-section">
+          <section className="settings-menu-section">
               <span className="settings-menu-label">Estado adaptativo</span>
 
               <div
@@ -418,7 +423,6 @@ export function GameScreen({
                 </dl>
               )}
             </section>
-          )}
 
           {canChangeLevel && (
             <section className="settings-menu-section">
