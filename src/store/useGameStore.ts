@@ -16,6 +16,7 @@ import {
   type DrawResult,
 } from "../engine/session";
 import { drawAdaptiveCard } from "../engine/game-master";
+import { normalizeSceneRole } from "../lib/sceneRole";
 
 export type AppStage = "age" | "home" | "setup" | "game" | "paused" | "summary";
 
@@ -89,7 +90,12 @@ function eventFromCurrentCard(
     playerIndex: session.currentPlayer,
     intensity: card.intensity,
     continuityGroup: card.gm_continuity_group,
-    sceneRole: card.gm_scene_role,
+    sceneRole: normalizeSceneRole(card.gm_scene_role, {
+      levelOrder: content.levels.find((level) => level.id === card.level)?.intensity_order,
+      intensity: card.intensity,
+      escalationScore: card.gm_escalation_score,
+      recoveryScore: card.gm_recovery_score,
+    }),
     createdAt: new Date().toISOString(),
   };
 }

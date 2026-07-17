@@ -7,6 +7,7 @@ import type {
   GameSetup,
   SessionState,
 } from "../types";
+import { normalizeSceneRole } from "../lib/sceneRole";
 import {
   recentAnatomyFocuses,
   recentCardIds,
@@ -231,7 +232,12 @@ function candidatePayload(content: ContentBundle, card: Card) {
     gm_recovery_score: normalizeFivePointScore(card.gm_recovery_score, 1),
     gm_novelty_score: normalizeFivePointScore(card.gm_novelty_score, 2),
     gm_continuity_group: card.gm_continuity_group,
-    gm_scene_role: card.gm_scene_role,
+    gm_scene_role: normalizeSceneRole(card.gm_scene_role, {
+      levelOrder: level?.intensity_order ?? card.intensity,
+      intensity: card.intensity,
+      escalationScore: normalizeEscalationScore(card.gm_escalation_score),
+      recoveryScore: normalizeFivePointScore(card.gm_recovery_score, 1),
+    }),
   };
 }
 

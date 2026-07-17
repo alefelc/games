@@ -281,7 +281,13 @@ export const cardSchema = z.object({
   gm_recovery_score: number.optional().default(0),
   gm_novelty_score: number.optional().default(3),
   gm_continuity_group: nullableString,
-  gm_scene_role: z.string().optional().default("continuation"),
+  gm_scene_role: z
+    .unknown()
+    .optional()
+    .default("continuation")
+    .transform((value) =>
+      typeof value === "string" ? value : "continuation",
+    ),
 });
 
 export const deckCardSchema = z.object({

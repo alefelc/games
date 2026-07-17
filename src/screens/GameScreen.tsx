@@ -10,6 +10,7 @@ import type {
 import { Brand } from "../components/Brand";
 import { Icon } from "../components/Icon";
 import { personalizeCardText } from "../utils/personalize-card-text";
+import { resolveGamePaceMessage } from "../utils/game-pace-message";
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -184,6 +185,15 @@ export function GameScreen({
     ? renderText(session.gmHostMessage)
     : null;
 
+  const gamePaceMessage = setup.gameMasterEnabled
+    ? resolveGamePaceMessage({
+        hostMessage: personalizedHostMessage,
+        cardText: personalizedCardText,
+        phase: session.gmPhase,
+        strategy: session.gmStrategy,
+      })
+    : null;
+
   const gameMasterStatus =
     session.gmProvider === "openai"
       ? {
@@ -200,9 +210,7 @@ export function GameScreen({
         : session.gmProvider === "frontend_fallback"
           ? {
               label: "Recuperación temporal",
-              detail: session.gmErrorCode
-                ? `Falla ${session.gmErrorCode}; se reintentará en la próxima`
-                : "Falló esta carta; la IA se reintentará en la próxima",
+              detail: "No pudimos adaptar esta carta; volveremos a intentarlo en la próxima",
               tone: "offline",
             }
           : session.gmProvider === "local"
@@ -332,12 +340,6 @@ export function GameScreen({
 
   const showSettingsButton = canChangeLevel || setup.gameMasterEnabled;
 
-  const responseTime =
-    session.gmLatencyMs === null
-      ? null
-      : session.gmLatencyMs >= 1000
-        ? `${(session.gmLatencyMs / 1000).toFixed(1)} s`
-        : `${session.gmLatencyMs} ms`;
 
   const levelStyle = {
     "--level-color": level.color,
@@ -407,55 +409,6 @@ export function GameScreen({
                 </div>
               </div>
 
-              {(session.gmModel || responseTime || session.gmErrorCode || session.gmEndpoint || session.gmRequestId || session.gmApiVersion) && (
-                <dl className="adaptive-technical-data">
-                  {session.gmModel && (
-                    <>
-                      <dt>Modelo</dt>
-                      <dd>{session.gmModel}</dd>
-                    </>
-                  )}
-
-                  {responseTime && (
-                    <>
-                      <dt>Respuesta</dt>
-                      <dd>{responseTime}</dd>
-                    </>
-                  )}
-
-                  {session.gmApiVersion && (
-                    <>
-                      <dt>API</dt>
-                      <dd>{session.gmApiVersion}</dd>
-                    </>
-                  )}
-
-                  {session.gmErrorCode && (
-                    <>
-                      <dt>Error</dt>
-                      <dd>{session.gmErrorCode}</dd>
-                    </>
-                  )}
-
-                  {session.gmEndpoint && (
-                    <>
-                      <dt>Ruta</dt>
-                      <dd className="technical-break">{session.gmEndpoint}</dd>
-                    </>
-                  )}
-
-                  {session.gmRequestId && (
-                    <>
-                      <dt>Solicitud</dt>
-                      <dd className="technical-break">{session.gmRequestId}</dd>
-                    </>
-                  )}
-                </dl>
-              )}
-
-              {session.gmErrorReason && (
-                <p className="adaptive-error-reason">{session.gmErrorReason}</p>
-              )}
             </section>
 
           {canChangeLevel && (
@@ -506,10 +459,10 @@ export function GameScreen({
           <span style={{ width: `${progress}%` }} />
         </div>
 
-        {setup.gameMasterEnabled && personalizedHostMessage && (
+        {setup.gameMasterEnabled && gamePaceMessage && (
           <div className="game-master-message">
             <span>Ritmo de la partida</span>
-            <p>{personalizedHostMessage}</p>
+            <p>{gamePaceMessage}</p>
           </div>
         )}
 
