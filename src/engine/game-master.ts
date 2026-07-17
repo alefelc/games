@@ -8,7 +8,6 @@ import type {
 } from "../types";
 import {
   applyCardSelection,
-  drawNextCard,
   getDrawCandidatePool,
   type DrawResult,
 } from "./session";
@@ -132,10 +131,6 @@ export async function drawAdaptiveCard(
   session: SessionState,
   resolvedEvent: GameMasterEvent | null,
 ): Promise<DrawResult> {
-  if (!setup.gameMasterEnabled) {
-    return drawNextCard(content, setup, session);
-  }
-
   const pool = getDrawCandidatePool(content, setup, session, resolvedEvent);
   if (pool.exhausted || !pool.candidates.length) {
     return { session, card: null, exhausted: true };
@@ -144,6 +139,9 @@ export async function drawAdaptiveCard(
   try {
     const candidates = rankCandidates(pool.candidates, session, resolvedEvent);
 
+    // La dirección adaptativa debe intentarse siempre que el frontend tenga
+    // configurado su endpoint. Los flags administrativos no pueden convertir
+    // silenciosamente una partida completa a modo local antes de hacer la llamada.
     const decision = await requestGameMasterDecision({
       content,
       setup,
