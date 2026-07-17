@@ -1,33 +1,33 @@
-# Integración 2.12.0
-
-## Catálogo
-
-El frontend obtiene la configuración y el catálogo publicado. Incluye `pc_filters` con los campos:
-
-```text
-id,game,status,key,label,description,icon,filter_kind,card_fields,numeric_field,default_enabled,default_number,min_value,max_value,visible,advanced,sort
-```
-
-Si un bundle viejo todavía no contiene filtros, la aplicación crea temporalmente los 16 límites compatibles y continúa funcionando.
+# Integración 2.13.2
 
 ## Dirección adaptativa
 
-En producción el navegador llama a:
+El frontend intenta la URL declarada en `VITE_GAME_MASTER_URL` y la ruta del mismo origen `/api/game-master`.
+
+Variables:
 
 ```text
-/api/game-master/health
-/api/game-master/v1/game-master/next
+VITE_GAME_MASTER_URL=https://DOMINIO-API
+GAME_MASTER_UPSTREAM=https://DOMINIO-API
 ```
 
-El Nginx incluido reenvía esas rutas a `https://gm.teanimas.com/`. La preferencia del usuario se respeta:
+`VITE_GAME_MASTER_URL` es una variable de compilación. Cambiarla exige reconstruir el frontend.
 
-- activada: intenta la IA en cada carta;
-- desactivada: usa selección local intencional;
-- error temporal: usa una carta local sólo para ese turno y vuelve a intentar la IA en el siguiente.
+## Contrato requerido
 
-## Despliegue
+La API debe informar en `/health`:
 
-1. Publicar primero `te-animas-game-master`.
-2. Verificar `/health` y `/ready`.
-3. Publicar el frontend.
-4. Abrir la app en una ventana privada o borrar la PWA anterior una vez para forzar la renovación inicial del service worker.
+```json
+{
+  "version": "1.8.3",
+  "request_contract": "v6-scene-role-normalized"
+}
+```
+
+El frontend convierte cualquier valor de `gm_scene_role` a uno de:
+
+```text
+starter | bridge | continuation | climax | recovery | closer
+```
+
+La API 1.8.3 vuelve a normalizarlo de forma defensiva.
