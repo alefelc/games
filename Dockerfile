@@ -24,7 +24,7 @@ ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=2.11.0
+ARG BUILD_RELEASE=2.11.1-ai-proxy
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
@@ -34,12 +34,15 @@ ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_CONTENT_CACHE_HOURS=${VITE_CONTENT_CACHE_HOURS} \
     BUILD_RELEASE=${BUILD_RELEASE}
 
-RUN echo "Building release $BUILD_RELEASE with adaptive service $VITE_GAME_MASTER_URL" \
-    && npm run build
+RUN echo "Building release $BUILD_RELEASE with same-origin adaptive proxy" \
+    && npm run build \
+    && printf '{"frontend_release":"%s","game_master_route":"/api/game-master","built_at":"%s"}\n' \
+      "$BUILD_RELEASE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      > /app/dist/build-info.json
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.11.0"
+LABEL org.opencontainers.image.version="2.11.1-ai-proxy"
 
 COPY deploy/nginx-container.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
