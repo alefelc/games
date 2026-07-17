@@ -110,7 +110,9 @@ export async function requestGameMasterDecision({
   }
 
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 16_000);
+  // El backend puede intentar el modelo principal y luego otro modelo de IA.
+  // No se debe abortar desde el navegador antes de que termine esa recuperación.
+  const timeout = window.setTimeout(() => controller.abort(), 36_000);
 
   try {
     const mode = content.modes.find((item) => item.id === setup.modeId);
@@ -173,7 +175,10 @@ export async function requestGameMasterDecision({
     });
 
     if (!response.ok) {
-      throw new Error(`La dirección adaptativa respondió ${response.status}.`);
+      const details = (await response.text()).slice(0, 500);
+      throw new Error(
+        `La dirección adaptativa respondió ${response.status}${details ? `: ${details}` : ""}.`,
+      );
     }
 
     return responseSchema.parse(await response.json());
