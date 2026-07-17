@@ -78,6 +78,46 @@ function parseJsonSafely(text: string): unknown {
   }
 }
 
+function clampScore(value: number, min: number, max: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function normalizeFivePointScore(value: number, fallback: number) {
+  const score = clampScore(value, 0, 10, fallback);
+  return score <= 5 ? score : Math.min(5, Math.ceil(score / 2));
+}
+
+function normalizeEscalationScore(value: number) {
+  const score = clampScore(value, -10, 10, 0);
+  return score <= 3 ? Math.max(-2, score) : Math.min(3, Math.round(score / 3));
+}
+
+function requestIssueSummary(payload: unknown) {
+  if (!payload || typeof payload !== "object" || !("issues" in payload)) return "";
+  const issues = (payload as { issues?: unknown }).issues;
+  if (!Array.isArray(issues)) return "";
+
+  const summary = issues
+    .slice(0, 5)
+    .map((issue) => {
+      if (!issue || typeof issue !== "object") return "";
+      const field =
+        "field" in issue && typeof issue.field === "string"
+          ? issue.field
+          : "solicitud";
+      const message =
+        "message" in issue && typeof issue.message === "string"
+          ? issue.message
+          : "valor inválido";
+      return `${field}: ${message}`;
+    })
+    .filter(Boolean)
+    .join("; ");
+
+  return summary ? ` Detalle: ${summary}` : "";
+}
+
 export function normalizeGameMasterError(error: unknown): GameMasterErrorDetails {
   if (error instanceof GameMasterClientError) return error.details;
 
@@ -184,12 +224,12 @@ function candidatePayload(content: ContentBundle, card: Card) {
     penetration_method: card.penetration_method,
     reciprocal_action: card.reciprocal_action,
     tags: tagSlugsForCard(content, card.id),
-    gm_escalation_score: card.gm_escalation_score,
-    gm_energy_score: card.gm_energy_score,
-    gm_intimacy_score: card.gm_intimacy_score,
-    gm_humor_score: card.gm_humor_score,
-    gm_recovery_score: card.gm_recovery_score,
-    gm_novelty_score: card.gm_novelty_score,
+    gm_escalation_score: normalizeEscalationScore(card.gm_escalation_score),
+    gm_energy_score: normalizeFivePointScore(card.gm_energy_score, 2),
+    gm_intimacy_score: normalizeFivePointScore(card.gm_intimacy_score, 2),
+    gm_humor_score: normalizeFivePointScore(card.gm_humor_score, 0),
+    gm_recovery_score: normalizeFivePointScore(card.gm_recovery_score, 1),
+    gm_novelty_score: normalizeFivePointScore(card.gm_novelty_score, 2),
     gm_continuity_group: card.gm_continuity_group,
     gm_scene_role: card.gm_scene_role,
   };
@@ -267,11 +307,12 @@ async function requestOnce(
         payloadBody && typeof payloadBody === "object" && "error" in payloadBody
           ? String((payloadBody as { error?: unknown }).error || "")
           : text.slice(0, 500);
+      const issueSummary = requestIssueSummary(payloadBody);
       throw new GameMasterClientError({
         status: response.status,
         code: responseCode(response.status, payloadBody),
         reason: sanitizeReason(
-          `La dirección adaptativa respondió ${response.status}${serverMessage ? `: ${serverMessage}` : ""}.`,
+          `La dirección adaptativa respondió ${response.status}${serverMessage ? `: ${serverMessage}` : ""}.${issueSummary}`,
         ),
         endpoint,
         requestId,

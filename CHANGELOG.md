@@ -1,4 +1,7 @@
-# Cambios 2.13.0
+# Cambios 2.13.1
+
+- Normalización defensiva de puntajes adaptativos 1–10 al contrato interno.
+- Los errores 422 muestran los campos exactos rechazados por la API.
 
 - Se corrigió la activación real de la dirección adaptativa.
 - Se agregó comprobación de salud antes de iniciar.
