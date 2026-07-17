@@ -123,6 +123,11 @@ export function createSession(
     gmProvider: null,
     gmModel: null,
     gmLatencyMs: null,
+    gmErrorCode: null,
+    gmErrorReason: null,
+    gmEndpoint: null,
+    gmRequestId: null,
+    gmApiVersion: null,
   };
 }
 
@@ -370,6 +375,11 @@ export function applyCardSelection(
       | null;
     model?: string | null;
     latencyMs?: number | null;
+    errorCode?: string | null;
+    errorReason?: string | null;
+    endpoint?: string | null;
+    requestId?: string | null;
+    apiVersion?: string | null;
   },
 ): SessionState {
   recordCardSeen(card);
@@ -393,6 +403,11 @@ export function applyCardSelection(
     gmProvider: gameMaster?.provider ?? null,
     gmModel: gameMaster?.model ?? null,
     gmLatencyMs: gameMaster?.latencyMs ?? null,
+    gmErrorCode: gameMaster?.errorCode ?? null,
+    gmErrorReason: gameMaster?.errorReason ?? null,
+    gmEndpoint: gameMaster?.endpoint ?? null,
+    gmRequestId: gameMaster?.requestId ?? null,
+    gmApiVersion: gameMaster?.apiVersion ?? null,
   };
 }
 

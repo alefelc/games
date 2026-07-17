@@ -1,4 +1,7 @@
-import { requestGameMasterDecision } from "../api/game-master";
+import {
+  normalizeGameMasterError,
+  requestGameMasterDecision,
+} from "../api/game-master";
 import type {
   Card,
   ContentBundle,
@@ -172,12 +175,18 @@ export async function drawAdaptiveCard(
         provider: decision.provider,
         model: decision.model,
         latencyMs: decision.latency_ms,
+        errorCode: decision.fallback_code ?? null,
+        errorReason: decision.fallback_reason ?? null,
+        endpoint: decision.endpoint,
+        requestId: decision.request_id,
+        apiVersion: decision.api_version,
       }),
       card: selected,
       exhausted: false,
     };
   } catch (error) {
-    console.warn("Se continuó con la selección local.", error);
+    const failure = normalizeGameMasterError(error);
+    console.warn("Se continuó con la selección local.", failure, error);
 
     const localCandidates = rankCandidates(
       pool.candidates,
@@ -211,6 +220,11 @@ export async function drawAdaptiveCard(
         provider: "frontend_fallback",
         model: "local-browser",
         latencyMs: null,
+        errorCode: failure.code,
+        errorReason: failure.reason,
+        endpoint: failure.endpoint,
+        requestId: failure.requestId,
+        apiVersion: null,
       }),
       card: selected,
       exhausted: false,

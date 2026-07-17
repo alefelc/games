@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-describe("dirección adaptativa v2.12.0", () => {
+describe("dirección adaptativa v2.13.0", () => {
   it("comprueba disponibilidad real", () => {
     const api = readFileSync("src/api/game-master.ts", "utf8");
     expect(api).toContain("checkGameMasterAvailability");
     expect(api).toContain("/health");
-    expect(api).toContain("4_500");
+    expect(api).toContain("5_500");
+    expect(api).toContain("env.gameMasterUrls");
   });
 
   it("respeta el modo local elegido", () => {

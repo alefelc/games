@@ -19,12 +19,12 @@ RUN npm ci --no-audit --no-fund --prefer-online
 COPY . .
 
 ARG VITE_DIRECTUS_URL=https://admin.teanimas.com
-ARG VITE_GAME_MASTER_URL=https://gm.teanimas.com
+ARG VITE_GAME_MASTER_URL=
 ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=2.12.0
+ARG BUILD_RELEASE=2.13.0
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
@@ -34,7 +34,7 @@ ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_CONTENT_CACHE_HOURS=${VITE_CONTENT_CACHE_HOURS} \
     BUILD_RELEASE=${BUILD_RELEASE}
 
-RUN echo "Building release $BUILD_RELEASE with dynamic limits, explicit AI states and same-origin proxy" \
+RUN echo "Building release $BUILD_RELEASE with redundant AI routes and observable diagnostics" \
     && npm run build \
     && printf '{"frontend_release":"%s","game_master_route":"/api/game-master","built_at":"%s"}\n' \
       "$BUILD_RELEASE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -42,9 +42,11 @@ RUN echo "Building release $BUILD_RELEASE with dynamic limits, explicit AI state
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.12.0"
+LABEL org.opencontainers.image.version="2.13.0"
 
-COPY deploy/nginx-container.conf /etc/nginx/conf.d/default.conf
+ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com
+
+COPY deploy/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

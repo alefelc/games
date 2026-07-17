@@ -111,6 +111,11 @@ function recoverWithLocalDraw(
         gmProvider: "frontend_fallback",
         gmModel: "local-browser-emergency",
         gmLatencyMs: null,
+        gmErrorCode: "LOCAL_DRAW_FAILED",
+        gmErrorReason: error instanceof Error ? error.message : String(error),
+        gmEndpoint: null,
+        gmRequestId: null,
+        gmApiVersion: null,
         gmHostMessage:
           "No se pudo preparar otra carta con esta configuración.",
       },

@@ -436,6 +436,11 @@ export interface SessionState {
     | null;
   gmModel: string | null;
   gmLatencyMs: number | null;
+  gmErrorCode: string | null;
+  gmErrorReason: string | null;
+  gmEndpoint: string | null;
+  gmRequestId: string | null;
+  gmApiVersion: string | null;
 }
 
 export interface EligibilityContext {

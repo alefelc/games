@@ -9,6 +9,12 @@ const configuredGameMasterUrl = String(
 
 if (!directusUrl) throw new Error("VITE_DIRECTUS_URL no está configurado.");
 
+function uniqueUrls(values: string[]) {
+  return [...new Set(values.map((value) => value.replace(/\/+$/, "")).filter(Boolean))];
+}
+
+const sameOriginGameMasterUrl = "/api/game-master";
+
 export const env = {
   directusUrl,
   basePath: String(import.meta.env.BASE_URL || "/"),
@@ -19,12 +25,13 @@ export const env = {
     1,
     Number(import.meta.env.VITE_CONTENT_CACHE_HOURS || 24),
   ),
-  // En producción se usa el mismo dominio del frontend. Nginx reenvía estas
-  // solicitudes al Game Master y elimina dependencias de CORS o variables Vite
-  // antiguas almacenadas en una PWA.
-  gameMasterUrl: import.meta.env.PROD
-    ? "/api/game-master"
-    : configuredGameMasterUrl || "https://gm.teanimas.com",
+  // Se prueban ambas rutas. La URL configurada permite llamar directamente al
+  // servicio; la ruta local usa el proxy del contenedor del frontend.
+  gameMasterUrl: configuredGameMasterUrl || sameOriginGameMasterUrl,
+  gameMasterUrls: uniqueUrls([
+    configuredGameMasterUrl,
+    sameOriginGameMasterUrl,
+  ]),
 };
 
 export function assetUrl(fileId: string | null | undefined) {

@@ -1,4 +1,4 @@
-# Cambios 2.12.0
+# Cambios 2.13.0
 
 - Se corrigió la activación real de la dirección adaptativa.
 - Se agregó comprobación de salud antes de iniciar.

@@ -200,7 +200,9 @@ export function GameScreen({
         : session.gmProvider === "frontend_fallback"
           ? {
               label: "Recuperación temporal",
-              detail: "Falló esta carta; la IA se reintentará en la próxima",
+              detail: session.gmErrorCode
+                ? `Falla ${session.gmErrorCode}; se reintentará en la próxima`
+                : "Falló esta carta; la IA se reintentará en la próxima",
               tone: "offline",
             }
           : session.gmProvider === "local"
@@ -405,7 +407,7 @@ export function GameScreen({
                 </div>
               </div>
 
-              {(session.gmModel || responseTime) && (
+              {(session.gmModel || responseTime || session.gmErrorCode || session.gmEndpoint || session.gmRequestId || session.gmApiVersion) && (
                 <dl className="adaptive-technical-data">
                   {session.gmModel && (
                     <>
@@ -420,7 +422,39 @@ export function GameScreen({
                       <dd>{responseTime}</dd>
                     </>
                   )}
+
+                  {session.gmApiVersion && (
+                    <>
+                      <dt>API</dt>
+                      <dd>{session.gmApiVersion}</dd>
+                    </>
+                  )}
+
+                  {session.gmErrorCode && (
+                    <>
+                      <dt>Error</dt>
+                      <dd>{session.gmErrorCode}</dd>
+                    </>
+                  )}
+
+                  {session.gmEndpoint && (
+                    <>
+                      <dt>Ruta</dt>
+                      <dd className="technical-break">{session.gmEndpoint}</dd>
+                    </>
+                  )}
+
+                  {session.gmRequestId && (
+                    <>
+                      <dt>Solicitud</dt>
+                      <dd className="technical-break">{session.gmRequestId}</dd>
+                    </>
+                  )}
                 </dl>
+              )}
+
+              {session.gmErrorReason && (
+                <p className="adaptive-error-reason">{session.gmErrorReason}</p>
               )}
             </section>
 

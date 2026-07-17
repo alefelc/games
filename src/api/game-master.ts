@@ -13,7 +13,7 @@ import {
   recentContinuityGroups,
 } from "../engine/card-history";
 
-const responseSchema = z.object({
+const wireResponseSchema = z.object({
   selected_card_id: z.string(),
   phase: z.string(),
   strategy: z.string(),
@@ -27,18 +27,111 @@ const responseSchema = z.object({
   fallback_used: z.boolean(),
   fallback_code: z.string().nullable().optional(),
   fallback_reason: z.string().nullable().optional(),
+  request_id: z.string().nullable().optional(),
+  api_version: z.string().nullable().optional(),
 });
 
-export type GameMasterDecision = z.infer<typeof responseSchema>;
+type WireGameMasterDecision = z.infer<typeof wireResponseSchema>;
 
-class GameMasterHttpError extends Error {
+export type GameMasterDecision = WireGameMasterDecision & {
+  endpoint: string;
+  request_id: string | null;
+  api_version: string | null;
+};
+
+export interface GameMasterErrorDetails {
+  code: string;
+  reason: string;
+  endpoint: string | null;
+  status: number | null;
+  requestId: string | null;
+}
+
+export class GameMasterClientError extends Error {
   constructor(
-    readonly status: number,
-    message: string,
+    readonly details: GameMasterErrorDetails,
+    options?: ErrorOptions,
   ) {
-    super(message);
-    this.name = "GameMasterHttpError";
+    super(details.reason, options);
+    this.name = "GameMasterClientError";
   }
+}
+
+function sanitizeReason(value: string) {
+  return value.replace(/sk-[A-Za-z0-9_-]+/g, "[clave oculta]").slice(0, 700);
+}
+
+function responseCode(status: number, payload: unknown) {
+  if (payload && typeof payload === "object" && "code" in payload) {
+    const code = (payload as { code?: unknown }).code;
+    if (typeof code === "string" && code) return code;
+  }
+  return `HTTP_${status}`;
+}
+
+function parseJsonSafely(text: string): unknown {
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+export function normalizeGameMasterError(error: unknown): GameMasterErrorDetails {
+  if (error instanceof GameMasterClientError) return error.details;
+
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return {
+      code: "CLIENT_TIMEOUT",
+      reason: "La solicitud a la IA excedió el tiempo permitido.",
+      endpoint: null,
+      status: null,
+      requestId: null,
+    };
+  }
+
+  if (error instanceof z.ZodError) {
+    return {
+      code: "INVALID_RESPONSE_CONTRACT",
+      reason: `La API respondió JSON, pero no coincide con el contrato esperado: ${error.issues
+        .slice(0, 3)
+        .map((issue) => `${issue.path.join(".") || "respuesta"}: ${issue.message}`)
+        .join("; ")}`,
+      endpoint: null,
+      status: null,
+      requestId: null,
+    };
+  }
+
+  if (error instanceof SyntaxError) {
+    return {
+      code: "INVALID_RESPONSE_JSON",
+      reason: "La ruta adaptativa devolvió una respuesta que no es JSON válido.",
+      endpoint: null,
+      status: null,
+      requestId: null,
+    };
+  }
+
+  if (error instanceof TypeError) {
+    return {
+      code: "NETWORK_OR_CORS",
+      reason:
+        "El navegador no pudo completar la conexión. Las causas probables son DNS, proxy, certificado o CORS.",
+      endpoint: null,
+      status: null,
+      requestId: null,
+    };
+  }
+
+  return {
+    code: "CLIENT_ERROR",
+    reason: sanitizeReason(error instanceof Error ? error.message : String(error)),
+    endpoint: null,
+    status: null,
+    requestId: null,
+  };
 }
 
 function tagSlugsForCard(content: ContentBundle, cardId: string) {
@@ -107,105 +200,214 @@ function wait(milliseconds: number) {
 }
 
 function shouldRetryRequest(error: unknown, elapsedMs: number) {
-  if (error instanceof GameMasterHttpError) {
+  const details = normalizeGameMasterError(error);
+
+  if (details.status !== null) {
     return (
-      error.status === 408 ||
-      error.status === 409 ||
-      error.status === 425 ||
-      error.status === 429 ||
-      error.status >= 500
+      details.status === 408 ||
+      details.status === 409 ||
+      details.status === 425 ||
+      details.status === 429 ||
+      details.status >= 500
     );
   }
 
-  if (error instanceof DOMException && error.name === "AbortError") {
-    // Un timeout completo ya consumió suficiente tiempo; no duplicamos la espera.
-    return elapsedMs < 30_000;
-  }
+  if (details.code === "CLIENT_TIMEOUT") return elapsedMs < 30_000;
 
-  // Fallos de red, JSON truncado o respuesta fuera de contrato suelen ser
-  // transitorios y merecen una segunda oportunidad antes del modo local.
-  return error instanceof TypeError || error instanceof SyntaxError || error instanceof z.ZodError;
+  return [
+    "NETWORK_OR_CORS",
+    "INVALID_RESPONSE_JSON",
+    "INVALID_RESPONSE_CONTRACT",
+  ].includes(details.code);
 }
 
 async function requestOnce(
-  endpoint: string,
+  baseUrl: string,
   payload: unknown,
   sessionId: string,
   resolvedCount: number,
 ): Promise<GameMasterDecision> {
+  const endpoint = `${baseUrl}/v1/game-master/next`;
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 42_000);
+  const timeout = window.setTimeout(() => controller.abort(), 48_000);
 
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-Game-Session": sessionId,
-        "X-Game-Draw": String(resolvedCount),
-      },
-      body: JSON.stringify(payload),
-      cache: "no-store",
-      signal: controller.signal,
-    });
-
-    const text = await response.text();
-
-    if (!response.ok) {
-      throw new GameMasterHttpError(
-        response.status,
-        `La dirección adaptativa respondió ${response.status}${text ? `: ${text.slice(0, 500)}` : ""}.`,
+    let response: Response;
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-Game-Session": sessionId,
+          "X-Game-Draw": String(resolvedCount),
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch (error) {
+      const details = normalizeGameMasterError(error);
+      throw new GameMasterClientError(
+        { ...details, endpoint },
+        { cause: error },
       );
     }
 
-    return responseSchema.parse(JSON.parse(text));
+    const text = await response.text();
+    const payloadBody = parseJsonSafely(text);
+    const requestId =
+      response.headers.get("x-request-id") ||
+      (payloadBody && typeof payloadBody === "object" && "request_id" in payloadBody
+        ? String((payloadBody as { request_id?: unknown }).request_id || "") || null
+        : null);
+
+    if (!response.ok) {
+      const serverMessage =
+        payloadBody && typeof payloadBody === "object" && "error" in payloadBody
+          ? String((payloadBody as { error?: unknown }).error || "")
+          : text.slice(0, 500);
+      throw new GameMasterClientError({
+        status: response.status,
+        code: responseCode(response.status, payloadBody),
+        reason: sanitizeReason(
+          `La dirección adaptativa respondió ${response.status}${serverMessage ? `: ${serverMessage}` : ""}.`,
+        ),
+        endpoint,
+        requestId,
+      });
+    }
+
+    if (!payloadBody) {
+      throw new GameMasterClientError({
+        status: response.status,
+        code: "INVALID_RESPONSE_JSON",
+        reason:
+          "La ruta adaptativa respondió correctamente a nivel HTTP, pero devolvió HTML o texto en lugar de JSON.",
+        endpoint,
+        requestId,
+      });
+    }
+
+    try {
+      const parsed = wireResponseSchema.parse(payloadBody);
+      return {
+        ...parsed,
+        endpoint,
+        request_id: parsed.request_id || requestId,
+        api_version:
+          parsed.api_version || response.headers.get("x-game-master-version"),
+      };
+    } catch (error) {
+      const details = normalizeGameMasterError(error);
+      throw new GameMasterClientError(
+        { ...details, endpoint, status: response.status, requestId },
+        { cause: error },
+      );
+    }
   } finally {
     window.clearTimeout(timeout);
   }
 }
 
 export type GameMasterAvailability =
-  | { status: "online"; version: string | null }
-  | { status: "offline"; reason: string };
+  | {
+      status: "online";
+      version: string | null;
+      endpoint: string;
+      openaiConfigured: boolean | null;
+    }
+  | { status: "offline"; reason: string; attempts: GameMasterErrorDetails[] };
 
-export async function checkGameMasterAvailability(
-  timeoutMs = 4_500,
-): Promise<GameMasterAvailability> {
-  if (!env.gameMasterUrl) {
-    return { status: "offline", reason: "La dirección adaptativa no está configurada." };
-  }
-
+async function checkOneAvailability(baseUrl: string, timeoutMs: number) {
+  const endpoint = `${baseUrl}/health`;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${env.gameMasterUrl}/health`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      return {
-        status: "offline",
-        reason: `El servicio respondió ${response.status}.`,
-      };
+    let response: Response;
+    try {
+      response = await fetch(endpoint, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch (error) {
+      const details = normalizeGameMasterError(error);
+      throw new GameMasterClientError({ ...details, endpoint }, { cause: error });
     }
-    const payload = (await response.json()) as { version?: unknown };
+
+    const text = await response.text();
+    const payload = parseJsonSafely(text);
+    const requestId = response.headers.get("x-request-id");
+
+    if (!response.ok) {
+      throw new GameMasterClientError({
+        code: responseCode(response.status, payload),
+        reason: `El servicio respondió ${response.status}.`,
+        endpoint,
+        status: response.status,
+        requestId,
+      });
+    }
+
+    if (!payload || typeof payload !== "object") {
+      throw new GameMasterClientError({
+        code: "INVALID_HEALTH_JSON",
+        reason: "El endpoint de salud devolvió contenido que no es JSON.",
+        endpoint,
+        status: response.status,
+        requestId,
+      });
+    }
+
     return {
-      status: "online",
-      version: typeof payload.version === "string" ? payload.version : null,
+      status: "online" as const,
+      version:
+        typeof (payload as { version?: unknown }).version === "string"
+          ? (payload as { version: string }).version
+          : null,
+      endpoint: baseUrl,
+      openaiConfigured:
+        typeof (payload as { openai_configured?: unknown }).openai_configured ===
+        "boolean"
+          ? (payload as { openai_configured: boolean }).openai_configured
+          : null,
     };
-  } catch (error) {
-    const reason =
-      error instanceof DOMException && error.name === "AbortError"
-        ? "La comprobación excedió el tiempo permitido."
-        : "No se pudo contactar al servicio adaptativo.";
-    return { status: "offline", reason };
   } finally {
     window.clearTimeout(timeout);
   }
+}
+
+export async function checkGameMasterAvailability(
+  timeoutMs = 5_500,
+): Promise<GameMasterAvailability> {
+  if (!env.gameMasterUrls.length) {
+    return {
+      status: "offline",
+      reason: "La dirección adaptativa no está configurada.",
+      attempts: [],
+    };
+  }
+
+  const attempts: GameMasterErrorDetails[] = [];
+
+  for (const baseUrl of env.gameMasterUrls) {
+    try {
+      return await checkOneAvailability(baseUrl, timeoutMs);
+    } catch (error) {
+      attempts.push(normalizeGameMasterError(error));
+    }
+  }
+
+  const last = attempts.at(-1);
+  return {
+    status: "offline",
+    reason:
+      last?.reason || "No se pudo contactar al servicio adaptativo por ninguna ruta.",
+    attempts,
+  };
 }
 
 export async function requestGameMasterDecision({
@@ -223,8 +425,14 @@ export async function requestGameMasterDecision({
   candidates: Card[];
   resolvedEvent: GameMasterEvent | null;
 }): Promise<GameMasterDecision> {
-  if (!env.gameMasterUrl) {
-    throw new Error("La dirección adaptativa no está configurada.");
+  if (!env.gameMasterUrls.length) {
+    throw new GameMasterClientError({
+      code: "NOT_CONFIGURED",
+      reason: "La dirección adaptativa no está configurada.",
+      endpoint: null,
+      status: null,
+      requestId: null,
+    });
   }
 
   const mode = content.modes.find((item) => item.id === setup.modeId);
@@ -273,35 +481,42 @@ export async function requestGameMasterDecision({
       .slice(-10)
       .map(eventPayload),
     resolved_event: resolvedEvent ? eventPayload(resolvedEvent) : null,
-    candidates: candidates.slice(0, 60).map((card) => candidatePayload(content, card)),
+    candidates: candidates
+      .slice(0, 60)
+      .map((card) => candidatePayload(content, card)),
   };
 
-  const endpoint = `${env.gameMasterUrl}/v1/game-master/next`;
-  let lastError: unknown = new Error("No se realizó la solicitud adaptativa.");
+  let lastError: unknown = new GameMasterClientError({
+    code: "NO_ATTEMPT",
+    reason: "No se realizó la solicitud adaptativa.",
+    endpoint: null,
+    status: null,
+    requestId: null,
+  });
 
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const startedAt = Date.now();
+  for (const baseUrl of env.gameMasterUrls) {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const startedAt = Date.now();
 
-    try {
-      return await requestOnce(
-        endpoint,
-        payload,
-        session.id,
-        session.resolvedCount,
-      );
-    } catch (error) {
-      lastError = error;
-      const elapsedMs = Date.now() - startedAt;
+      try {
+        return await requestOnce(
+          baseUrl,
+          payload,
+          session.id,
+          session.resolvedCount,
+        );
+      } catch (error) {
+        lastError = error;
+        const elapsedMs = Date.now() - startedAt;
 
-      if (attempt >= 2 || !shouldRetryRequest(error, elapsedMs)) {
-        break;
+        if (attempt >= 2 || !shouldRetryRequest(error, elapsedMs)) break;
+
+        console.warn(
+          `La dirección adaptativa falló en ${baseUrl}; se reintenta antes de probar otra ruta.`,
+          error,
+        );
+        await wait(400 * attempt);
       }
-
-      console.warn(
-        `La dirección adaptativa falló en el intento ${attempt}; se reintenta antes del modo local.`,
-        error,
-      );
-      await wait(350 * attempt);
     }
   }
 

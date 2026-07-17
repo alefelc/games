@@ -2054,3 +2054,16 @@ h2 {
   grid-template-columns: minmax(0, 1fr);
   max-width: 42rem;
 }
+
+.technical-break {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.adaptive-error-reason {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  opacity: 0.82;
+  overflow-wrap: anywhere;
+}
