@@ -1,32 +1,26 @@
-# ¿Te animás? — Frontend 2.13.8 r13
+# ¿Te animás? — Frontend 2.13.10 R15
 
-Esta revisión hace que GA4 funcione incluso cuando el token del panel no puede crear campos.
+## Analytics GA4
+
+El frontend toma el ID únicamente de estos campos del registro publicado en `pc_app_settings`:
+
+- `analytics_enabled`
+- `analytics_measurement_id`
+
+No hay un ID integrado, variable de entorno ni archivo runtime alternativo.
+
+Cuando Analytics está desactivado, el ID está vacío o no cumple el formato `G-XXXXXXXXXX`, Google Analytics no se carga.
+
+Antes de publicar este frontend, aplicá la migración incluida en `directus-migration-analytics-r15` para que el campo **ID de medición de Google Analytics 4** aparezca en el panel.
 
 ## Publicación
 
-Subir el contenido de este directorio a la raíz del repositorio del frontend y reconstruir la aplicación.
-
-## Configuración de Analytics
-
-`Analytics Enabled` se controla desde el panel. El ID se puede suministrar de tres formas:
-
-1. Campo **Analytics Measurement Id**, cuando existe.
-2. `public/runtime-config.js`.
-3. Variable `GA4_MEASUREMENT_ID` en el contenedor.
-
-La opción recomendada en EasyPanel es:
-
-```env
-GA4_MEASUREMENT_ID=G-XXXXXXXXXX
-```
-
-Después, reiniciar o redesplegar el servicio.
+Subí el contenido de este directorio a la raíz del repositorio del frontend y reconstruí la aplicación.
 
 ## Comprobación
 
-- Abrir `/build-info.json` y confirmar `frontend_release: 2.13.8`.
-- Abrir `/runtime-config.js` y comprobar el ID.
-- Activar **Analytics Enabled**.
-- Revisar GA4 en tiempo real durante una partida de prueba.
-
-`runtime-config.js` queda fuera de la caché de la PWA para permitir cambios inmediatos.
+1. Abrí `/build-info.json` y confirmá `frontend_release: 2.13.10-r15`.
+2. En el panel, activá `Analytics Enabled`.
+3. Cargá el ID en **ID de medición de Google Analytics 4** y guardá.
+4. Abrí el juego en una ventana privada.
+5. Revisá el informe Tiempo real de GA4.

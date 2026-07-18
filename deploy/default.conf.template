@@ -38,12 +38,6 @@ server {
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
   }
 
-  location = /runtime-config.js {
-    default_type application/javascript;
-    add_header Cache-Control "no-cache, no-store, must-revalidate" always;
-    try_files $uri =404;
-  }
-
   location ~* \.(?:js|css|png|jpg|jpeg|svg|webp|woff2)$ {
     expires 1y;
     add_header Cache-Control "public, max-age=31536000, immutable";

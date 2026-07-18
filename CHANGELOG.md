@@ -1,3 +1,10 @@
+# 2.13.10 — R15
+
+- El ID de GA4 se configura exclusivamente desde `pc_app_settings.analytics_measurement_id`.
+- Se elimina el ID integrado en el bundle y cualquier fallback runtime.
+- Analytics no carga si el interruptor está apagado o el campo no contiene un ID `G-...` válido.
+- Se incluye una migración de Directus para crear el campo visible junto a `Analytics Enabled`.
+
 # 2.13.9 — R14
 
 - GA4 `G-8CMSB2VYC8` queda integrado en el bundle del frontend.

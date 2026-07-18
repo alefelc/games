@@ -1,0 +1,15 @@
+¿Te animás? — frontend 2.13.10 R15
+
+Analytics:
+- Fuente única del ID: pc_app_settings.analytics_measurement_id
+- Interruptor: pc_app_settings.analytics_enabled
+- ID fijo en bundle: no
+- Variable de entorno alternativa: no
+- runtime-config.js: eliminado
+
+Validación:
+- 29 archivos de prueba aprobados
+- 84 pruebas aprobadas
+- Build TypeScript/Vite/PWA correcto
+- Bundle de producción sin G-8CMSB2VYC8
+- Migración R15 válida e idempotente en prueba simulada
