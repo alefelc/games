@@ -1,7 +1,7 @@
-# Integración r12
+# Integración r13
 
 1. Ejecutar `Ejecutar-Actualizacion-Analytics.bat` con el ID GA4.
-2. Publicar el frontend 2.13.7.
+2. Publicar el frontend 2.13.8.
 3. No volver a publicar la API adaptativa.
 4. Confirmar que `/runtime-config.js` contiene el ID.
 5. Activar **Analytics Enabled** en el panel.

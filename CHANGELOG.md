@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.13.8 — Analytics R13
+
+- El actualizador deja de depender del slug `te-animas`.
+- La configuración runtime se genera antes de consultar Directus.
+- Si existe una sola fila de `pc_app_settings`, se utiliza directamente.
+- Los problemas de permisos o selección se convierten en advertencias y no cancelan GA4.
+
 ## 2.13.7 — Analytics R12
 
 - El ID runtime de GA4 tiene prioridad sobre valores remotos anteriores.

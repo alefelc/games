@@ -1,4 +1,4 @@
-# ¿Te animás? — Frontend 2.13.7 r12
+# ¿Te animás? — Frontend 2.13.8 r13
 
 Esta revisión hace que GA4 funcione incluso cuando el token del panel no puede crear campos.
 
@@ -24,7 +24,7 @@ Después, reiniciar o redesplegar el servicio.
 
 ## Comprobación
 
-- Abrir `/build-info.json` y confirmar `frontend_release: 2.13.7`.
+- Abrir `/build-info.json` y confirmar `frontend_release: 2.13.8`.
 - Abrir `/runtime-config.js` y comprobar el ID.
 - Activar **Analytics Enabled**.
 - Revisar GA4 en tiempo real durante una partida de prueba.
