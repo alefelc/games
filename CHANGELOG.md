@@ -1,8 +1,14 @@
-# ¿Te animás? — Frontend 2.13.4 r9
+# ¿Te animás? — Frontend 2.13.5 r10
 
-## Corrección
+## Analytics GA4 funcional
 
-- El bloque **Ritmo de la partida** ya no puede repetir el texto de la carta.
-- Se comparan ambos textos ignorando mayúsculas, acentos, puntuación y pequeñas reformulaciones.
-- Si el mensaje adaptativo está vacío o coincide con la carta, se muestra un mensaje breve derivado de la fase y la estrategia de la partida.
-- El mensaje técnico original continúa disponible en el estado interno para diagnóstico.
+- `Analytics Enabled` ahora activa y desactiva realmente Google Analytics 4.
+- Se agregó `Analytics Measurement Id` para guardar el identificador `G-XXXXXXXXXX`.
+- GA4 se carga de forma dinámica únicamente cuando ambas configuraciones son válidas.
+- Se registran aperturas, pantallas y acciones generales de partida.
+- No se envían nombres, textos de cartas, límites, elementos, juguetes ni respuestas íntimas.
+- El frontend sigue funcionando aunque el campo todavía no haya sido creado.
+
+## Corrección incluida de r9
+
+- El bloque **Ritmo de la partida** no repite el texto de la carta.

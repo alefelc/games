@@ -1,33 +1,7 @@
-# Integración 2.13.2
+# Integración r10
 
-## Dirección adaptativa
-
-El frontend intenta la URL declarada en `VITE_GAME_MASTER_URL` y la ruta del mismo origen `/api/game-master`.
-
-Variables:
-
-```text
-VITE_GAME_MASTER_URL=https://DOMINIO-API
-GAME_MASTER_UPSTREAM=https://DOMINIO-API
-```
-
-`VITE_GAME_MASTER_URL` es una variable de compilación. Cambiarla exige reconstruir el frontend.
-
-## Contrato requerido
-
-La API debe informar en `/health`:
-
-```json
-{
-  "version": "1.8.3",
-  "request_contract": "v6-scene-role-normalized"
-}
-```
-
-El frontend convierte cualquier valor de `gm_scene_role` a uno de:
-
-```text
-starter | bridge | continuation | climax | recovery | closer
-```
-
-La API 1.8.3 vuelve a normalizarlo de forma defensiva.
+1. Ejecutar `Ejecutar-Actualizacion-Analytics.bat` para crear y configurar el campo GA4.
+2. Publicar el frontend 2.13.5.
+3. No volver a publicar la API adaptativa.
+4. Probar en una ventana privada para evitar una PWA anterior almacenada.
+5. Verificar los eventos en el informe en tiempo real de Google Analytics 4.

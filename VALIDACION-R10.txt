@@ -1,0 +1,10 @@
+¿Te animás? — Frontend 2.13.5 r10
+
+Fecha de validación: 2026-07-17T21:17:09Z
+
+Resultados:
+- TypeScript: correcto.
+- Build de producción Vite/PWA: correcto.
+- Archivos de producción generados en dist/: correcto.
+- Pruebas automatizadas: 29 archivos, 81 pruebas aprobadas.
+- Pruebas específicas de GA4: carga condicional, rechazo de ID inválido y envío de eventos aprobados.

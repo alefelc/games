@@ -24,7 +24,7 @@ ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=2.13.2
+ARG BUILD_RELEASE=2.13.5
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
@@ -34,7 +34,7 @@ ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_CONTENT_CACHE_HOURS=${VITE_CONTENT_CACHE_HOURS} \
     BUILD_RELEASE=${BUILD_RELEASE}
 
-RUN echo "Building release $BUILD_RELEASE with scene-role compatibility and observable diagnostics" \
+RUN echo "Building release $BUILD_RELEASE with private adaptive diagnostics and clean player UI" \
     && npm run build \
     && printf '{"frontend_release":"%s","game_master_route":"/api/game-master","built_at":"%s"}\n' \
       "$BUILD_RELEASE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -42,7 +42,7 @@ RUN echo "Building release $BUILD_RELEASE with scene-role compatibility and obse
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.13.2"
+LABEL org.opencontainers.image.version="2.13.5"
 
 ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com
 

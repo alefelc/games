@@ -1,25 +1,24 @@
-# ¿Te animás? — Frontend 2.13.2
+# ¿Te animás? — Frontend 2.13.5 r10
 
-PWA React + TypeScript con catálogo en vivo, filtros dinámicos y dirección adaptativa opcional.
+Esta revisión convierte la opción de Analytics en una integración funcional con Google Analytics 4.
 
-## Comandos
+## Publicación
 
-```bash
-npm ci
-npm test
-npm run build
-```
+Subir el contenido de este directorio a la raíz del repositorio del frontend y reconstruir la aplicación.
 
-## Variables
+## Configuración previa
 
-Copiar `.env.example` y ajustar los dominios. En producción el navegador puede usar la URL directa configurada y también `/api/game-master`; Nginx reenvía esta última al servicio adaptativo.
+Ejecutar `Ejecutar-Actualizacion-Analytics.bat` desde el instalador incluido en el paquete completo. El proceso crea el campo **Analytics Measurement Id** y permite guardar directamente el ID `G-XXXXXXXXXX`.
 
-## Corrección 2.13.2
+Después, en la configuración:
 
-- normaliza `gm_scene_role` antes de enviar cartas a la API;
-- acepta valores históricos, traducidos, vacíos, nulos o personalizados;
-- infiere un rol canónico usando nivel, intensidad y puntajes;
-- guarda roles canónicos en el historial para evitar nuevos rechazos;
-- mantiene el diagnóstico detallado de errores y rutas.
+1. Completar **Analytics Measurement Id**.
+2. Activar **Analytics Enabled**.
+3. Guardar.
 
-La corrección del HTTP 422 requiere API 1.8.3 o posterior. Publicar también este frontend agrega una segunda defensa y actualiza la PWA.
+## Comprobación
+
+- Abrir `/build-info.json` y confirmar `frontend_release: 2.13.5`.
+- Abrir GA4 en tiempo real y comenzar una partida de prueba.
+
+La API adaptativa 1.8.3 no requiere cambios.
