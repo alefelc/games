@@ -1,3 +1,10 @@
+# 2.13.9 — R14
+
+- GA4 `G-8CMSB2VYC8` queda integrado en el bundle del frontend.
+- `Analytics Enabled` es el único interruptor necesario.
+- Se elimina la dependencia de scripts PowerShell, permisos de esquema, slug y `runtime-config.js`.
+- `runtime-config.js` se conserva únicamente como diagnóstico estático.
+
 # Changelog
 
 ## 2.13.8 — Analytics R13

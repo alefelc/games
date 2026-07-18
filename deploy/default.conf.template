@@ -33,14 +33,15 @@ server {
   }
 
 
-  location = /runtime-config.js {
-    default_type application/javascript;
-    add_header Cache-Control "no-cache, no-store, must-revalidate" always;
-  }
-
   location = /build-info.json {
     default_type application/json;
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+  }
+
+  location = /runtime-config.js {
+    default_type application/javascript;
+    add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    try_files $uri =404;
   }
 
   location ~* \.(?:js|css|png|jpg|jpeg|svg|webp|woff2)$ {
