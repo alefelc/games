@@ -10,7 +10,6 @@ beforeEach(() => {
   document.head.innerHTML = "";
   window.dataLayer = [];
   delete window.gtag;
-  delete window.__TE_ANIMAS_RUNTIME_CONFIG__;
 });
 
 describe("Google Analytics 4", () => {
@@ -26,7 +25,7 @@ describe("Google Analytics 4", () => {
     expect(document.getElementById("te-animas-ga4")).toBeNull();
   });
 
-  it("rechaza identificadores inválidos", async () => {
+  it("rechaza identificadores inválidos pero usa el ID integrado", async () => {
     const { configureAnalytics, isValidAnalyticsMeasurementId } =
       await analyticsModule();
 
@@ -36,7 +35,9 @@ describe("Google Analytics 4", () => {
         analytics_enabled: true,
         analytics_measurement_id: "UA-123456-1",
       }),
-    ).toBe(false);
+    ).toBe(true);
+    const script = document.getElementById("te-animas-ga4") as HTMLScriptElement;
+    expect(script.src).toContain("gtag/js?id=G-8CMSB2VYC8");
   });
 
   it("carga GA4 y encola eventos anónimos", async () => {
@@ -71,29 +72,7 @@ describe("Google Analytics 4", () => {
     );
   });
 
-  it("prioriza el ID runtime sobre un campo remoto viejo", async () => {
-    window.__TE_ANIMAS_RUNTIME_CONFIG__ = {
-      ga4MeasurementId: "G-RUNTIME123",
-    };
-    const { configureAnalytics } = await analyticsModule();
-
-    expect(
-      configureAnalytics({
-        analytics_enabled: true,
-        analytics_measurement_id: "G-REMOTE999",
-      }),
-    ).toBe(true);
-
-    const script = document.getElementById(
-      "te-animas-ga4",
-    ) as HTMLScriptElement | null;
-    expect(script?.src).toContain("gtag/js?id=G-RUNTIME123");
-  });
-
-  it("usa el ID runtime cuando el campo no existe", async () => {
-    window.__TE_ANIMAS_RUNTIME_CONFIG__ = {
-      ga4MeasurementId: "G-RUNTIME123",
-    };
+  it("usa el ID integrado cuando el panel no tiene código", async () => {
     const { configureAnalytics } = await analyticsModule();
 
     expect(
@@ -106,7 +85,8 @@ describe("Google Analytics 4", () => {
     const script = document.getElementById(
       "te-animas-ga4",
     ) as HTMLScriptElement | null;
-    expect(script?.src).toContain("gtag/js?id=G-RUNTIME123");
+    expect(script?.src).toContain("gtag/js?id=G-8CMSB2VYC8");
   });
+
 
 });

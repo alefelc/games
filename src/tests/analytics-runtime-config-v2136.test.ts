@@ -2,26 +2,37 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-describe("GA4 runtime config", () => {
-  it("loads runtime-config.js before the application", () => {
+describe("GA4 integrado R14", () => {
+  it("la aplicación no depende de runtime-config.js", () => {
     const html = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
-    const runtimeIndex = html.indexOf("runtime-config.js");
-    const appIndex = html.indexOf("/src/main.tsx");
-    expect(runtimeIndex).toBeGreaterThan(-1);
-    expect(appIndex).toBeGreaterThan(runtimeIndex);
+    expect(html).not.toContain('<script src="%BASE_URL%runtime-config.js"></script>');
+    expect(html).toContain('/src/main.tsx');
   });
 
-  it("supports GA4 runtime environment generation", () => {
-    const dockerfile = readFileSync(resolve(process.cwd(), "Dockerfile"), "utf8");
-    const script = readFileSync(
-      resolve(process.cwd(), "deploy/40-runtime-config.sh"),
+  it("incluye el ID real como fallback compilado", () => {
+    const analytics = readFileSync(
+      resolve(process.cwd(), "src/lib/analytics.ts"),
       "utf8",
     );
-    expect(dockerfile).toContain("GA4_MEASUREMENT_ID");
-    expect(dockerfile).toContain("40-runtime-config.sh");
-    expect(script).toContain("runtime-config.js");
-    expect(script).toContain("^G-[A-Z0-9]{4,20}$");
-    const viteConfig = readFileSync(resolve(process.cwd(), "vite.config.ts"), "utf8");
-    expect(viteConfig).toContain("globIgnores: [\"**/runtime-config.js\"]");
+    expect(analytics).toContain('EMBEDDED_MEASUREMENT_ID = "G-8CMSB2VYC8"');
   });
+
+  it("conserva un archivo estático solo para diagnóstico", () => {
+    const runtime = readFileSync(
+      resolve(process.cwd(), "public/runtime-config.js"),
+      "utf8",
+    );
+    expect(runtime).toContain('G-8CMSB2VYC8');
+    expect(runtime).toContain('embedded-r14');
+  });
+  it("la plantilla Nginx define una sola ruta de diagnóstico", () => {
+    const nginx = readFileSync(
+      resolve(process.cwd(), "deploy/default.conf.template"),
+      "utf8",
+    );
+    const matches = nginx.match(/location = \/runtime-config\.js/g) ?? [];
+    expect(matches).toHaveLength(1);
+    expect(nginx).toContain("try_files $uri =404");
+  });
+
 });

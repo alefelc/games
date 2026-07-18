@@ -1,14 +1,3 @@
-declare global {
-  interface Window {
-    __TE_ANIMAS_RUNTIME_CONFIG__?: {
-      ga4MeasurementId?: string;
-    };
-  }
-}
-
-const runtimeConfig =
-  typeof window !== "undefined" ? window.__TE_ANIMAS_RUNTIME_CONFIG__ : undefined;
-
 const directusUrl = String(import.meta.env.VITE_DIRECTUS_URL || "").replace(
   /\/+$/,
   "",
@@ -32,11 +21,6 @@ export const env = {
   gameSlug: String(import.meta.env.VITE_GAME_SLUG || "te-animas"),
   allowBootstrapFallback:
     String(import.meta.env.VITE_ALLOW_BOOTSTRAP_FALLBACK || "true") !== "false",
-  ga4MeasurementId: String(
-    runtimeConfig?.ga4MeasurementId ||
-      import.meta.env.VITE_GA4_MEASUREMENT_ID ||
-      "",
-  ).trim(),
   cacheHours: Math.max(
     1,
     Number(import.meta.env.VITE_CONTENT_CACHE_HOURS || 24),
