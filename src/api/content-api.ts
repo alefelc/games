@@ -192,6 +192,7 @@ const SETTINGS_FIELDS = [
   "enable_random_level",
   "enable_private_filters",
   "analytics_enabled",
+  "analytics_measurement_id",
   "maintenance_mode",
   "default_exclude_photo_video",
   "default_exclude_third_parties",
@@ -514,6 +515,36 @@ export interface RuntimeConfigRecord {
   settings: unknown;
 }
 
+async function readSettings(
+  gameId: string,
+  signal?: AbortSignal,
+): Promise<Record<string, unknown>> {
+  const filters = {
+    "filter[game][_eq]": gameId,
+    "filter[status][_eq]": "published",
+  };
+
+  try {
+    return await readFirst<Record<string, unknown>>(
+      "pc_app_settings",
+      SETTINGS_FIELDS,
+      filters,
+      signal,
+    );
+  } catch (error) {
+    // Permite desplegar el frontend antes de ejecutar la migración del campo GA4.
+    // Una vez creado analytics_measurement_id, la siguiente carga lo toma automáticamente.
+    if (!(error instanceof ContentApiError) || ![400, 403].includes(error.status)) throw error;
+
+    return readFirst<Record<string, unknown>>(
+      "pc_app_settings",
+      SETTINGS_FIELDS.filter((field) => field !== "analytics_measurement_id"),
+      filters,
+      signal,
+    );
+  }
+}
+
 export async function readRuntimeConfig(
   signal?: AbortSignal,
 ): Promise<RuntimeConfigRecord> {
@@ -549,15 +580,7 @@ export async function readRuntimeConfig(
       },
       signal,
     ),
-    readFirst<Record<string, unknown>>(
-      "pc_app_settings",
-      SETTINGS_FIELDS,
-      {
-        "filter[game][_eq]": gameId,
-        "filter[status][_eq]": "published",
-      },
-      signal,
-    ),
+    readSettings(gameId, signal),
   ]);
 
   return { game, theme, settings };

@@ -343,6 +343,7 @@ export const settingsSchema = z.object({
   enable_random_level: bool,
   enable_private_filters: bool,
   analytics_enabled: bool,
+  analytics_measurement_id: z.string().nullable().optional().default(""),
   maintenance_mode: bool,
   default_exclude_photo_video: bool,
   default_exclude_third_parties: bool,

@@ -10,6 +10,7 @@ import { SetupScreen } from "./screens/SetupScreen";
 import { GameScreen } from "./screens/GameScreen";
 import { PauseScreen } from "./screens/PauseScreen";
 import { SummaryScreen } from "./screens/SummaryScreen";
+import { configureAnalytics, trackAnalyticsScreen } from "./lib/analytics";
 
 export default function App() {
   /*
@@ -89,6 +90,19 @@ export default function App() {
       controller.abort();
     };
   }, [refresh]);
+
+  useEffect(() => {
+    if (!content) return;
+    configureAnalytics(content.settings);
+  }, [
+    content?.settings.analytics_enabled,
+    content?.settings.analytics_measurement_id,
+  ]);
+
+  useEffect(() => {
+    if (!content) return;
+    trackAnalyticsScreen(stage);
+  }, [stage, content]);
 
   useEffect(() => {
     if (stage !== "game" || !content?.settings.allow_screen_wake_lock) return;

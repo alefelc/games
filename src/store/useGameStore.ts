@@ -17,6 +17,7 @@ import {
 } from "../engine/session";
 import { drawAdaptiveCard } from "../engine/game-master";
 import { normalizeSceneRole } from "../lib/sceneRole";
+import { trackAnalyticsEvent } from "../lib/analytics";
 
 export type AppStage = "age" | "home" | "setup" | "game" | "paused" | "summary";
 
@@ -154,10 +155,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   acceptAge() {
     localStorage.setItem("pecadoclub-age-accepted", "true");
+    trackAnalyticsEvent("age_gate_accepted");
     set({ stage: "home" });
   },
 
   goHome() {
+    trackAnalyticsEvent("home_returned");
     set({ stage: "home", session: null, gameMasterBusy: false });
   },
 
@@ -165,6 +168,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { content, setup } = get();
     if (!content) return;
 
+    trackAnalyticsEvent("setup_opened");
     set({
       stage: "setup",
       setup: normalizeSetup(content, setup),
@@ -196,6 +200,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!content || !setup || gameMasterBusy) return;
 
     const session = createSession(content, setup);
+    trackAnalyticsEvent("game_started", {
+      player_count:
+        content.modes.find((mode) => mode.id === setup.modeId)?.turn_mode ===
+        "single"
+          ? 1
+          : 2,
+      adaptive_enabled: setup.gameMasterEnabled,
+      maximum_cards: setup.maxCards,
+    });
     set({
       stage: "game",
       session,
@@ -207,6 +220,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       if (get().session?.id !== session.id) return;
 
+      if (draw.exhausted) {
+        trackAnalyticsEvent("game_finished", {
+          finish_reason: "automatic",
+          resolved_cards: draw.session.resolvedCount,
+          completed_cards: draw.session.completedCardIds.length,
+          skipped_cards: draw.session.skippedCardIds.length,
+        });
+      }
       set({
         stage: draw.exhausted ? "summary" : "game",
         session: draw.session,
@@ -220,6 +241,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (get().session?.id !== session.id) return;
 
       const draw = recoverWithLocalDraw(content, setup, session);
+      if (draw.exhausted) {
+        trackAnalyticsEvent("game_finished", {
+          finish_reason: "automatic",
+          resolved_cards: draw.session.resolvedCount,
+          completed_cards: draw.session.completedCardIds.length,
+          skipped_cards: draw.session.skippedCardIds.length,
+        });
+      }
       set({
         stage: draw.exhausted ? "summary" : "game",
         session: draw.session,
@@ -234,6 +263,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   revealCard() {
     const session = get().session;
     if (!session) return;
+    trackAnalyticsEvent("card_revealed", {
+      card_number: session.resolvedCount + 1,
+    });
     set({ session: { ...session, revealed: true } });
   },
 
@@ -255,6 +287,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!content || !setup || !session || gameMasterBusy) return;
 
     const resolvedEvent = eventFromCurrentCard(content, session, result);
+    trackAnalyticsEvent("card_resolved", {
+      result,
+      card_number: session.resolvedCount + 1,
+    });
 
     let resolved = resolveCurrentCard(content, setup, session, result);
 
@@ -280,6 +316,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       if (get().session?.id !== resolved.id) return;
 
+      if (draw.exhausted) {
+        trackAnalyticsEvent("game_finished", {
+          finish_reason: "automatic",
+          resolved_cards: draw.session.resolvedCount,
+          completed_cards: draw.session.completedCardIds.length,
+          skipped_cards: draw.session.skippedCardIds.length,
+        });
+      }
       set({
         stage: draw.exhausted ? "summary" : "game",
         session: draw.session,
@@ -293,6 +337,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (get().session?.id !== resolved.id) return;
 
       const draw = recoverWithLocalDraw(content, setup, resolved);
+      if (draw.exhausted) {
+        trackAnalyticsEvent("game_finished", {
+          finish_reason: "automatic",
+          resolved_cards: draw.session.resolvedCount,
+          completed_cards: draw.session.completedCardIds.length,
+          skipped_cards: draw.session.skippedCardIds.length,
+        });
+      }
       set({
         stage: draw.exhausted ? "summary" : "game",
         session: draw.session,
@@ -305,15 +357,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   pause() {
-    if (get().stage === "game") set({ stage: "paused" });
+    if (get().stage === "game") {
+      trackAnalyticsEvent("game_paused");
+      set({ stage: "paused" });
+    }
   },
 
   resume() {
-    if (get().stage === "paused") set({ stage: "game" });
+    if (get().stage === "paused") {
+      trackAnalyticsEvent("game_resumed");
+      set({ stage: "game" });
+    }
   },
 
   finish() {
     const session = get().session;
+    trackAnalyticsEvent("game_finished", {
+      finish_reason: "manual",
+      resolved_cards: session?.resolvedCount ?? 0,
+      completed_cards: session?.completedCardIds.length ?? 0,
+      skipped_cards: session?.skippedCardIds.length ?? 0,
+    });
     set({
       stage: "summary",
       session: session
@@ -331,6 +395,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   restart() {
     const { content } = get();
+    trackAnalyticsEvent("game_restarted");
     set({
       stage: "setup",
       session: null,

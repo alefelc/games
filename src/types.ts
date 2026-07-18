@@ -307,6 +307,7 @@ export interface AppSettings {
   enable_random_level: boolean;
   enable_private_filters: boolean;
   analytics_enabled: boolean;
+  analytics_measurement_id: string | null;
   maintenance_mode: boolean;
   default_exclude_photo_video: boolean;
   default_exclude_third_parties: boolean;
