@@ -18,6 +18,8 @@ import {
 import { drawAdaptiveCard } from "../engine/game-master";
 import { normalizeSceneRole } from "../lib/sceneRole";
 import { trackAnalyticsEvent } from "../lib/analytics";
+import { applySavedPreferences } from "../auth/profile-preferences";
+import type { SavedGamePreferences } from "../auth/types";
 
 export type AppStage = "age" | "home" | "setup" | "game" | "paused" | "summary";
 
@@ -36,7 +38,7 @@ interface GameStore {
   ) => void;
   acceptAge: () => void;
   goHome: () => void;
-  openSetup: () => void;
+  openSetup: (preferences?: SavedGamePreferences | null) => void;
   updateSetup: (patch: Partial<GameSetup>) => void;
   updateFilters: (patch: Partial<GameSetup["filters"]>) => void;
   startGame: () => Promise<void>;
@@ -164,14 +166,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ stage: "home", session: null, gameMasterBusy: false });
   },
 
-  openSetup() {
-    const { content, setup } = get();
+  openSetup(preferences) {
+    const { content } = get();
     if (!content) return;
 
     trackAnalyticsEvent("setup_opened");
     set({
       stage: "setup",
-      setup: normalizeSetup(content, setup),
+      setup: applySavedPreferences(
+        content,
+        normalizeSetup(content, null),
+        preferences,
+      ),
       session: null,
       gameMasterBusy: false,
     });

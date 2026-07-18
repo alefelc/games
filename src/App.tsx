@@ -11,6 +11,10 @@ import { GameScreen } from "./screens/GameScreen";
 import { PauseScreen } from "./screens/PauseScreen";
 import { SummaryScreen } from "./screens/SummaryScreen";
 import { configureAnalytics, trackAnalyticsScreen } from "./lib/analytics";
+import { useAuthStore } from "./auth/useAuthStore";
+import { AuthScreen, type AuthMode } from "./screens/AuthScreen";
+import { ProfileScreen } from "./screens/ProfileScreen";
+import { serializeSetupPreferences } from "./auth/profile-preferences";
 
 export default function App() {
   /*
@@ -45,6 +49,24 @@ export default function App() {
   const restart = useGameStore((state) => state.restart);
 
   const [loading, setLoading] = useState(true);
+  const initialAuth = new URLSearchParams(window.location.search);
+  const initialAuthAction = initialAuth.get("auth");
+  const [accountView, setAccountView] = useState<"none" | "auth" | "profile">(
+    initialAuthAction ? "auth" : "none",
+  );
+  const [authMode, setAuthMode] = useState<AuthMode>(
+    initialAuthAction === "accept-invite"
+      ? "accept-invite"
+      : initialAuthAction === "reset-password"
+        ? "reset"
+        : "login",
+  );
+  const authToken = initialAuth.get("token");
+  const authStatus = useAuthStore((state) => state.status);
+  const authUser = useAuthStore((state) => state.user);
+  const authProfile = useAuthStore((state) => state.profile);
+  const initializeAuth = useAuthStore((state) => state.initialize);
+  const savePreferences = useAuthStore((state) => state.savePreferences);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestSequence = useRef(0);
@@ -81,6 +103,10 @@ export default function App() {
     },
     [setContent],
   );
+
+  useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -133,6 +159,42 @@ export default function App() {
     return <LoadingScreen />;
   }
 
+  const closeAccountView = () => {
+    setAccountView("none");
+    if (new URLSearchParams(window.location.search).has("auth")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  };
+
+  if (accountView === "auth") {
+    return (
+      <AuthScreen
+        content={content}
+        initialMode={authMode}
+        token={authToken}
+        onBack={closeAccountView}
+        onAuthenticated={() => {
+          window.history.replaceState({}, "", window.location.pathname);
+          setAccountView("profile");
+        }}
+      />
+    );
+  }
+
+  if (accountView === "profile" && authStatus === "authenticated" && authUser) {
+    return (
+      <ProfileScreen
+        content={content}
+        onBack={closeAccountView}
+        onEditDefaults={() => {
+          setAccountView("none");
+          openSetup(authProfile?.preferences);
+        }}
+        onLoggedOut={closeAccountView}
+      />
+    );
+  }
+
   if (content.settings.maintenance_mode) {
     return (
       <ErrorScreen
@@ -150,7 +212,13 @@ export default function App() {
       return (
         <HomeScreen
           content={content}
-          onStart={openSetup}
+          onStart={() => openSetup(authProfile?.preferences)}
+          accountLabel={authStatus === "authenticated" ? authProfile?.preferences?.playerOne || authUser?.first_name || "Mi perfil" : "Ingresar"}
+          authenticated={authStatus === "authenticated"}
+          onAccount={() => {
+            setAuthMode("login");
+            setAccountView(authStatus === "authenticated" ? "profile" : "auth");
+          }}
           onRefresh={() => void refresh(true)}
           refreshing={refreshing}
         />
@@ -165,6 +233,14 @@ export default function App() {
           onStart={() => void startGame()}
           updateSetup={updateSetup}
           updateFilters={updateFilters}
+          authenticated={authStatus === "authenticated"}
+          onSaveDefaults={
+            authStatus === "authenticated"
+              ? async () => {
+                  await savePreferences(serializeSetupPreferences(content, setup));
+                }
+              : undefined
+          }
         />
       ) : (
         <LoadingScreen content={content} />

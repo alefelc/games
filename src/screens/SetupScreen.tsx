@@ -46,6 +46,8 @@ export function SetupScreen({
   onStart,
   updateSetup,
   updateFilters,
+  authenticated,
+  onSaveDefaults,
 }: {
   content: ContentBundle;
   setup: GameSetup;
@@ -53,8 +55,12 @@ export function SetupScreen({
   onStart: () => void;
   updateSetup: (patch: Partial<GameSetup>) => void;
   updateFilters: (patch: Partial<SafetyFilters>) => void;
+  authenticated: boolean;
+  onSaveDefaults?: () => Promise<void>;
 }) {
   const [step, setStep] = useState(0);
+  const [savingDefaults, setSavingDefaults] = useState(false);
+  const [defaultsNotice, setDefaultsNotice] = useState<string | null>(null);
   const stepContent = [
     {
       label: content.settings.setup_step_1_label,
@@ -579,6 +585,34 @@ export function SetupScreen({
                 }
               />
             </label>
+
+            {authenticated && onSaveDefaults && (
+              <div className="save-defaults-panel">
+                <div>
+                  <Icon name="check" />
+                  <span>
+                    <b>Usar esta configuración siempre</b>
+                    <small>Guardá nombres, modo, niveles, elementos, juguetes, filtros y cantidad de cartas.</small>
+                  </span>
+                </div>
+                <button
+                  className="secondary-button wide"
+                  type="button"
+                  disabled={savingDefaults}
+                  onClick={() => {
+                    setSavingDefaults(true);
+                    setDefaultsNotice(null);
+                    void onSaveDefaults()
+                      .then(() => setDefaultsNotice("Preferencias guardadas en tu perfil."))
+                      .catch(() => setDefaultsNotice("No se pudieron guardar las preferencias."))
+                      .finally(() => setSavingDefaults(false));
+                  }}
+                >
+                  {savingDefaults ? "Guardando…" : "Guardar como predeterminada"}
+                </button>
+                {defaultsNotice && <p className="defaults-notice">{defaultsNotice}</p>}
+              </div>
+            )}
 
             <div
               className={`eligibility-summary ${eligibleCount === 0 ? "invalid" : ""}`}

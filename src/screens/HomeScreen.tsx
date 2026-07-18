@@ -9,11 +9,17 @@ export function HomeScreen({
   onStart,
   onRefresh,
   refreshing,
+  onAccount,
+  accountLabel,
+  authenticated,
 }: {
   content: ContentBundle;
   onStart: () => void;
   onRefresh: () => void;
   refreshing: boolean;
+  onAccount: () => void;
+  accountLabel: string;
+  authenticated: boolean;
 }) {
   const [showRules, setShowRules] = useState(false);
   const publishedLevels = content.levels.length;
@@ -76,15 +82,26 @@ export function HomeScreen({
       <TopBar
         content={content}
         actions={
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onRefresh}
-            disabled={refreshing}
-            aria-label="Actualizar contenido"
-          >
-            <Icon name="refresh" className={refreshing ? "spin" : ""} />
-          </button>
+          <>
+            <button
+              className={`account-button ${authenticated ? "authenticated" : ""}`}
+              type="button"
+              onClick={onAccount}
+              aria-label={authenticated ? "Abrir mi perfil" : "Ingresar o crear cuenta"}
+            >
+              <Icon name={authenticated ? "check" : "lock"} />
+              <span>{accountLabel}</span>
+            </button>
+            <button
+              className="icon-button"
+              type="button"
+              onClick={onRefresh}
+              disabled={refreshing}
+              aria-label="Actualizar contenido"
+            >
+              <Icon name="refresh" className={refreshing ? "spin" : ""} />
+            </button>
+          </>
         }
       />
       <main className="hero">
@@ -104,6 +121,14 @@ export function HomeScreen({
           </span>
           <Icon name="arrow" />
         </button>
+
+        {!authenticated && (
+          <button className="account-promo" type="button" onClick={onAccount}>
+            <Icon name="lock" />
+            <span><b>Guardá tus preferencias</b><small>Creá una cuenta y evitá configurar cada partida.</small></span>
+            <Icon name="arrow" />
+          </button>
+        )}
 
         <div className="home-stats" aria-label="Contenido disponible">
           <div>
@@ -132,7 +157,7 @@ export function HomeScreen({
           <Icon name="lock" />
           <span>
             {content.game.privacy_notice ||
-              "La actividad de la partida queda en este dispositivo."}
+              "Las partidas quedan en este dispositivo; al iniciar sesión solo se sincronizan tus preferencias guardadas."}
           </span>
         </div>
       </main>
