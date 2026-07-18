@@ -1,7 +1,7 @@
 {
   "name": "te-animas-app",
   "private": true,
-  "version": "2.13.10",
+  "version": "2.14.3",
   "type": "module",
   "engines": {
     "node": ">=22.12"
@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run --pool=forks --maxWorkers=1",
+    "test": "vitest run --pool=threads --maxWorkers=1",
     "test:watch": "vitest"
   },
   "dependencies": {

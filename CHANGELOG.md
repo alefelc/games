@@ -1,3 +1,41 @@
+# 2.14.3 — R19
+
+- Reemplaza el registro público por activación mediante invitación nativa de Directus.
+- El registro inicial solicita nombre, apellido y email; la contraseña se define desde el enlace recibido.
+- Elimina la dependencia de políticas, permisos personalizados y configuración de registro público.
+- Mantiene los perfiles detrás de Game Master 1.9.1.
+
+# 2.14.2 — R18
+
+- Elimina los permisos personalizados rechazados por Directus 12.1.1.
+- El rol Jugadores queda sin acceso directo al panel ni a colecciones.
+- Añade una API privada de perfiles en Game Master 1.9.0.
+- El backend identifica al jugador mediante su access token y fija el propietario en el servidor.
+- El navegador deja de llamar a `/items/pc_user_profiles`.
+- Permite editar nombre y apellido desde el perfil.
+
+# 2.14.1 — R17
+
+- Retira la migración R16 por modificar tablas internas de Directus.
+- Nuevo instalador idempotente mediante APIs oficiales de colecciones, campos, roles, políticas, accesos, permisos y ajustes.
+- Preflight obligatorio de `Admin Access` antes de cualquier escritura.
+- Rollback automático de los cambios realizados por una ejecución fallida.
+- El frontend ya no envía el campo `user` al crear perfiles; Directus lo fija con `$CURRENT_USER`.
+- Validación adicional contra colisiones de nombres y permisos duplicados.
+- R16 queda retirada y no debe desplegarse.
+
+# 2.14.0 — R16
+
+- Registro de usuarios con nombre, apellido, email y contraseña.
+- Validación obligatoria del email antes del primer ingreso.
+- Login, logout, recuperación y cambio de contraseña.
+- Refresh token en cookie `httpOnly`; access token únicamente en memoria.
+- Perfil privado por usuario en `pc_user_profiles`.
+- Configuración predeterminada sincronizada por slugs estables entre dispositivos.
+- Rol `Jugadores` sin acceso al panel y política limitada a `$CURRENT_USER`.
+- El juego continúa disponible como invitado.
+- No se sincronizan cartas, reacciones, respuestas ni historial de partidas.
+
 # 2.13.10 — R15
 
 - El ID de GA4 se configura exclusivamente desde `pc_app_settings.analytics_measurement_id`.
