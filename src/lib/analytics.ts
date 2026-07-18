@@ -2,7 +2,6 @@ import type { AppSettings } from "../types";
 
 const SCRIPT_ID = "te-animas-ga4";
 const MEASUREMENT_ID_PATTERN = /^G-[A-Z0-9]{4,20}$/i;
-const EMBEDDED_MEASUREMENT_ID = "G-8CMSB2VYC8";
 
 type Gtag = (...args: unknown[]) => void;
 
@@ -65,11 +64,7 @@ export function configureAnalytics(
     return false;
   }
 
-  const buildMeasurementId = import.meta.env.VITE_GA4_MEASUREMENT_ID;
-  const measurementId =
-    normalizeMeasurementId(settings.analytics_measurement_id) ??
-    normalizeMeasurementId(buildMeasurementId) ??
-    normalizeMeasurementId(EMBEDDED_MEASUREMENT_ID);
+  const measurementId = normalizeMeasurementId(settings.analytics_measurement_id);
 
   if (!settings.analytics_enabled || !measurementId) {
     disableMeasurementId(activeMeasurementId ?? measurementId);

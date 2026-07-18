@@ -1,49 +1,53 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-async function analyticsModule() {
-  vi.resetModules();
-  return import("../lib/analytics");
-}
-
-beforeEach(() => {
-  document.head.innerHTML = "";
-  window.dataLayer = [];
-  delete window.gtag;
-});
+import {
+  configureAnalytics,
+  isValidAnalyticsMeasurementId,
+  trackAnalyticsEvent,
+  trackAnalyticsScreen,
+} from "../lib/analytics";
 
 describe("Google Analytics 4", () => {
-  it("no carga GA4 si está desactivado", async () => {
-    const { configureAnalytics } = await analyticsModule();
+  beforeEach(() => {
+    document.head.innerHTML = "";
+    window.dataLayer = [];
+    window.gtag = undefined;
+    delete window["ga-disable-G-ABC12345"];
+  });
 
+  it("no carga GA4 cuando Analytics está desactivado", () => {
     expect(
       configureAnalytics({
         analytics_enabled: false,
         analytics_measurement_id: "G-ABC12345",
       }),
     ).toBe(false);
-    expect(document.getElementById("te-animas-ga4")).toBeNull();
+
+    expect(document.querySelector("#te-animas-ga4")).toBeNull();
   });
 
-  it("rechaza identificadores inválidos pero usa el ID integrado", async () => {
-    const { configureAnalytics, isValidAnalyticsMeasurementId } =
-      await analyticsModule();
+  it("no carga GA4 sin un ID válido configurado en el panel", () => {
+    expect(
+      configureAnalytics({
+        analytics_enabled: true,
+        analytics_measurement_id: "",
+      }),
+    ).toBe(false);
 
-    expect(isValidAnalyticsMeasurementId("UA-123456-1")).toBe(false);
+    expect(document.querySelector("#te-animas-ga4")).toBeNull();
+  });
+
+  it("rechaza identificadores que no sean GA4", () => {
     expect(
       configureAnalytics({
         analytics_enabled: true,
         analytics_measurement_id: "UA-123456-1",
       }),
-    ).toBe(true);
-    const script = document.getElementById("te-animas-ga4") as HTMLScriptElement;
-    expect(script.src).toContain("gtag/js?id=G-8CMSB2VYC8");
+    ).toBe(false);
+
+    expect(document.querySelector("#te-animas-ga4")).toBeNull();
   });
 
-  it("carga GA4 y encola eventos anónimos", async () => {
-    const { configureAnalytics, trackAnalyticsEvent } =
-      await analyticsModule();
-
+  it("carga el ID configurado en el panel", () => {
     expect(
       configureAnalytics({
         analytics_enabled: true,
@@ -51,42 +55,36 @@ describe("Google Analytics 4", () => {
       }),
     ).toBe(true);
 
-    const script = document.getElementById(
-      "te-animas-ga4",
-    ) as HTMLScriptElement | null;
+    const script = document.querySelector<HTMLScriptElement>("#te-animas-ga4");
     expect(script?.src).toContain("gtag/js?id=G-ABC12345");
+    expect(script?.dataset.measurementId).toBe("G-ABC12345");
+  });
 
-    trackAnalyticsEvent("game_started", {
-      player_count: 2,
-      adaptive_enabled: true,
+  it("envía eventos y evita repetir la misma pantalla", () => {
+    configureAnalytics({
+      analytics_enabled: true,
+      analytics_measurement_id: "G-ABC12345",
     });
 
-    expect(window.dataLayer).toEqual(
-      expect.arrayContaining([
-        [
-          "event",
-          "game_started",
-          { player_count: 2, adaptive_enabled: true },
-        ],
-      ]),
-    );
-  });
+    const spy = vi.spyOn(window, "gtag");
+    trackAnalyticsEvent("game_started", { mode: "clasico" });
+    trackAnalyticsScreen("setup");
+    trackAnalyticsScreen("setup");
 
-  it("usa el ID integrado cuando el panel no tiene código", async () => {
-    const { configureAnalytics } = await analyticsModule();
-
+    expect(spy).toHaveBeenCalledWith("event", "game_started", { mode: "clasico" });
     expect(
-      configureAnalytics({
-        analytics_enabled: true,
-        analytics_measurement_id: "",
-      }),
-    ).toBe(true);
-
-    const script = document.getElementById(
-      "te-animas-ga4",
-    ) as HTMLScriptElement | null;
-    expect(script?.src).toContain("gtag/js?id=G-8CMSB2VYC8");
+      spy.mock.calls.filter(
+        ([kind, name, params]) =>
+          kind === "event" &&
+          name === "screen_view" &&
+          (params as Record<string, unknown>)?.screen_name === "setup",
+      ),
+    ).toHaveLength(1);
   });
 
-
+  it("valida IDs GA4", () => {
+    expect(isValidAnalyticsMeasurementId("G-8CMSB2VYC8")).toBe(true);
+    expect(isValidAnalyticsMeasurementId("UA-123456-1")).toBe(false);
+    expect(isValidAnalyticsMeasurementId("")).toBe(false);
+  });
 });
