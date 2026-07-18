@@ -10,6 +10,9 @@ declare global {
     dataLayer?: unknown[];
     gtag?: Gtag;
     [key: `ga-disable-${string}`]: boolean | undefined;
+    __TE_ANIMAS_RUNTIME_CONFIG__?: {
+      ga4MeasurementId?: string;
+    };
   }
 }
 
@@ -64,9 +67,15 @@ export function configureAnalytics(
     return false;
   }
 
-  const measurementId = normalizeMeasurementId(
-    settings.analytics_measurement_id,
-  );
+  const runtimeMeasurementId =
+    typeof window !== "undefined"
+      ? window.__TE_ANIMAS_RUNTIME_CONFIG__?.ga4MeasurementId
+      : undefined;
+  const buildMeasurementId = import.meta.env.VITE_GA4_MEASUREMENT_ID;
+  const measurementId =
+    normalizeMeasurementId(runtimeMeasurementId) ??
+    normalizeMeasurementId(settings.analytics_measurement_id) ??
+    normalizeMeasurementId(buildMeasurementId);
 
   if (!settings.analytics_enabled || !measurementId) {
     disableMeasurementId(activeMeasurementId ?? measurementId);
