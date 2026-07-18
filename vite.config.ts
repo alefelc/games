@@ -64,6 +64,7 @@ export default defineConfig(({ mode }) => {
             /^\/build-info\.json$/,
           ],
           globPatterns: ["**/*.{js,css,html,svg,png,json,webmanifest}"],
+          globIgnores: ["**/runtime-config.js"],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,

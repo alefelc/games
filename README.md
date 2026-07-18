@@ -1,24 +1,32 @@
-# ¿Te animás? — Frontend 2.13.5 r10
+# ¿Te animás? — Frontend 2.13.7 r12
 
-Esta revisión convierte la opción de Analytics en una integración funcional con Google Analytics 4.
+Esta revisión hace que GA4 funcione incluso cuando el token del panel no puede crear campos.
 
 ## Publicación
 
 Subir el contenido de este directorio a la raíz del repositorio del frontend y reconstruir la aplicación.
 
-## Configuración previa
+## Configuración de Analytics
 
-Ejecutar `Ejecutar-Actualizacion-Analytics.bat` desde el instalador incluido en el paquete completo. El proceso crea el campo **Analytics Measurement Id** y permite guardar directamente el ID `G-XXXXXXXXXX`.
+`Analytics Enabled` se controla desde el panel. El ID se puede suministrar de tres formas:
 
-Después, en la configuración:
+1. Campo **Analytics Measurement Id**, cuando existe.
+2. `public/runtime-config.js`.
+3. Variable `GA4_MEASUREMENT_ID` en el contenedor.
 
-1. Completar **Analytics Measurement Id**.
-2. Activar **Analytics Enabled**.
-3. Guardar.
+La opción recomendada en EasyPanel es:
+
+```env
+GA4_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+Después, reiniciar o redesplegar el servicio.
 
 ## Comprobación
 
-- Abrir `/build-info.json` y confirmar `frontend_release: 2.13.5`.
-- Abrir GA4 en tiempo real y comenzar una partida de prueba.
+- Abrir `/build-info.json` y confirmar `frontend_release: 2.13.7`.
+- Abrir `/runtime-config.js` y comprobar el ID.
+- Activar **Analytics Enabled**.
+- Revisar GA4 en tiempo real durante una partida de prueba.
 
-La API adaptativa 1.8.3 no requiere cambios.
+`runtime-config.js` queda fuera de la caché de la PWA para permitir cambios inmediatos.

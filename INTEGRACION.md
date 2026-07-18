@@ -1,7 +1,10 @@
-# Integración r10
+# Integración r12
 
-1. Ejecutar `Ejecutar-Actualizacion-Analytics.bat` para crear y configurar el campo GA4.
-2. Publicar el frontend 2.13.5.
+1. Ejecutar `Ejecutar-Actualizacion-Analytics.bat` con el ID GA4.
+2. Publicar el frontend 2.13.7.
 3. No volver a publicar la API adaptativa.
-4. Probar en una ventana privada para evitar una PWA anterior almacenada.
-5. Verificar los eventos en el informe en tiempo real de Google Analytics 4.
+4. Confirmar que `/runtime-config.js` contiene el ID.
+5. Activar **Analytics Enabled** en el panel.
+6. Verificar eventos en Google Analytics 4.
+
+Si se usa EasyPanel, también puede definirse `GA4_MEASUREMENT_ID=G-XXXXXXXXXX` en el servicio del frontend.

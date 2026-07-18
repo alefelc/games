@@ -22,14 +22,16 @@ ARG VITE_DIRECTUS_URL=https://admin.teanimas.com
 ARG VITE_GAME_MASTER_URL=
 ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
+ARG VITE_GA4_MEASUREMENT_ID=
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=2.13.5
+ARG BUILD_RELEASE=2.13.6
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
     VITE_BASE_PATH=${VITE_BASE_PATH} \
     VITE_GAME_SLUG=${VITE_GAME_SLUG} \
+    VITE_GA4_MEASUREMENT_ID=${VITE_GA4_MEASUREMENT_ID} \
     VITE_ALLOW_BOOTSTRAP_FALLBACK=${VITE_ALLOW_BOOTSTRAP_FALLBACK} \
     VITE_CONTENT_CACHE_HOURS=${VITE_CONTENT_CACHE_HOURS} \
     BUILD_RELEASE=${BUILD_RELEASE}
@@ -42,11 +44,13 @@ RUN echo "Building release $BUILD_RELEASE with private adaptive diagnostics and 
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.13.5"
+LABEL org.opencontainers.image.version="2.13.6"
 
-ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com
+ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com \
+    GA4_MEASUREMENT_ID=
 
 COPY deploy/default.conf.template /etc/nginx/templates/default.conf.template
+COPY deploy/40-runtime-config.sh /docker-entrypoint.d/40-runtime-config.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

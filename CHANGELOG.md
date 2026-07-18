@@ -1,4 +1,19 @@
-# ¿Te animás? — Frontend 2.13.5 r10
+# Changelog
+
+## 2.13.7 — Analytics R12
+
+- El ID runtime de GA4 tiene prioridad sobre valores remotos anteriores.
+- `runtime-config.js` queda preparado con `G-8CMSB2VYC8`.
+- El actualizador ya no consulta endpoints `/fields`.
+
+## 2.13.6 — Analytics sin permisos de esquema
+
+- GA4 puede tomar el ID desde `GA4_MEASUREMENT_ID` en el contenedor.
+- También admite `public/runtime-config.js` y conserva el campo remoto como alternativa.
+- `Analytics Enabled` sigue siendo el interruptor maestro.
+- Ya no es obligatorio dar permisos para modificar el modelo de datos.
+
+# Historial anterior — Frontend 2.13.5 r10
 
 ## Analytics GA4 funcional
 
