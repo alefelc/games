@@ -1,4 +1,4 @@
-# ¿Te animás? — Frontend 2.14.3 R19
+# ¿Te animás? — Frontend 2.15.0 R20
 
 Frontend con cuentas por invitación, login, recuperación de contraseña y perfil persistente.
 
@@ -15,10 +15,10 @@ El frontend no llama a `/users/register` ni accede directamente a `pc_user_profi
 ## Despliegue
 
 1. Instalá `directus-auth-r19`.
-2. Publicá Game Master 1.9.1 con `PLAYER_ROLE_ID`.
+2. Publicá Game Master 1.10.0 con `PLAYER_ROLE_ID`.
 3. Publicá este frontend.
 4. Reconstruí la imagen sin reutilizar una versión anterior.
-5. Abrí `/build-info.json` y confirmá `frontend_release: 2.14.3-r19`.
+5. Abrí `/build-info.json` y confirmá `frontend_release: 2.15.0-r20`.
 
 ## Validación
 
@@ -27,3 +27,7 @@ npm ci
 npm test -- --run
 npm run build
 ```
+
+## Inventario y variedad R20
+
+El frontend incluye el bundle completo de 1.030 cartas como respaldo, prioriza los recursos elegidos, distribuye su aparición durante la sesión, registra las cartas seleccionadas por la IA en el historial persistente y muestra la cobertura real antes de empezar.

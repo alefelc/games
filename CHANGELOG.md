@@ -1,3 +1,13 @@
+# 2.15.0 — R20
+
+- Corrige las relaciones carta-elemento y carta-juguete para el catálogo completo.
+- Prioriza y garantiza una presencia proporcional del inventario seleccionado.
+- Añade cobertura de cartas de penetración en los niveles intensos cuando el filtro las permite.
+- Guarda también las cartas elegidas por Dirección adaptativa en el historial entre partidas.
+- Envía a la API el inventario y las prácticas de cada candidata.
+- Muestra cobertura real por recurso y resumen de cartas compatibles antes de empezar.
+- Corrige booleanos remotos recibidos como texto.
+
 # 2.14.3 — R19
 
 - Reemplaza el registro público por activación mediante invitación nativa de Directus.

@@ -64,6 +64,7 @@ export default defineConfig(({ mode }) => {
             /^\/build-info\.json$/,
           ],
           globPatterns: ["**/*.{js,css,html,svg,png,json,webmanifest}"],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
@@ -72,7 +73,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: apiPattern,
               handler: "NetworkFirst",
               options: {
-                cacheName: "te-animas-content-v2120",
+                cacheName: "te-animas-content-v2150",
                 networkTimeoutSeconds: 5,
                 expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
                 cacheableResponse: { statuses: [0, 200] },
@@ -82,7 +83,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: assetPattern,
               handler: "CacheFirst",
               options: {
-                cacheName: "te-animas-images-v2120",
+                cacheName: "te-animas-images-v2150",
                 expiration: {
                   maxEntries: 80,
                   maxAgeSeconds: 60 * 60 * 24 * 30,
