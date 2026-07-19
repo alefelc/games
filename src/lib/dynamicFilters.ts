@@ -22,6 +22,15 @@ export interface DynamicFilterDefinition {
 
 export type DynamicFilterValues = Record<string, boolean | number>;
 
+function asBoolean(value: unknown): boolean {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["false", "0", "no", ""].includes(normalized)) return false;
+    if (["true", "1", "yes", "si", "sí"].includes(normalized)) return true;
+  }
+  return value === true || value === 1;
+}
+
 const booleanFilter = (
   key: string,
   label: string,
@@ -196,7 +205,7 @@ export function buildDynamicFilterDefaults(
       definition.key,
       definition.filter_kind === "max_number"
         ? Number(definition.default_number ?? definition.max_value ?? 0)
-        : Boolean(definition.default_enabled),
+        : asBoolean(definition.default_enabled),
     ]),
   );
 }
@@ -213,7 +222,7 @@ export function normalizeFilterValues(
     defaults[definition.key] =
       definition.filter_kind === "max_number"
         ? Number(incoming[definition.key])
-        : Boolean(incoming[definition.key]);
+        : asBoolean(incoming[definition.key]);
   }
 
   return defaults;

@@ -16,7 +16,13 @@ const nullableNumber = z.coerce
   .nullable()
   .optional()
   .transform((value) => value ?? null);
-const bool = z.coerce.boolean();
+const bool = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const normalized = value.trim().toLowerCase();
+  if (["true", "1", "yes", "si", "sí"].includes(normalized)) return true;
+  if (["false", "0", "no", ""].includes(normalized)) return false;
+  return value;
+}, z.boolean());
 const number = z.coerce.number();
 const cardFields = z.preprocess((value) => {
   if (Array.isArray(value)) return value.map(String);

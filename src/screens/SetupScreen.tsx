@@ -3,7 +3,7 @@ import type { ContentBundle, GameSetup, Id, SafetyFilters } from "../types";
 import { Icon } from "../components/Icon";
 import { DynamicLimits } from "../components/DynamicLimits";
 import { TopBar } from "../components/TopBar";
-import { previewEligibleCount } from "../engine/session";
+import { previewEligibleStats } from "../engine/session";
 import { checkGameMasterAvailability } from "../api/game-master";
 
 function toggleId(values: Id[], id: Id): Id[] {
@@ -112,16 +112,99 @@ export function SetupScreen({
         ? deck.minimum_players <= 1 && deck.maximum_players >= 1
         : deck.minimum_players <= 2 && deck.maximum_players >= 2),
   );
+  const elementCoverage = useMemo(
+    () =>
+      new Map(
+        content.elements.map((item) => [
+          item.id,
+          new Set(
+            content.cardElements
+              .filter((row) => row.element === item.id)
+              .map((row) => row.card),
+          ).size,
+        ]),
+      ),
+    [content.cardElements, content.elements],
+  );
+  const toyCoverage = useMemo(
+    () =>
+      new Map(
+        content.toys.map((item) => [
+          item.id,
+          new Set(
+            content.cardToys
+              .filter((row) => row.toy === item.id)
+              .map((row) => row.card),
+          ).size,
+        ]),
+      ),
+    [content.cardToys, content.toys],
+  );
   const availableElements = content.elements
-    .filter((item) => item.visible_in_setup && matchesSoloResource(item))
+    .filter(
+      (item) =>
+        item.visible_in_setup &&
+        matchesSoloResource(item) &&
+        (elementCoverage.get(item.id) ?? 0) > 0,
+    )
     .sort((a, b) => a.selection_priority - b.selection_priority);
   const availableToys = content.toys
-    .filter((item) => item.visible_in_setup && matchesSoloResource(item))
+    .filter(
+      (item) =>
+        item.visible_in_setup &&
+        matchesSoloResource(item) &&
+        (toyCoverage.get(item.id) ?? 0) > 0,
+    )
     .sort((a, b) => a.selection_priority - b.selection_priority);
-  const eligibleCount = useMemo(
-    () => previewEligibleCount(content, setup),
+  const availableFilterDefinitions = useMemo(
+    () =>
+      content.filters
+        .filter((definition) => {
+          if (!definition.visible) return false;
+          if (definition.filter_kind === "boolean_exclusion") {
+            return content.cards.some((card) =>
+              definition.card_fields.some((field) =>
+                Boolean((card as unknown as Record<string, unknown>)[field]),
+              ),
+            );
+          }
+          if (definition.filter_kind === "max_number" && definition.numeric_field) {
+            const minimum = Number(definition.min_value ?? 0);
+            return content.cards.some(
+              (card) =>
+                Number(
+                  (card as unknown as Record<string, unknown>)[
+                    definition.numeric_field as string
+                  ] ?? 0,
+                ) > minimum,
+            );
+          }
+          return false;
+        })
+        .map((definition) => {
+          if (definition.filter_kind !== "boolean_exclusion") return definition;
+          const affected = content.cards.filter((card) =>
+            definition.card_fields.some((field) =>
+              Boolean((card as unknown as Record<string, unknown>)[field]),
+            ),
+          ).length;
+          return {
+            ...definition,
+            description: [
+              definition.description,
+              `${affected} ${affected === 1 ? "carta afectada" : "cartas afectadas"}`,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          };
+        }),
+    [content.cards, content.filters],
+  );
+  const eligibleStats = useMemo(
+    () => previewEligibleStats(content, setup),
     [content, setup],
   );
+  const eligibleCount = eligibleStats.total;
   const requiresIntenseConsent = content.levels.some(
     (level) => setup.levelIds.includes(level.id) && level.requires_confirmation,
   );
@@ -517,7 +600,7 @@ export function SetupScreen({
                   key={item.id}
                   checked={setup.elementIds.includes(item.id)}
                   title={item.name}
-                  description={item.description}
+                  description={`${item.description || ""} · ${elementCoverage.get(item.id) ?? 0} cartas`}
                   onChange={() =>
                     updateSetup({
                       elementIds: toggleId(setup.elementIds, item.id),
@@ -534,7 +617,7 @@ export function SetupScreen({
                   key={toy.id}
                   checked={setup.toyIds.includes(toy.id)}
                   title={toy.name}
-                  description={`${toy.difficulty} · ${toy.description || ""}`}
+                  description={`${toy.difficulty} · ${toy.description || ""} · ${toyCoverage.get(toy.id) ?? 0} cartas`}
                   onChange={() =>
                     updateSetup({ toyIds: toggleId(setup.toyIds, toy.id) })
                   }
@@ -551,13 +634,13 @@ export function SetupScreen({
             <p className="section-copy">{stepContent[3].subtitle}</p>
 
             <DynamicLimits
-              definitions={content.filters}
+              definitions={availableFilterDefinitions}
               values={setup.filters}
               onChange={(values) => updateFilters(values)}
               showAdvanced={showAdvanced}
             />
 
-            {content.filters.some((definition) => definition.advanced) && (
+            {availableFilterDefinitions.some((definition) => definition.advanced) && (
               <button
                 className="advanced-toggle"
                 type="button"
@@ -621,6 +704,19 @@ export function SetupScreen({
                 <b>{eligibleCount}</b>
                 <span>cartas compatibles con esta configuración</span>
               </div>
+              {eligibleCount > 0 && (
+                <div className="eligibility-breakdown">
+                  <span>
+                    <b>{eligibleStats.withSelectedInventory}</b> usan lo elegido
+                  </span>
+                  <span>
+                    <b>{eligibleStats.penetration}</b> incluyen coger/penetración
+                  </span>
+                  <span>
+                    <b>{eligibleStats.toys}</b> incluyen juguetes
+                  </span>
+                </div>
+              )}
               {eligibleCount === 0 && (
                 <p>
                   Los filtros y elementos seleccionados dejaron la partida sin

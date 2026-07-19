@@ -3,6 +3,7 @@ import {
   buildDynamicFilterDefaults,
   cardPassesDynamicFilters,
   fallbackFilterDefinitions,
+  normalizeFilterValues,
 } from "../lib/dynamicFilters";
 
 describe("filtros dinámicos v2.12.0", () => {
@@ -31,4 +32,12 @@ describe("filtros dinámicos v2.12.0", () => {
       ),
     ).toBe(false);
   });
+  it("conserva false cuando una preferencia heredada llega como texto", () => {
+    const definitions = fallbackFilterDefinitions();
+    const values = normalizeFilterValues(definitions, {
+      excludePenetration: "false",
+    } as unknown as Record<string, boolean | number>);
+    expect(values.excludePenetration).toBe(false);
+  });
+
 });

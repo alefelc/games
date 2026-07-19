@@ -13,6 +13,7 @@ import {
   applyCardSelection,
   drawNextCard,
   getDrawCandidatePool,
+  rememberSelectedCard,
   type DrawResult,
 } from "./session";
 import { cardHistoryPenalty } from "./card-history";
@@ -164,6 +165,8 @@ export async function drawAdaptiveCard(
       throw new Error("La carta elegida ya no está disponible.");
     }
 
+    rememberSelectedCard(content, setup, selected);
+
     return {
       session: applyCardSelection(session, selected, pool.player, {
         phase: decision.phase,
@@ -202,6 +205,9 @@ export async function drawAdaptiveCard(
         exhausted: true,
       };
     }
+
+
+    rememberSelectedCard(content, setup, selected);
 
     return {
       session: applyCardSelection(session, selected, pool.player, {

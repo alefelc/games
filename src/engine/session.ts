@@ -14,6 +14,7 @@ import {
   fallbackFilterDefinitions,
 } from "../lib/dynamicFilters";
 import { chooseInventoryPool } from "../lib/inventoryCoverage";
+import { choosePracticePool } from "../lib/practiceCoverage";
 import {
   buildHistoryKey,
   readCardHistory,
@@ -348,12 +349,27 @@ export function getDrawCandidatePool(
     setup,
     session,
   );
+  const practiceAware = choosePracticePool(
+    inventoryAware,
+    content,
+    setup,
+    session,
+  );
 
   return {
     player: drawPlayer,
-    candidates: preferFreshCards(inventoryAware),
-    exhausted: inventoryAware.length === 0,
+    candidates: preferFreshCards(practiceAware),
+    exhausted: practiceAware.length === 0,
   };
+}
+
+export function rememberSelectedCard(
+  content: ContentBundle,
+  setup: GameSetup,
+  card: Card,
+): void {
+  const { key, limit } = historyContext(content, setup);
+  rememberCard(key, card.id, limit);
 }
 
 export function applyCardSelection(
@@ -428,8 +444,7 @@ export function drawNextCard(
     };
   }
 
-  const { key, limit } = historyContext(content, setup);
-  rememberCard(key, card.id, limit);
+  rememberSelectedCard(content, setup, card);
 
   return {
     session: applyCardSelection(session, card, pool.player, {
@@ -508,4 +523,61 @@ export function previewEligibleCount(
   });
 
   return new Set([...one, ...two].map((card) => card.id)).size;
+}
+
+export interface EligiblePreviewStats {
+  total: number;
+  withSelectedInventory: number;
+  penetration: number;
+  toys: number;
+}
+
+export function previewEligibleStats(
+  content: ContentBundle,
+  setup: GameSetup,
+): EligiblePreviewStats {
+  const mode = content.modes.find((item) => item.id === setup.modeId);
+  const isSolo = mode?.slug === "solitario" || mode?.turn_mode === "single";
+  const common = {
+    playerCount: isSolo ? (1 as const) : (2 as const),
+    selectedLevelIds: new Set(setup.levelIds),
+    selectedDeckIds: new Set(setup.deckIds),
+    selectedElementIds: new Set(setup.elementIds),
+    selectedToyIds: new Set(setup.toyIds),
+    filters: setup.filters,
+    filterDefinitions: content.filters?.length
+      ? content.filters
+      : fallbackFilterDefinitions(content.settings),
+  };
+  const one = eligibleCards(content, {
+    ...common,
+    currentPlayerSexId: setup.playerOneSexId,
+    partnerSexId: isSolo ? null : setup.playerTwoSexId,
+  });
+  const two = isSolo
+    ? []
+    : eligibleCards(content, {
+        ...common,
+        currentPlayerSexId: setup.playerTwoSexId,
+        partnerSexId: setup.playerOneSexId,
+      });
+  const cards = [...new Map([...one, ...two].map((card) => [card.id, card])).values()];
+  const selectedInventory = new Set([...setup.elementIds, ...setup.toyIds]);
+  const usesSelectedInventory = (card: Card) =>
+    content.cardElements.some(
+      (row) => row.card === card.id && selectedInventory.has(row.element),
+    ) ||
+    content.cardToys.some(
+      (row) => row.card === card.id && selectedInventory.has(row.toy),
+    ) ||
+    (setup.toyIds.length > 0 &&
+      card.contains_toy &&
+      !content.cardToys.some((row) => row.card === card.id));
+
+  return {
+    total: cards.length,
+    withSelectedInventory: cards.filter(usesSelectedInventory).length,
+    penetration: cards.filter((card) => card.contains_penetration).length,
+    toys: cards.filter((card) => card.contains_toy).length,
+  };
 }

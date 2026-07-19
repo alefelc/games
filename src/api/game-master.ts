@@ -9,6 +9,10 @@ import type {
 } from "../types";
 import { normalizeSceneRole } from "../lib/sceneRole";
 import {
+  cardInventoryIds,
+  cardUsesSelectedInventory,
+} from "../lib/inventoryCoverage";
+import {
   recentAnatomyFocuses,
   recentCardIds,
   recentContinuityGroups,
@@ -206,6 +210,7 @@ function eventPayload(event: GameMasterEvent) {
 
 function candidatePayload(content: ContentBundle, card: Card) {
   const level = content.levels.find((item) => item.id === card.level);
+  const inventory = cardInventoryIds(card, content);
 
   return {
     id: card.id,
@@ -224,6 +229,18 @@ function candidatePayload(content: ContentBundle, card: Card) {
     anatomy_owner: card.anatomy_owner,
     penetration_method: card.penetration_method,
     reciprocal_action: card.reciprocal_action,
+    weight: card.weight,
+    element_slugs: content.elements
+      .filter((item) => inventory.elements.includes(item.id))
+      .map((item) => item.slug),
+    toy_slugs: content.toys
+      .filter((item) => inventory.toys.includes(item.id))
+      .map((item) => item.slug),
+    uses_selected_inventory: false,
+    contains_penetration: card.contains_penetration,
+    contains_toy: card.contains_toy,
+    contains_oral: card.contains_oral,
+    contains_manual_stimulation: card.contains_manual_stimulation,
     tags: tagSlugsForCard(content, card.id),
     gm_escalation_score: normalizeEscalationScore(card.gm_escalation_score),
     gm_energy_score: normalizeFivePointScore(card.gm_energy_score, 2),
@@ -528,9 +545,10 @@ export async function requestGameMasterDecision({
       .slice(-10)
       .map(eventPayload),
     resolved_event: resolvedEvent ? eventPayload(resolvedEvent) : null,
-    candidates: candidates
-      .slice(0, 60)
-      .map((card) => candidatePayload(content, card)),
+    candidates: candidates.slice(0, 60).map((card) => ({
+      ...candidatePayload(content, card),
+      uses_selected_inventory: cardUsesSelectedInventory(card, content, setup),
+    })),
   };
 
   let lastError: unknown = new GameMasterClientError({
