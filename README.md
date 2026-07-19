@@ -1,4 +1,4 @@
-# ¿Te animás? — Frontend 2.15.0 R20
+# ¿Te animás? — Frontend 2.15.1 R21
 
 Frontend con cuentas por invitación, login, recuperación de contraseña y perfil persistente.
 
@@ -18,7 +18,7 @@ El frontend no llama a `/users/register` ni accede directamente a `pc_user_profi
 2. Publicá Game Master 1.10.0 con `PLAYER_ROLE_ID`.
 3. Publicá este frontend.
 4. Reconstruí la imagen sin reutilizar una versión anterior.
-5. Abrí `/build-info.json` y confirmá `frontend_release: 2.15.0-r20`.
+5. Abrí `/build-info.json` y confirmá `frontend_release: 2.15.1-r21`.
 
 ## Validación
 

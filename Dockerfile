@@ -24,7 +24,7 @@ ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=2.15.0-r20
+ARG BUILD_RELEASE=2.15.1-r21
 
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
@@ -42,7 +42,7 @@ RUN echo "Building release $BUILD_RELEASE with invite-based accounts and backend
 
 FROM nginx:1.29-alpine AS runtime
 
-LABEL org.opencontainers.image.version="2.15.0-r20"
+LABEL org.opencontainers.image.version="2.15.1-r21"
 
 ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com
 

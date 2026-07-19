@@ -1,1 +1,5 @@
-{"frontend_release":"2.13.10-r15","game_master_route":"/api/game-master","built_at":"2026-07-18T03:16:53Z"}
+{
+  "frontend_release": "2.15.1-r21",
+  "game_master_route": "/api/game-master",
+  "built_at": "2026-07-19T03:50:00Z"
+}

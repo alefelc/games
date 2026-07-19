@@ -90881,18 +90881,18 @@
     "inventory_preference_multiplier": 6
   },
   "release": {
-    "id": "3924c021-2c46-5726-abc4-2b81f4f3be33",
+    "id": "046bf8b0-ccbb-5105-885c-3f5dbd3b3b70",
     "status": "published",
-    "sort": 6,
-    "version": "4.4.0",
-    "published_at": "2026-07-18T05:45:00.000Z",
-    "changelog": "Inventario funcional, mayor variedad entre partidas y cobertura de penetración en niveles intensos.",
-    "minimum_app_version": "2.15.0",
-    "config_hash": "5dd48754666a654ee114d229b37286e6dd0d7142bb24a91abfd7549840669c42",
-    "notes": "Actualización idempotente con respaldo automático.",
+    "sort": 7,
+    "version": "4.4.1",
+    "published_at": "2026-07-19T03:30:00.000Z",
+    "changelog": "Corrige la escala de intensidad del frontend y habilita correctamente cartas de intensidad 4 a 7.",
+    "minimum_app_version": "2.15.1",
+    "config_hash": "22a7a1f11d67152b97733b0b1df3190ce489ae5f383f5cc36289ffcf515a65ed",
+    "notes": "Actualización idempotente. Amplía automáticamente definiciones numéricas heredadas según el contenido real.",
     "game": "62a628ac-92e2-51e4-add3-62449e619e00"
   },
-  "fetchedAt": "2026-07-18T05:45:00.000Z",
+  "fetchedAt": "2026-07-19T03:30:00.000Z",
   "sexes": [
     {
       "id": "8476232a-8812-5185-bb3f-6bb3917219e8",
@@ -90914,6 +90914,25 @@
     }
   ],
   "filters": [
+    {
+      "status": "published",
+      "sort": 5,
+      "key": "maxIntensity",
+      "label": "Intensidad máxima de las cartas",
+      "description": "Permite usar toda la escala real del contenido, de 1 a 7. Los niveles elegidos siguen definiendo la progresión.",
+      "icon": null,
+      "filter_kind": "max_number",
+      "card_fields": [],
+      "numeric_field": "intensity",
+      "default_enabled": false,
+      "default_number": 7,
+      "min_value": 1,
+      "max_value": 7,
+      "visible": true,
+      "advanced": false,
+      "id": "77d217e6-c50a-5705-abfe-a94066e756fa",
+      "game": "62a628ac-92e2-51e4-add3-62449e619e00"
+    },
     {
       "status": "published",
       "sort": 10,
@@ -91248,5 +91267,5 @@
       "game": "62a628ac-92e2-51e4-add3-62449e619e00"
     }
   ],
-  "contentHash": "4a20f1d8b03c5b4523d0f02a72575cf56c65106e77e1f1ed38de2f1946839251"
+  "contentHash": "4b35b7d3e080de1e46a67fdc293c12bfee1261b8b1f9a0e73150514b6209c72c"
 }
