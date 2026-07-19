@@ -29,14 +29,21 @@ export function DynamicLimits({
           const value = Number(
             values[definition.key] ?? definition.default_number ?? 0,
           );
-          const maximum = Number(definition.max_value ?? 3);
+          const maximum = Math.max(
+            value,
+            Number(definition.max_value ?? value),
+            Number(definition.default_number ?? value),
+            Number(definition.min_value ?? 0),
+          );
 
           return (
             <label className="range-row" key={definition.id}>
               <span>
                 <b>{definition.label}</b>
                 <small>
-                  {definition.description || `${value} de ${maximum}`}
+                  {[definition.description, `${value} de ${maximum}`]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </small>
               </span>
               <input

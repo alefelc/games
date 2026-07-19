@@ -20,6 +20,7 @@ import { normalizeSceneRole } from "../lib/sceneRole";
 import { trackAnalyticsEvent } from "../lib/analytics";
 import { applySavedPreferences } from "../auth/profile-preferences";
 import type { SavedGamePreferences } from "../auth/types";
+import { normalizeFilterValues } from "../lib/dynamicFilters";
 
 export type AppStage = "age" | "home" | "setup" | "game" | "paused" | "summary";
 
@@ -69,10 +70,10 @@ function normalizeSetup(
     gameMasterEnabled:
       content.settings.game_master_enabled &&
       (setup.gameMasterEnabled ?? defaults.gameMasterEnabled),
-    filters: {
+    filters: normalizeFilterValues(content.filters, {
       ...defaults.filters,
       ...setup.filters,
-    },
+    }),
   };
 }
 

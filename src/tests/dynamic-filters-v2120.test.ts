@@ -8,7 +8,7 @@ import {
 
 describe("filtros dinámicos v2.12.0", () => {
   it("expone los 16 límites compatibles", () => {
-    expect(fallbackFilterDefinitions()).toHaveLength(16);
+    expect(fallbackFilterDefinitions()).toHaveLength(17);
   });
 
   it("excluye por campo booleano y riesgo máximo", () => {

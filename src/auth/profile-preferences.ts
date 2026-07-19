@@ -1,5 +1,6 @@
 import type { ContentBundle, GameSetup } from "../types";
 import type { SavedGamePreferences } from "./types";
+import { normalizeFilterValues } from "../lib/dynamicFilters";
 
 function slugFor<T extends { id: string; slug: string }>(items: T[], id: string | null) {
   return id ? items.find((item) => item.id === id)?.slug ?? null : null;
@@ -69,10 +70,10 @@ export function applySavedPreferences(
     deckIds: deckIds.length ? deckIds : setup.deckIds,
     elementIds: idsForSlugs(content.elements, preferences.elementSlugs),
     toyIds: idsForSlugs(content.toys, preferences.toySlugs),
-    filters: {
+    filters: normalizeFilterValues(content.filters, {
       ...setup.filters,
       ...preferences.filters,
-    },
+    }),
     maxCards: Math.max(
       5,
       Math.min(content.settings.maximum_cards_per_session, preferences.maxCards),

@@ -62,22 +62,29 @@ const numberFilter = (
   label: string,
   numericField: string,
   sort: number,
+  options: {
+    description?: string | null;
+    defaultNumber?: number;
+    minValue?: number;
+    maxValue?: number;
+    advanced?: boolean;
+  } = {},
 ): DynamicFilterDefinition => ({
   id: `fallback-${key}`,
   status: "published",
   key,
   label,
-  description: null,
+  description: options.description ?? null,
   icon: null,
   filter_kind: "max_number",
   card_fields: [],
   numeric_field: numericField,
   default_enabled: false,
-  default_number: 1,
-  min_value: 0,
-  max_value: 3,
+  default_number: options.defaultNumber ?? 1,
+  min_value: options.minValue ?? 0,
+  max_value: options.maxValue ?? 3,
   visible: true,
-  advanced: true,
+  advanced: options.advanced ?? true,
   sort,
 });
 
@@ -89,6 +96,20 @@ export function fallbackFilterDefinitions(
   settings?: Partial<AppSettings>,
 ): DynamicFilterDefinition[] {
   const definitions = [
+    numberFilter(
+      "maxIntensity",
+      "Intensidad máxima de las cartas",
+      "intensity",
+      5,
+      {
+        description:
+          "La escala real del contenido va de 1 a 7. Los niveles elegidos siguen definiendo la progresión.",
+        defaultNumber: 7,
+        minValue: 1,
+        maxValue: 7,
+        advanced: false,
+      },
+    ),
     booleanFilter(
       "excludePhotoVideo",
       "Fotos o videos",
@@ -194,6 +215,69 @@ export function fallbackFilterDefinitions(
   );
 }
 
+export function normalizeFilterDefinitionsForCards(
+  definitions: DynamicFilterDefinition[],
+  cards: Array<Record<string, unknown>>,
+): DynamicFilterDefinition[] {
+  return definitions.map((definition) => {
+    if (
+      definition.filter_kind !== "max_number" ||
+      !definition.numeric_field
+    ) {
+      return definition;
+    }
+
+    const observedValues = cards
+      .map((card) => Number(card[definition.numeric_field as string]))
+      .filter(Number.isFinite);
+
+    if (!observedValues.length) return definition;
+
+    const observedMinimum = Math.min(...observedValues);
+    const observedMaximum = Math.max(...observedValues);
+    const finiteOrNull = (value: number | null | undefined) => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+    const configuredMinimum = finiteOrNull(definition.min_value);
+    const configuredMaximum = finiteOrNull(definition.max_value);
+    const effectiveMinimum =
+      configuredMinimum === null
+        ? observedMinimum
+        : Math.min(configuredMinimum, observedMinimum);
+    const effectiveMaximum =
+      configuredMaximum === null
+        ? observedMaximum
+        : Math.max(configuredMaximum, observedMaximum);
+    const configuredDefault = finiteOrNull(definition.default_number);
+    const defaultRepresentedFullRange =
+      configuredDefault !== null &&
+      ((configuredMaximum === null &&
+        definition.numeric_field === "intensity") ||
+        (configuredMaximum !== null &&
+          configuredDefault >= configuredMaximum));
+    const effectiveDefault =
+      configuredDefault === null
+        ? effectiveMaximum
+        : defaultRepresentedFullRange
+          ? effectiveMaximum
+          : Math.min(
+              effectiveMaximum,
+              Math.max(effectiveMinimum, configuredDefault),
+            );
+
+    return {
+      ...definition,
+      min_value: effectiveMinimum,
+      max_value: effectiveMaximum,
+      default_number: effectiveDefault,
+    };
+  });
+}
+
 export function buildDynamicFilterDefaults(
   definitions: DynamicFilterDefinition[] | null | undefined,
 ): DynamicFilterValues {
@@ -211,18 +295,42 @@ export function buildDynamicFilterDefaults(
 }
 
 export function normalizeFilterValues(
-  definitions: DynamicFilterDefinition[],
+  definitions: DynamicFilterDefinition[] | null | undefined,
   values: DynamicFilterValues | null | undefined,
 ): DynamicFilterValues {
-  const defaults = buildDynamicFilterDefaults(definitions);
+  const activeDefinitions = definitions?.length
+    ? definitions
+    : fallbackFilterDefinitions();
+  const defaults = buildDynamicFilterDefaults(activeDefinitions);
   const incoming = values ?? {};
 
-  for (const definition of definitions) {
+  for (const definition of activeDefinitions) {
     if (!(definition.key in incoming)) continue;
-    defaults[definition.key] =
-      definition.filter_kind === "max_number"
-        ? Number(incoming[definition.key])
-        : asBoolean(incoming[definition.key]);
+
+    if (definition.filter_kind === "max_number") {
+      const parsed = Number(incoming[definition.key]);
+      if (!Number.isFinite(parsed)) continue;
+      const minimum = Number(definition.min_value ?? parsed);
+      const maximum = Number(definition.max_value ?? parsed);
+      defaults[definition.key] = Math.min(
+        Math.max(parsed, minimum),
+        Math.max(minimum, maximum),
+      );
+      continue;
+    }
+
+    defaults[definition.key] = asBoolean(incoming[definition.key]);
+  }
+
+  // Keep legacy preference keys so an older saved profile is not silently
+  // erased before its matching content definition is loaded.
+  for (const [key, value] of Object.entries(incoming)) {
+    if (key in defaults) continue;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      defaults[key] = value;
+    } else {
+      defaults[key] = asBoolean(value);
+    }
   }
 
   return defaults;
