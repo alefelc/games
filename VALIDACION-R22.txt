@@ -1,0 +1,9 @@
+FRONTEND 2.15.2 R22
+
+- 34 archivos de pruebas aprobados.
+- 103 pruebas aprobadas.
+- TypeScript y Vite compilados correctamente.
+- Selector de intensidad visible en Paso 2.
+- Escala 1–7 conectada a setup.filters.maxIntensity.
+- maxIntensity garantizado aunque falte en el catálogo remoto.
+- Cachés PWA v2152.

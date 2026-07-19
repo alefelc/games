@@ -1,33 +1,14 @@
-# ¿Te animás? — Frontend 2.15.1 R21
+# ¿Te animás? — Frontend 2.15.2 R22
 
-Frontend con cuentas por invitación, login, recuperación de contraseña y perfil persistente.
+## Cambio principal
 
-## Flujo de alta
+En **Personalizar partida → Paso 2: Niveles e intensidad**, debajo de los niveles, aparece el selector **Intensidad máxima de las cartas**, con valores del 1 al 7.
 
-1. El usuario ingresa nombre, apellido y email.
-2. Game Master solicita una invitación a Directus.
-3. El usuario abre el enlace recibido.
-4. Elige la contraseña y activa la cuenta.
-5. Inicia sesión normalmente.
+El control no depende de que `pc_filters` esté actualizado: si una instalación antigua no trae `maxIntensity`, el frontend crea la definición compatible y la aplica al filtrado real de cartas.
 
-El frontend no llama a `/users/register` ni accede directamente a `pc_user_profiles`.
+## Publicación
 
-## Despliegue
-
-1. Instalá `directus-auth-r19`.
-2. Publicá Game Master 1.10.0 con `PLAYER_ROLE_ID`.
-3. Publicá este frontend.
-4. Reconstruí la imagen sin reutilizar una versión anterior.
-5. Abrí `/build-info.json` y confirmá `frontend_release: 2.15.1-r21`.
-
-## Validación
-
-```sh
-npm ci
-npm test -- --run
-npm run build
-```
-
-## Inventario y variedad R20
-
-El frontend incluye el bundle completo de 1.030 cartas como respaldo, prioriza los recursos elegidos, distribuye su aparición durante la sesión, registra las cartas seleccionadas por la IA en el historial persistente y muestra la cobertura real antes de empezar.
+1. Construí o desplegá este directorio.
+2. Usá `BUILD_RELEASE=2.15.2-r22`.
+3. Borrá la caché anterior o reinstalá la PWA.
+4. Abrí `/build-info.json` y confirmá `frontend_release: 2.15.2-r22`.

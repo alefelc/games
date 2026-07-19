@@ -1,7 +1,7 @@
 {
   "name": "te-animas-app",
   "private": true,
-  "version": "2.15.1",
+  "version": "2.15.2",
   "type": "module",
   "engines": {
     "node": ">=22.12"
