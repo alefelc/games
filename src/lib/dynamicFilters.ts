@@ -215,6 +215,43 @@ export function fallbackFilterDefinitions(
   );
 }
 
+export function ensureIntensityFilterDefinition(
+  definitions: DynamicFilterDefinition[] | null | undefined,
+  settings?: Partial<AppSettings>,
+): DynamicFilterDefinition[] {
+  const current = definitions ?? [];
+  const fallback = fallbackFilterDefinitions(settings).find(
+    (definition) => definition.key === "maxIntensity",
+  );
+
+  if (!fallback) return current;
+
+  const existingIndex = current.findIndex(
+    (definition) =>
+      definition.key === "maxIntensity" ||
+      definition.numeric_field === "intensity",
+  );
+
+  if (existingIndex < 0) {
+    return [...current, fallback];
+  }
+
+  return current.map((definition, index) =>
+    index === existingIndex
+      ? {
+          ...fallback,
+          ...definition,
+          key: "maxIntensity",
+          label: definition.label || fallback.label,
+          filter_kind: "max_number",
+          numeric_field: "intensity",
+          visible: true,
+          advanced: false,
+        }
+      : definition,
+  );
+}
+
 export function normalizeFilterDefinitionsForCards(
   definitions: DynamicFilterDefinition[],
   cards: Array<Record<string, unknown>>,

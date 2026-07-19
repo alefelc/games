@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDynamicFilterDefaults,
   cardPassesDynamicFilters,
+  ensureIntensityFilterDefinition,
   normalizeFilterDefinitionsForCards,
   type DynamicFilterDefinition,
 } from "../lib/dynamicFilters";
@@ -26,6 +27,16 @@ const staleIntensityFilter: DynamicFilterDefinition = {
 };
 
 describe("escala de intensidad r21", () => {
+  it("agrega el filtro de intensidad cuando un catálogo antiguo no lo trae", () => {
+    const [definition] = ensureIntensityFilterDefinition([]);
+
+    expect(definition.key).toBe("maxIntensity");
+    expect(definition.numeric_field).toBe("intensity");
+    expect(definition.visible).toBe(true);
+    expect(definition.advanced).toBe(false);
+    expect(definition.max_value).toBe(7);
+  });
+
   it("amplía una definición heredada hasta la intensidad real del catálogo", () => {
     const [definition] = normalizeFilterDefinitionsForCards(
       [staleIntensityFilter],

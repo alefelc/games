@@ -26,6 +26,7 @@ import {
   toySchema,
 } from "./schemas";
 import {
+  ensureIntensityFilterDefinition,
   fallbackFilterDefinitions,
   normalizeFilterDefinitionsForCards,
 } from "../lib/dynamicFilters";
@@ -66,11 +67,15 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   );
   const toys = sortByOrder(raw.toys.map((item) => toySchema.parse(item)));
   const tags = sortByOrder(raw.tags.map((item) => tagSchema.parse(item)));
+  const settings = settingsSchema.parse(raw.settings);
   const rawFilters = Array.isArray(raw.filters) && raw.filters.length
     ? raw.filters
-    : fallbackFilterDefinitions(raw.settings);
+    : fallbackFilterDefinitions(settings);
   const parsedFilters = sortByOrder(
-    rawFilters.map((item) => dynamicFilterSchema.parse(item)),
+    ensureIntensityFilterDefinition(
+      rawFilters.map((item) => dynamicFilterSchema.parse(item)),
+      settings,
+    ),
   );
   const rawSexes =
     Array.isArray(raw.sexes) && raw.sexes.length
@@ -88,7 +93,6 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   );
   const cardToys = raw.cardToys.map((item) => cardToySchema.parse(item));
   const cardTags = raw.cardTags.map((item) => cardTagSchema.parse(item));
-  const settings = settingsSchema.parse(raw.settings);
   const release = releaseSchema.parse(raw.release);
 
   if (!cards.length) throw new Error("No hay cartas disponibles.");

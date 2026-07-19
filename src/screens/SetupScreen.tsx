@@ -200,6 +200,27 @@ export function SetupScreen({
         }),
     [content.cards, content.filters],
   );
+  const intensityDefinition = availableFilterDefinitions.find(
+    (definition) =>
+      definition.key === "maxIntensity" ||
+      definition.numeric_field === "intensity",
+  );
+  const limitFilterDefinitions = availableFilterDefinitions.filter(
+    (definition) => definition !== intensityDefinition,
+  );
+  const intensityMinimum = Number(intensityDefinition?.min_value ?? 1);
+  const intensityMaximum = Number(intensityDefinition?.max_value ?? 7);
+  const selectedMaximumIntensity = Math.min(
+    intensityMaximum,
+    Math.max(
+      intensityMinimum,
+      Number(
+        setup.filters.maxIntensity ??
+          intensityDefinition?.default_number ??
+          intensityMaximum,
+      ),
+    ),
+  );
   const eligibleStats = useMemo(
     () => previewEligibleStats(content, setup),
     [content, setup],
@@ -539,6 +560,48 @@ export function SetupScreen({
               })}
             </div>
 
+            {intensityDefinition && (
+              <div className="intensity-selector-panel">
+                <label className="range-row intensity-range">
+                  <span>
+                    <b>Intensidad máxima de las cartas</b>
+                    <small>
+                      Hasta intensidad {selectedMaximumIntensity} de {intensityMaximum}.
+                      Los niveles elegidos siguen marcando la progresión de la partida.
+                    </small>
+                  </span>
+                  <input
+                    type="range"
+                    min={intensityMinimum}
+                    max={intensityMaximum}
+                    step="1"
+                    value={selectedMaximumIntensity}
+                    aria-label="Intensidad máxima de las cartas"
+                    onChange={(event) =>
+                      updateFilters({
+                        maxIntensity: Number(event.target.value),
+                      })
+                    }
+                  />
+                </label>
+                <div className="intensity-scale" aria-hidden="true">
+                  {Array.from(
+                    { length: intensityMaximum - intensityMinimum + 1 },
+                    (_, index) => intensityMinimum + index,
+                  ).map((value) => (
+                    <span
+                      key={value}
+                      className={
+                        value <= selectedMaximumIntensity ? "active" : ""
+                      }
+                    >
+                      {value}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {requiresIntenseConsent && (
               <label className="intense-consent">
                 <input
@@ -634,13 +697,13 @@ export function SetupScreen({
             <p className="section-copy">{stepContent[3].subtitle}</p>
 
             <DynamicLimits
-              definitions={availableFilterDefinitions}
+              definitions={limitFilterDefinitions}
               values={setup.filters}
               onChange={(values) => updateFilters(values)}
               showAdvanced={showAdvanced}
             />
 
-            {availableFilterDefinitions.some((definition) => definition.advanced) && (
+            {limitFilterDefinitions.some((definition) => definition.advanced) && (
               <button
                 className="advanced-toggle"
                 type="button"
