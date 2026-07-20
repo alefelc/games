@@ -1,8 +1,6 @@
-# 2.15.2 — R22
+# 2.15.3 — R23
 
-- Agrega el selector visible **Intensidad máxima de las cartas** en el Paso 2.
-- Escala completa del 1 al 7, conectada al filtro real `maxIntensity`.
-- El frontend crea automáticamente la definición de intensidad si una base antigua no la incluye.
-- Evita mostrar el mismo control nuevamente en el Paso 4.
-- Conserva perfiles y configuraciones guardadas.
-- Renueva las cachés PWA a v2152.
+- Eliminado el cuadro “Guardá tus preferencias” de la portada.
+- “Cómo se juega” editable desde Directus.
+- Cantidad predeterminada de cartas configurable desde Directus.
+- Compatibilidad con esquemas anteriores mediante valores de respaldo.

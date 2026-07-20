@@ -1,14 +1,9 @@
-# ¿Te animás? — Frontend 2.15.2 R22
+# ¿Te animás? — Frontend 2.15.3 R23
 
-## Cambio principal
+- Elimina el cuadro redundante de registro de la portada.
+- Renderiza “Cómo se juega” desde `pc_app_settings`.
+- Usa `default_cards_per_session` como cantidad inicial de cartas.
+- Mantiene `maximum_cards_per_session` como límite superior.
+- Tolera instalaciones antiguas mientras se ejecuta el instalador R23.
 
-En **Personalizar partida → Paso 2: Niveles e intensidad**, debajo de los niveles, aparece el selector **Intensidad máxima de las cartas**, con valores del 1 al 7.
-
-El control no depende de que `pc_filters` esté actualizado: si una instalación antigua no trae `maxIntensity`, el frontend crea la definición compatible y la aplica al filtrado real de cartas.
-
-## Publicación
-
-1. Construí o desplegá este directorio.
-2. Usá `BUILD_RELEASE=2.15.2-r22`.
-3. Borrá la caché anterior o reinstalá la PWA.
-4. Abrí `/build-info.json` y confirmá `frontend_release: 2.15.2-r22`.
+Publicá con `BUILD_RELEASE=2.15.3-r23` y limpiá la caché de la PWA.
