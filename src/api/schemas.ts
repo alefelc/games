@@ -24,6 +24,13 @@ const bool = z.preprocess((value) => {
   return value;
 }, z.boolean());
 const number = z.coerce.number();
+const stringWithDefault = (fallback: string) =>
+  z.string().nullish().transform((value) => value ?? fallback);
+const numberWithDefault = (fallback: number) =>
+  z.preprocess(
+    (value) => (value === null || value === "" ? undefined : value),
+    z.coerce.number().optional().default(fallback),
+  );
 const cardFields = z.preprocess((value) => {
   if (Array.isArray(value)) return value.map(String);
   if (typeof value !== "string") return [];
@@ -337,6 +344,17 @@ export const settingsSchema = z.object({
   start_screen_title: z.string(),
   intro_text: z.string(),
   instructions_text: z.string(),
+  how_to_play_eyebrow: stringWithDefault("REGLAS CLARAS, CERO PRESIÓN"),
+  how_to_play_title: stringWithDefault("Cómo se juega"),
+  how_to_play_step_1_title: stringWithDefault("Preparen el momento"),
+  how_to_play_step_1_text: stringWithDefault("Privacidad, comodidad y tiempo sin interrupciones."),
+  how_to_play_step_2_title: stringWithDefault("Configuren límites"),
+  how_to_play_step_2_text: stringWithDefault("Elijan niveles, prácticas, elementos y juguetes disponibles."),
+  how_to_play_step_3_title: stringWithDefault("Revelá cada carta"),
+  how_to_play_step_3_text: stringWithDefault("Seguí la propuesta o saltala libremente. En pareja, el turno cambia automáticamente."),
+  how_to_play_step_4_title: stringWithDefault("Saltar no requiere explicación"),
+  how_to_play_step_4_text: stringWithDefault("Ninguna carta es una obligación ni un compromiso previo."),
+  how_to_play_button_label: stringWithDefault("Entendido"),
   safety_text: z.string(),
   stop_word: z.string(),
   age_gate_enabled: bool,
@@ -346,6 +364,7 @@ export const settingsSchema = z.object({
   allow_vibration: bool,
   allow_offline: bool,
   maximum_cards_per_session: number,
+  default_cards_per_session: numberWithDefault(20),
   enable_random_level: bool,
   enable_private_filters: bool,
   analytics_enabled: bool,

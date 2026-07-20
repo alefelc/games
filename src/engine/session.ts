@@ -15,6 +15,7 @@ import {
 } from "../lib/dynamicFilters";
 import { chooseInventoryPool } from "../lib/inventoryCoverage";
 import { choosePracticePool } from "../lib/practiceCoverage";
+import { resolveDefaultCards } from "../lib/cardCount";
 import {
   buildHistoryKey,
   readCardHistory,
@@ -80,10 +81,7 @@ export function createDefaultSetup(content: ContentBundle): GameSetup {
         ? content.filters
         : fallbackFilterDefinitions(content.settings),
     ),
-    maxCards: Math.min(
-      20,
-      Math.max(1, content.settings.maximum_cards_per_session || 20),
-    ),
+    maxCards: resolveDefaultCards(content.settings),
     intenseConsent: false,
     gameMasterEnabled:
       content.settings.game_master_enabled &&

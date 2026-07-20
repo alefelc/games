@@ -295,6 +295,17 @@ export interface AppSettings {
   start_screen_title: string;
   intro_text: string;
   instructions_text: string;
+  how_to_play_eyebrow: string;
+  how_to_play_title: string;
+  how_to_play_step_1_title: string;
+  how_to_play_step_1_text: string;
+  how_to_play_step_2_title: string;
+  how_to_play_step_2_text: string;
+  how_to_play_step_3_title: string;
+  how_to_play_step_3_text: string;
+  how_to_play_step_4_title: string;
+  how_to_play_step_4_text: string;
+  how_to_play_button_label: string;
   safety_text: string;
   stop_word: string;
   age_gate_enabled: boolean;
@@ -304,6 +315,7 @@ export interface AppSettings {
   allow_vibration: boolean;
   allow_offline: boolean;
   maximum_cards_per_session: number;
+  default_cards_per_session: number;
   enable_random_level: boolean;
   enable_private_filters: boolean;
   analytics_enabled: boolean;

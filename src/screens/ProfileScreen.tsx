@@ -4,6 +4,7 @@ import { TopBar } from "../components/TopBar";
 import { Icon } from "../components/Icon";
 import { useAuthStore } from "../auth/useAuthStore";
 import type { SavedGamePreferences } from "../auth/types";
+import { resolveDefaultCards } from "../lib/cardCount";
 
 export function ProfileScreen({
   content,
@@ -66,7 +67,7 @@ export function ProfileScreen({
       elementSlugs: [],
       toySlugs: [],
       filters: {},
-      maxCards: Math.min(20, content.settings.maximum_cards_per_session),
+      maxCards: resolveDefaultCards(content.settings),
       gameMasterEnabled: content.settings.game_master_default_on,
     };
     try {

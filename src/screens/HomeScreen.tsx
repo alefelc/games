@@ -29,34 +29,21 @@ export function HomeScreen({
       <div className="app-page">
         <TopBar content={content} onBack={() => setShowRules(false)} />
         <main className="narrow-page rules-page">
-          <p className="eyebrow">REGLAS CLARAS, CERO PRESIÓN</p>
-          <h1>Cómo se juega</h1>
+          <p className="eyebrow">{content.settings.how_to_play_eyebrow}</p>
+          <h1>{content.settings.how_to_play_title}</h1>
           <div className="rule-grid">
-            <article>
-              <span>01</span>
-              <h2>Preparen el momento</h2>
-              <p>Privacidad, comodidad y tiempo sin interrupciones.</p>
-            </article>
-            <article>
-              <span>02</span>
-              <h2>Configuren límites</h2>
-              <p>
-                Elijan niveles, prácticas, elementos y juguetes disponibles.
-              </p>
-            </article>
-            <article>
-              <span>03</span>
-              <h2>Revelá cada carta</h2>
-              <p>
-                Seguí la propuesta o saltala libremente. En pareja, el turno
-                cambia automáticamente.
-              </p>
-            </article>
-            <article>
-              <span>04</span>
-              <h2>Saltar no requiere explicación</h2>
-              <p>Ninguna carta es una obligación ni un compromiso previo.</p>
-            </article>
+            {[
+              [content.settings.how_to_play_step_1_title, content.settings.how_to_play_step_1_text],
+              [content.settings.how_to_play_step_2_title, content.settings.how_to_play_step_2_text],
+              [content.settings.how_to_play_step_3_title, content.settings.how_to_play_step_3_text],
+              [content.settings.how_to_play_step_4_title, content.settings.how_to_play_step_4_text],
+            ].map(([title, text], index) => (
+              <article key={`${index}-${title}`}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <h2>{title}</h2>
+                <p>{text}</p>
+              </article>
+            ))}
           </div>
           <div className="safety-panel">
             <Icon name="warning" />
@@ -70,7 +57,7 @@ export function HomeScreen({
             type="button"
             onClick={() => setShowRules(false)}
           >
-            Entendido
+            {content.settings.how_to_play_button_label}
           </button>
         </main>
       </div>
@@ -121,14 +108,6 @@ export function HomeScreen({
           </span>
           <Icon name="arrow" />
         </button>
-
-        {!authenticated && (
-          <button className="account-promo" type="button" onClick={onAccount}>
-            <Icon name="lock" />
-            <span><b>Guardá tus preferencias</b><small>Creá una cuenta y evitá configurar cada partida.</small></span>
-            <Icon name="arrow" />
-          </button>
-        )}
 
         <div className="home-stats" aria-label="Contenido disponible">
           <div>

@@ -180,6 +180,17 @@ const SETTINGS_FIELDS = [
   "start_screen_title",
   "intro_text",
   "instructions_text",
+  "how_to_play_eyebrow",
+  "how_to_play_title",
+  "how_to_play_step_1_title",
+  "how_to_play_step_1_text",
+  "how_to_play_step_2_title",
+  "how_to_play_step_2_text",
+  "how_to_play_step_3_title",
+  "how_to_play_step_3_text",
+  "how_to_play_step_4_title",
+  "how_to_play_step_4_text",
+  "how_to_play_button_label",
   "safety_text",
   "stop_word",
   "age_gate_enabled",
@@ -189,6 +200,7 @@ const SETTINGS_FIELDS = [
   "allow_vibration",
   "allow_offline",
   "maximum_cards_per_session",
+  "default_cards_per_session",
   "enable_random_level",
   "enable_private_filters",
   "analytics_enabled",
@@ -220,6 +232,22 @@ const SETTINGS_FIELDS = [
   "game_master_description",
   "game_master_show_reactions",
 ];
+
+const OPTIONAL_SETTINGS_FIELDS = new Set([
+  "analytics_measurement_id",
+  "default_cards_per_session",
+  "how_to_play_eyebrow",
+  "how_to_play_title",
+  "how_to_play_step_1_title",
+  "how_to_play_step_1_text",
+  "how_to_play_step_2_title",
+  "how_to_play_step_2_text",
+  "how_to_play_step_3_title",
+  "how_to_play_step_3_text",
+  "how_to_play_step_4_title",
+  "how_to_play_step_4_text",
+  "how_to_play_button_label",
+]);
 
 const LEVEL_FIELDS = [
   "id",
@@ -532,13 +560,13 @@ async function readSettings(
       signal,
     );
   } catch (error) {
-    // Permite desplegar el frontend antes de ejecutar la migración del campo GA4.
-    // Una vez creado analytics_measurement_id, la siguiente carga lo toma automáticamente.
+    // Permite desplegar el frontend antes de crear campos opcionales nuevos.
+    // El esquema completa valores seguros hasta que Directus sea actualizado.
     if (!(error instanceof ContentApiError) || ![400, 403].includes(error.status)) throw error;
 
     return readFirst<Record<string, unknown>>(
       "pc_app_settings",
-      SETTINGS_FIELDS.filter((field) => field !== "analytics_measurement_id"),
+      SETTINGS_FIELDS.filter((field) => !OPTIONAL_SETTINGS_FIELDS.has(field)),
       filters,
       signal,
     );
