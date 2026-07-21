@@ -6,4 +6,4 @@
 - Mantiene `maximum_cards_per_session` como límite superior.
 - Tolera instalaciones antiguas mientras se ejecuta el instalador R23.
 
-Publicá con `BUILD_RELEASE=2.15.3-r23` y limpiá la caché de la PWA.
+Publicá con `BUILD_RELEASE=2.15.3-r23.9` y limpiá la caché de la PWA.

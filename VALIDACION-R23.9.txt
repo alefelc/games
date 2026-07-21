@@ -1,0 +1,2 @@
+Frontend 2.15.3-r23.9
+Bootstrap de contenido 4.4.4 sincronizado y hash verificado.
