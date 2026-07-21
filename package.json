@@ -1,7 +1,7 @@
 {
   "name": "te-animas-app",
   "private": true,
-  "version": "2.15.6",
+  "version": "3.0.0",
   "type": "module",
   "engines": {
     "node": ">=22.12"
@@ -10,15 +10,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run --pool=forks --maxWorkers=1",
-    "test:watch": "vitest"
+    "test": "node scripts/test-all.mjs",
+    "test:watch": "vitest",
+    "check": "npm run test && npm run build",
+    "test:raw": "vitest run --pool=threads --maxWorkers=1"
   },
   "dependencies": {
     "idb": "8.0.3",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "zod": "4.4.3",
-    "zustand": "5.0.14"
+    "zustand": "5.0.14",
+    "@te-animas/contracts": "3.0.0"
   },
   "devDependencies": {
     "@types/node": "24.10.13",
