@@ -1,8 +1,0 @@
-FRONTEND 2.15.0 R20
-
-- Bundle local con 1.030 cartas.
-- 132 relaciones carta-elemento y 169 carta-juguete.
-- 32 archivos de prueba y 99 pruebas aprobadas.
-- Pruebas específicas de cobertura de inventario, penetración, filtros y booleanos aprobadas.
-- Build Vite/PWA aprobado.
-- La selección adaptativa registra el historial persistente exacto.
