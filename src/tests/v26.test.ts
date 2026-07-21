@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import bootstrap from "../../public/bootstrap-content.json";
 import type { ContentBundle } from "../types";
 
-const content = bootstrap as unknown as ContentBundle;
+const content = JSON.parse(
+  readFileSync(resolve(process.cwd(), "public/bootstrap-content.json"), "utf8"),
+) as ContentBundle;
 
 describe("v2.6.0", () => {
   it("incluye los textos editables de los cuatro pasos", () => {

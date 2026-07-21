@@ -117,8 +117,8 @@ function session(overrides: Partial<SessionState> = {}): SessionState {
 }
 
 describe("inventario y variedad R20", () => {
-  it("publica las 1.030 cartas y relaciones reales para cada opción visible", () => {
-    expect(rootBundle.cards).toHaveLength(1030);
+  it("publica las 3.090 cartas y relaciones reales para cada opción visible", () => {
+    expect(rootBundle.cards).toHaveLength(3090);
     expect(rootBundle.cardElements.length).toBeGreaterThanOrEqual(132);
     expect(rootBundle.cardToys.length).toBeGreaterThanOrEqual(169);
     expect(rootBundle.cards.filter((item) => item.contains_penetration).length).toBeGreaterThan(100);

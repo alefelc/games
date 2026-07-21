@@ -103,6 +103,7 @@ describe("motor de sesión", () => {
     const setup = createDefaultSetup(content);
     setup.levelIds = ["level-1", "level-2"];
     setup.deckIds = ["deck"];
+    setup.filters.maxIntensity = 2;
     let session = createSession(content, setup);
     let draw = drawNextCard(content, setup, session, () => 0);
     expect(draw.card?.id).toBe("a");

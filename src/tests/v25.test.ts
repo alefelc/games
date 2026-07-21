@@ -1,10 +1,12 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createDefaultSetup } from "../engine/session";
 import { isCardEligible } from "../engine/eligibility";
 import type { Card, ContentBundle, EligibilityContext } from "../types";
-import bootstrap from "../../public/bootstrap-content.json";
-
-const content = bootstrap as unknown as ContentBundle;
+const content = JSON.parse(
+  readFileSync(resolve(process.cwd(), "public/bootstrap-content.json"), "utf8"),
+) as ContentBundle;
 
 describe("v2.5.0", () => {
   it("usa placeholders reales y no valores falsos", () => {

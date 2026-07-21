@@ -61,6 +61,7 @@ const context: EligibilityContext = {
   selectedElementIds: new Set(),
   selectedToyIds: new Set(),
   filters: {
+    maxIntensity: 2,
     excludePhotoVideo: true,
     excludeThirdParties: true,
     excludePublicPlaces: true,

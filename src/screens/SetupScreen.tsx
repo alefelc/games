@@ -564,10 +564,13 @@ export function SetupScreen({
               <div className="intensity-selector-panel">
                 <label className="range-row intensity-range">
                   <span>
-                    <b>Intensidad máxima de las cartas</b>
+                    <b>Intensidad de la partida</b>
                     <small>
-                      Hasta intensidad {selectedMaximumIntensity} de {intensityMaximum}.
-                      Los niveles elegidos siguen marcando la progresión de la partida.
+                      Nivel {selectedMaximumIntensity} de {intensityMaximum}. {selectedMaximumIntensity <= 2
+                        ? "Mazo social y pícaro, apto para personas tímidas o amigos."
+                        : selectedMaximumIntensity <= 4
+                          ? "Mazo sensual y provocador, sin lenguaje crudo."
+                          : "Mazo explícito y picante, con las cartas originales fuertes."}
                     </small>
                   </span>
                   <input
@@ -576,7 +579,7 @@ export function SetupScreen({
                     max={intensityMaximum}
                     step="1"
                     value={selectedMaximumIntensity}
-                    aria-label="Intensidad máxima de las cartas"
+                    aria-label="Intensidad de la partida"
                     onChange={(event) =>
                       updateFilters({
                         maxIntensity: Number(event.target.value),
@@ -592,7 +595,7 @@ export function SetupScreen({
                     <span
                       key={value}
                       className={
-                        value <= selectedMaximumIntensity ? "active" : ""
+                        value >= (selectedMaximumIntensity <= 2 ? 1 : selectedMaximumIntensity <= 4 ? 3 : 5) && value <= selectedMaximumIntensity ? "active" : ""
                       }
                     >
                       {value}

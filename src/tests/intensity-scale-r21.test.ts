@@ -63,4 +63,25 @@ describe("escala de intensidad r21", () => {
       cardPassesDynamicFilters({ intensity: 5 }, definitions, values),
     ).toBe(false);
   });
+
+
+  it("aísla las franjas y no arrastra cartas suaves a una partida intensa", () => {
+    const definitions = normalizeFilterDefinitionsForCards(
+      [staleIntensityFilter],
+      [{ intensity: 1 }, { intensity: 4 }, { intensity: 7 }],
+    );
+    const values = buildDynamicFilterDefaults(definitions);
+
+    values.maxIntensity = 7;
+    expect(cardPassesDynamicFilters({ intensity: 1 }, definitions, values)).toBe(false);
+    expect(cardPassesDynamicFilters({ intensity: 4 }, definitions, values)).toBe(false);
+    expect(cardPassesDynamicFilters({ intensity: 5 }, definitions, values)).toBe(true);
+    expect(cardPassesDynamicFilters({ intensity: 7 }, definitions, values)).toBe(true);
+
+    values.maxIntensity = 4;
+    expect(cardPassesDynamicFilters({ intensity: 2 }, definitions, values)).toBe(false);
+    expect(cardPassesDynamicFilters({ intensity: 3 }, definitions, values)).toBe(true);
+    expect(cardPassesDynamicFilters({ intensity: 4 }, definitions, values)).toBe(true);
+    expect(cardPassesDynamicFilters({ intensity: 5 }, definitions, values)).toBe(false);
+  });
 });

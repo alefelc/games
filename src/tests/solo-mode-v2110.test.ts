@@ -71,6 +71,7 @@ function soloCard(sex: string | null): Card {
 }
 
 const filters = {
+  maxIntensity: 4,
   excludePhotoVideo: false,
   excludeThirdParties: false,
   excludePublicPlaces: false,

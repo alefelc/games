@@ -98,12 +98,12 @@ export function fallbackFilterDefinitions(
   const definitions = [
     numberFilter(
       "maxIntensity",
-      "Intensidad máxima de las cartas",
+      "Intensidad de la partida",
       "intensity",
       5,
       {
         description:
-          "La escala real del contenido va de 1 a 7. Los niveles elegidos siguen definiendo la progresión.",
+          "1–2 usa un mazo social y pícaro; 3–4 uno sensual; 5–7 uno explícito. Cada franja tiene cartas distintas.",
         defaultNumber: 7,
         minValue: 1,
         maxValue: 7,
@@ -396,7 +396,13 @@ export function cardPassesDynamicFilters(
       const maximum = Number(
         value ?? definition.default_number ?? definition.max_value ?? 0,
       );
-      if (Number(card[definition.numeric_field] ?? 0) > maximum) return false;
+      const numericValue = Number(card[definition.numeric_field] ?? 0);
+      if (definition.numeric_field === "intensity") {
+        const minimum = maximum <= 2 ? 1 : maximum <= 4 ? 3 : 5;
+        if (numericValue < minimum || numericValue > maximum) return false;
+      } else if (numericValue > maximum) {
+        return false;
+      }
     }
   }
 
