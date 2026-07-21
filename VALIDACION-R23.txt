@@ -1,8 +1,0 @@
-FRONTEND 2.15.3 R23
-
-- 35 archivos de pruebas aprobados.
-- 109 pruebas aprobadas.
-- Compilación TypeScript correcta.
-- Compilación Vite correcta.
-- Service worker PWA generado correctamente.
-- Bundle inicial validado por Zod.
