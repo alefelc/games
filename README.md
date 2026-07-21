@@ -1,45 +1,14 @@
-# ¿Te animás? 3.0.2-r3
+# ¿Te animás? — Frontend autónomo 3.0.3-r4
 
-Este directorio es un repositorio autónomo del frontend.
+Este contenido debe subirse directamente a la raíz del repositorio conectado a EasyPanel.
 
-## Verificación visual obligatoria
+Cambios:
 
-Al abrir la raíz del repositorio en GitHub deben verse directamente:
+- elimina las métricas técnicas de cobertura del resumen;
+- lee `default_intensity_level` desde `pc_app_settings`;
+- permite elegir en Directus una intensidad predeterminada entre 1 y 7;
+- `default_level` selecciona realmente el único nivel configurado.
 
-- `Dockerfile`
-- `package.json`
-- `package-lock.json`
-- `REPOSITORY_ROOT_OK.txt`
-- `contracts/`
-- `src/`
-- `public/`
-- `deploy/`
+EasyPanel: Dockerfile `Dockerfile`, contexto `.`, puerto interno `80`.
 
-No debe verse una carpeta contenedora llamada `games-main` ni `te-animas-release-*`.
-
-## EasyPanel
-
-- Build method: `Dockerfile`
-- Dockerfile: `Dockerfile`
-- Build context: `.`
-- Puerto interno: `80`
-- Healthcheck: `/`
-
-Build argument requerido:
-
-```text
-VITE_GAME_MASTER_URL=https://gm.teanimas.com
-```
-
-Opcionales:
-
-```text
-VITE_DIRECTUS_URL=https://admin.teanimas.com
-VITE_BASE_PATH=/
-VITE_GAME_SLUG=te-animas
-VITE_ALLOW_BOOTSTRAP_FALLBACK=true
-VITE_CONTENT_CACHE_HOURS=24
-BUILD_RELEASE=3.0.2-r3
-```
-
-No hay secretos en el frontend. Todo valor `VITE_*` queda incorporado al JavaScript público.
+El `Dockerfile`, `package.json`, `src/`, `public/` y `contracts/` deben quedar directamente en la raíz de GitHub.

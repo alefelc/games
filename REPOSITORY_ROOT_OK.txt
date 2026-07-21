@@ -1,3 +1,2 @@
-ESTE ARCHIVO DEBE VERSE EN LA RAÍZ DEL REPOSITORIO DE GITHUB.
-Si no se ve junto a Dockerfile y package.json, se subió la carpeta equivocada.
-Release: 3.0.2-r3
+¿Te animás? frontend autónomo para EasyPanel — 3.0.3-r4
+Subí el contenido de esta carpeta directamente a la raíz del repositorio.
