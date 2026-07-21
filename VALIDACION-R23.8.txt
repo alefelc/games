@@ -1,7 +1,0 @@
-Frontend 2.15.3-r23.8
-
-35 archivos de pruebas aprobados.
-110 pruebas aprobadas.
-TypeScript y compilación Vite correctos.
-PWA generada correctamente.
-El cargador solicita solo metadata de pc_public_bundle y reconstruye el contenido con bootstrap local + colecciones públicas de Directus.
