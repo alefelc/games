@@ -390,6 +390,31 @@ export const settingsSchema = z.object({
     .default(
       "Elijan solamente los niveles que realmente quieran incluir en la partida.",
     ),
+  setup_intensity_title: z
+    .string()
+    .optional()
+    .default("Intensidad de la partida"),
+  setup_intensity_level_1_text: stringWithDefault(
+    "Muy suave, social y pícaro.",
+  ),
+  setup_intensity_level_2_text: stringWithDefault(
+    "Suave y provocador, con más cercanía.",
+  ),
+  setup_intensity_level_3_text: stringWithDefault(
+    "Sensual y directo, sin lenguaje crudo.",
+  ),
+  setup_intensity_level_4_text: stringWithDefault(
+    "Íntimo y atrevido, con propuestas más sexuales.",
+  ),
+  setup_intensity_level_5_text: stringWithDefault(
+    "Picante y explícito, con acciones intensas.",
+  ),
+  setup_intensity_level_6_text: stringWithDefault(
+    "Muy intenso y directo, con prácticas avanzadas.",
+  ),
+  setup_intensity_level_7_text: stringWithDefault(
+    "Máxima intensidad, sin suavizar las propuestas.",
+  ),
   setup_step_3_label: z.string().optional().default("Elementos"),
   setup_step_3_title: z.string().optional().default("¿Qué tienen disponible?"),
   setup_step_3_subtitle: z

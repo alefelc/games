@@ -5,6 +5,7 @@ import { DynamicLimits } from "../components/DynamicLimits";
 import { TopBar } from "../components/TopBar";
 import { previewEligibleStats } from "../engine/session";
 import { checkGameMasterAvailability } from "../api/game-master";
+import { intensityDescription, isIntensityMarkerActive } from "../lib/intensitySelector";
 
 function toggleId(values: Id[], id: Id): Id[] {
   return values.includes(id)
@@ -564,13 +565,12 @@ export function SetupScreen({
               <div className="intensity-selector-panel">
                 <label className="range-row intensity-range">
                   <span>
-                    <b>Intensidad de la partida</b>
+                    <b>{content.settings.setup_intensity_title}</b>
                     <small>
-                      Nivel {selectedMaximumIntensity} de {intensityMaximum}. {selectedMaximumIntensity <= 2
-                        ? "Mazo social y pícaro, apto para personas tímidas o amigos."
-                        : selectedMaximumIntensity <= 4
-                          ? "Mazo sensual y provocador, sin lenguaje crudo."
-                          : "Mazo explícito y picante, con las cartas originales fuertes."}
+                      Nivel {selectedMaximumIntensity} de {intensityMaximum}. {intensityDescription(
+                        content.settings,
+                        selectedMaximumIntensity,
+                      )}
                     </small>
                   </span>
                   <input
@@ -587,19 +587,28 @@ export function SetupScreen({
                     }
                   />
                 </label>
-                <div className="intensity-scale" aria-hidden="true">
+                <div className="intensity-scale" aria-label="Elegir intensidad">
                   {Array.from(
                     { length: intensityMaximum - intensityMinimum + 1 },
                     (_, index) => intensityMinimum + index,
                   ).map((value) => (
-                    <span
+                    <button
                       key={value}
-                      className={
-                        value >= (selectedMaximumIntensity <= 2 ? 1 : selectedMaximumIntensity <= 4 ? 3 : 5) && value <= selectedMaximumIntensity ? "active" : ""
-                      }
+                      type="button"
+                      className={[
+                        isIntensityMarkerActive(value, selectedMaximumIntensity)
+                          ? "active"
+                          : "",
+                        value === selectedMaximumIntensity ? "current" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      aria-label={`Intensidad ${value}`}
+                      aria-pressed={value === selectedMaximumIntensity}
+                      onClick={() => updateFilters({ maxIntensity: value })}
                     >
                       {value}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>

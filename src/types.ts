@@ -331,6 +331,14 @@ export interface AppSettings {
   setup_step_2_label: string;
   setup_step_2_title: string;
   setup_step_2_subtitle: string;
+  setup_intensity_title: string;
+  setup_intensity_level_1_text: string;
+  setup_intensity_level_2_text: string;
+  setup_intensity_level_3_text: string;
+  setup_intensity_level_4_text: string;
+  setup_intensity_level_5_text: string;
+  setup_intensity_level_6_text: string;
+  setup_intensity_level_7_text: string;
   setup_step_3_label: string;
   setup_step_3_title: string;
   setup_step_3_subtitle: string;
