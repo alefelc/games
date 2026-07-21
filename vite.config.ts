@@ -64,7 +64,7 @@ export default defineConfig(({ mode }) => {
             /^\/build-info\.json$/,
           ],
           globPatterns: ["**/*.{js,css,html,svg,png,json,webmanifest}"],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
