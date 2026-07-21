@@ -6,10 +6,10 @@ ENV NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # The frontend lives at repository root. Shared domain packages are local workspaces.
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY packages/game-domain/package.json packages/game-domain/tsconfig.json ./packages/game-domain/
 COPY packages/contracts/package.json packages/contracts/tsconfig.json ./packages/contracts/
-RUN npm ci --no-audit --no-fund
+RUN npm install --no-audit --no-fund --package-lock=false
 
 COPY packages ./packages
 COPY index.html vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
