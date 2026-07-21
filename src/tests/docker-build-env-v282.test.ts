@@ -19,7 +19,7 @@ describe("compilación y proxy adaptativo v2.13.0", () => {
       "ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com",
     );
     expect(dockerfile).toContain(
-      "COPY deploy/default.conf.template /etc/nginx/templates/default.conf.template",
+      "COPY games-main/deploy/default.conf.template /etc/nginx/templates/default.conf.template",
     );
     expect(nginxTemplate).toContain("proxy_pass ${GAME_MASTER_UPSTREAM}/;");
   });

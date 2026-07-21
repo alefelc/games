@@ -1,13 +1,18 @@
 import { readFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveDefaultCards } from "../lib/cardCount";
 import { createDefaultSetup } from "../engine/session";
 import type { ContentBundle } from "../types";
 
+const packageRoot = basename(process.cwd()) === "games-main"
+  ? process.cwd()
+  : resolve(process.cwd(), "games-main");
+
 describe("configuración editable del inicio r23", () => {
-  const home = readFileSync("src/screens/HomeScreen.tsx", "utf8");
+  const home = readFileSync(resolve(packageRoot, "src/screens/HomeScreen.tsx"), "utf8");
   const installer = readFileSync(
-    "../directus-installer-2026-07-17/installer-lib.mjs",
+    resolve(packageRoot, "../directus-installer/installer-lib.mjs"),
     "utf8",
   );
 
@@ -75,5 +80,33 @@ describe("cantidad predeterminada de cartas r23", () => {
     } as unknown as ContentBundle;
 
     expect(createDefaultSetup(content).maxCards).toBe(35);
+  });
+
+  it("reemplaza defaults remotos inexistentes por referencias válidas", () => {
+    const content = {
+      settings: {
+        default_mode: "mode-inexistente",
+        default_level: "level-inexistente",
+        maximum_cards_per_session: 40,
+        default_cards_per_session: 35,
+        game_master_enabled: false,
+        game_master_default_on: false,
+        default_exclude_photo_video: true,
+        default_exclude_third_parties: true,
+        default_exclude_public_places: true,
+        default_exclude_restraint: false,
+      },
+      levels: [{ id: "level-real", requires_confirmation: false }],
+      modes: [{ id: "mode-real", slug: "pareja", turn_mode: "alternating" }],
+      decks: [{ id: "deck", active: true, minimum_players: 2, maximum_players: 2 }],
+      elements: [],
+      toys: [],
+      filters: [],
+    } as unknown as ContentBundle;
+
+    const setup = createDefaultSetup(content);
+    expect(setup.modeId).toBe("mode-real");
+    expect(setup.levelIds).toEqual(["level-real"]);
+    expect(setup.deckIds).toEqual(["deck"]);
   });
 });

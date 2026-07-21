@@ -212,6 +212,9 @@ async function publicAccountRequest<T>(endpoint: string, options: RequestInit = 
 
 function scheduleRefresh(expiresMs: number, onFailure?: () => void) {
   clearRefreshTimer();
+  // A persistent session timer is a browser concern. Creating it in Vitest keeps
+  // the worker alive after every assertion and makes the release gate unreliable.
+  if (import.meta.env.MODE === "test") return;
   const delay = Math.max(30_000, expiresMs - 60_000);
   refreshTimer = window.setTimeout(() => {
     void refreshSession()

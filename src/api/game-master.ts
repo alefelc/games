@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NextResponseSchema, type NextResponse } from "@te-animas/contracts";
 import { env } from "../env";
 import type {
   Card,
@@ -18,25 +19,9 @@ import {
   recentContinuityGroups,
 } from "../engine/card-history";
 
-const wireResponseSchema = z.object({
-  selected_card_id: z.string(),
-  phase: z.string(),
-  strategy: z.string(),
-  target_tension: z.number(),
-  target_energy: z.number(),
-  host_message: z.string(),
-  confidence: z.number(),
-  provider: z.enum(["openai", "adaptive_fallback"]),
-  model: z.string(),
-  latency_ms: z.number(),
-  fallback_used: z.boolean(),
-  fallback_code: z.string().nullable().optional(),
-  fallback_reason: z.string().nullable().optional(),
-  request_id: z.string().nullable().optional(),
-  api_version: z.string().nullable().optional(),
-});
+const wireResponseSchema = NextResponseSchema;
 
-type WireGameMasterDecision = z.infer<typeof wireResponseSchema>;
+type WireGameMasterDecision = NextResponse;
 
 export type GameMasterDecision = WireGameMasterDecision & {
   endpoint: string;

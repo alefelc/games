@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { isSoloResourceCompatible } from "../lib/soloResource";
+
+const packageRoot = basename(process.cwd()) === "games-main"
+  ? process.cwd()
+  : resolve(process.cwd(), "games-main");
 
 describe("recursos del modo solitario r24.3", () => {
   it("muestra recursos con alcance all antes y después de elegir sexo", () => {
@@ -34,7 +38,7 @@ describe("recursos del modo solitario r24.3", () => {
 
   it("mantiene visibles los recursos reales del catálogo solitario", () => {
     const bundle = JSON.parse(
-      readFileSync(join(process.cwd(), "public", "bootstrap-content.json"), "utf8"),
+      readFileSync(resolve(packageRoot, "public/bootstrap-content.json"), "utf8"),
     ) as {
       elements: Array<{
         visible_in_setup: boolean;

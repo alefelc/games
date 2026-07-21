@@ -1,23 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
-const frontendApi = readFileSync(resolve(process.cwd(), "src/auth/auth-api.ts"), "utf8");
-const frontendScreen = readFileSync(resolve(process.cwd(), "src/screens/AuthScreen.tsx"), "utf8");
+const packageRoot = basename(process.cwd()) === "games-main"
+  ? process.cwd()
+  : resolve(process.cwd(), "games-main");
+const frontendApi = readFileSync(resolve(packageRoot, "src/auth/auth-api.ts"), "utf8");
+const frontendScreen = readFileSync(resolve(packageRoot, "src/screens/AuthScreen.tsx"), "utf8");
 const backendDirectus = readFileSync(
-  resolve(process.cwd(), "../te-animas-game-master-main/src/directus.ts"),
+  resolve(packageRoot, "../te-animas-game-master-main/src/directus.ts"),
   "utf8",
 );
 const backendAccount = readFileSync(
-  resolve(process.cwd(), "../te-animas-game-master-main/src/account.ts"),
+  resolve(packageRoot, "../te-animas-game-master-main/src/account.ts"),
   "utf8",
 );
 const backendServer = readFileSync(
-  resolve(process.cwd(), "../te-animas-game-master-main/src/server.ts"),
+  resolve(packageRoot, "../te-animas-game-master-main/src/server.ts"),
   "utf8",
 );
 const installerSource = readFileSync(
-  resolve(process.cwd(), "../directus-auth-r19/lib.mjs"),
+  resolve(packageRoot, "../tools/account-installer/lib.mjs"),
   "utf8",
 );
 
