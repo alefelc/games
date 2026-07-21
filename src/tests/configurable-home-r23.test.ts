@@ -7,7 +7,7 @@ import type { ContentBundle } from "../types";
 describe("configuración editable del inicio r23", () => {
   const home = readFileSync("src/screens/HomeScreen.tsx", "utf8");
   const installer = readFileSync(
-    "../directus-installer-2026-07-17/Instalar-Contenido-TeAnimas.ps1",
+    "../directus-installer-2026-07-17/installer-lib.mjs",
     "utf8",
   );
 
@@ -29,7 +29,7 @@ describe("configuración editable del inicio r23", () => {
     expect(installer).toContain("default_cards_per_session");
     expect(installer).toContain("how_to_play_step_1_title");
     expect(installer).toContain("how_to_play_step_4_text");
-    expect(installer).toContain("Ensure-AppSettingsFields");
+    expect(installer).toContain("ensureAppSettingsFields");
   });
 });
 

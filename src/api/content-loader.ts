@@ -122,13 +122,6 @@ function validateBundle(raw: ContentBundle): ContentBundle {
   };
 }
 
-function parseBundle(value: unknown): ContentBundle {
-  if (typeof value === "string") return JSON.parse(value) as ContentBundle;
-  if (!value || typeof value !== "object")
-    throw new Error("El contenido del juego no es válido.");
-  return value as ContentBundle;
-}
-
 async function buildLiveBundle(
   snapshot: ContentBundle,
   signal?: AbortSignal,
@@ -167,13 +160,22 @@ async function buildLiveBundle(
 async function fetchCurrentContent(
   signal?: AbortSignal,
 ): Promise<ContentBundle> {
-  const record = await readPublicBundle({
-    includeBundle: true,
-    signal,
-  });
+  const [record, bootstrap] = await Promise.all([
+    readPublicBundle({
+      includeBundle: false,
+      signal,
+    }),
+    readBootstrap(),
+  ]);
 
   const snapshot = validateBundle({
-    ...parseBundle(record.bundle),
+    ...bootstrap,
+    release: {
+      ...bootstrap.release,
+      version: record.version || bootstrap.release.version,
+      published_at:
+        record.published_at || bootstrap.release.published_at,
+    },
     contentHash: record.content_hash,
     fetchedAt: new Date().toISOString(),
   });

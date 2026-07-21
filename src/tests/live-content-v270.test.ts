@@ -32,6 +32,13 @@ describe("catálogo dinámico v2.7.0", () => {
     );
   });
 
+
+  it("no descarga el bundle JSON gigante desde Directus", () => {
+    expect(loader).toContain("includeBundle: false");
+    expect(loader).toContain("readBootstrap()");
+    expect(loader).not.toContain("parseBundle(record.bundle)");
+  });
+
   it("no depende de una lista fija de sexos", () => {
     expect(loader).toContain("sexes: catalog.sexes");
   });
