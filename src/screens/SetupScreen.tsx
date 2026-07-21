@@ -6,6 +6,7 @@ import { TopBar } from "../components/TopBar";
 import { previewEligibleStats } from "../engine/session";
 import { checkGameMasterAvailability } from "../api/game-master";
 import { intensityDescription, isIntensityMarkerActive } from "../lib/intensitySelector";
+import { isSoloResourceCompatible } from "../lib/soloResource";
 
 function toggleId(values: Id[], id: Id): Id[] {
   return values.includes(id)
@@ -97,14 +98,7 @@ export function SetupScreen({
   const matchesSoloResource = (resource: {
     solo_compatible: boolean;
     solo_gender_scope: string;
-  }) => {
-    if (!isSolo) return true;
-    if (!resource.solo_compatible) return false;
-    return (
-      resource.solo_gender_scope === "neutral" ||
-      resource.solo_gender_scope === playerOneSexSlug
-    );
-  };
+  }) => !isSolo || isSoloResourceCompatible(resource, playerOneSexSlug);
 
   const availableDecks = content.decks.filter(
     (deck) =>
@@ -292,9 +286,7 @@ export function SetupScreen({
             content.elements.some(
               (item) =>
                 item.id === id &&
-                item.solo_compatible &&
-                (item.solo_gender_scope === "neutral" ||
-                  item.solo_gender_scope === playerOneSexSlug),
+                isSoloResourceCompatible(item, playerOneSexSlug),
             ),
           )
         : setup.elementIds,
@@ -303,9 +295,7 @@ export function SetupScreen({
             content.toys.some(
               (toy) =>
                 toy.id === id &&
-                toy.solo_compatible &&
-                (toy.solo_gender_scope === "neutral" ||
-                  toy.solo_gender_scope === playerOneSexSlug),
+                isSoloResourceCompatible(toy, playerOneSexSlug),
             ),
           )
         : setup.toyIds,
@@ -396,9 +386,7 @@ export function SetupScreen({
                                 content.elements.some(
                                   (item) =>
                                     item.id === id &&
-                                    item.solo_compatible &&
-                                    (item.solo_gender_scope === "neutral" ||
-                                      item.solo_gender_scope === slug),
+                                    isSoloResourceCompatible(item, slug),
                                 ),
                               )
                             : setup.elementIds,
@@ -407,9 +395,7 @@ export function SetupScreen({
                                 content.toys.some(
                                   (toy) =>
                                     toy.id === id &&
-                                    toy.solo_compatible &&
-                                    (toy.solo_gender_scope === "neutral" ||
-                                      toy.solo_gender_scope === slug),
+                                    isSoloResourceCompatible(toy, slug),
                                 ),
                               )
                             : setup.toyIds,
