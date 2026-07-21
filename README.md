@@ -1,22 +1,45 @@
-# ¿Te animás? — Web 3.0.0-r1
+# ¿Te animás? Web — EasyPanel 3.0.2-r3
 
-Aplicación React/PWA del juego. Se instala y construye desde la raíz del workspace, no desde esta carpeta.
+Este directorio es un repositorio autónomo del frontend.
 
-```bash
-npm ci
-npm run test:web
-npm run build:web
+## Verificación visual obligatoria
+
+Al abrir la raíz del repositorio en GitHub deben verse directamente:
+
+- `Dockerfile`
+- `package.json`
+- `package-lock.json`
+- `REPOSITORY_ROOT_OK.txt`
+- `contracts/`
+- `src/`
+- `public/`
+- `deploy/`
+
+No debe verse una carpeta contenedora llamada `games-main` ni `te-animas-release-*`.
+
+## EasyPanel
+
+- Build method: `Dockerfile`
+- Dockerfile: `Dockerfile`
+- Build context: `.`
+- Puerto interno: `80`
+- Healthcheck: `/`
+
+Build argument requerido:
+
+```text
+VITE_GAME_MASTER_URL=https://gm.teanimas.com
 ```
 
-## Decisiones relevantes
+Opcionales:
 
-- Consume el contrato compartido `@te-animas/contracts`.
-- Valida respuestas de contenido e IA antes de incorporarlas al estado.
-- Reemplaza modos o niveles predeterminados inexistentes por referencias válidas.
-- El selector de intensidad elige un solo nivel y muestra los inferiores únicamente como progreso visual.
-- Elementos y juguetes se mantienen disponibles en modo solitario cuando tienen cartas compatibles.
-- Las pruebas se aíslan por archivo para terminar sin recursos pendientes.
+```text
+VITE_DIRECTUS_URL=https://admin.teanimas.com
+VITE_BASE_PATH=/
+VITE_GAME_SLUG=te-animas
+VITE_ALLOW_BOOTSTRAP_FALLBACK=true
+VITE_CONTENT_CACHE_HOURS=24
+BUILD_RELEASE=3.0.2-r3
+```
 
-## Docker
-
-Usar la raíz de la release como contexto y `games-main/Dockerfile` como Dockerfile. Ver `../docs/DEPLOYMENT.md`.
+No hay secretos en el frontend. Todo valor `VITE_*` queda incorporado al JavaScript público.
