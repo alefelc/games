@@ -1,4 +1,4 @@
-# ¿Te animás? Web — EasyPanel 3.0.2-r3
+# ¿Te animás? 3.0.2-r3
 
 Este directorio es un repositorio autónomo del frontend.
 
