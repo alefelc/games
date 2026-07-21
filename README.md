@@ -1,7 +1,5 @@
-# ¿Te animás? — Frontend 2.15.5 R24.2
+# ¿Te animás? — Frontend 2.15.6 R24.3
 
-El selector de intensidad permite elegir cada valor entre 1 y 7. Los niveles inferiores quedan marcados como progreso visual y el valor actual se distingue con un resaltado adicional.
+Corrige la ausencia de elementos y juguetes en modo solitario.
 
-El título y la descripción correspondiente a cada nivel se leen desde `pc_app_settings`.
-
-Publicá con `BUILD_RELEASE=2.15.5-r24.2` y limpiá la caché de la PWA.
+Publicá con `BUILD_RELEASE=2.15.6-r24.3` y limpiá la caché de la PWA. No requiere reinstalar contenido.

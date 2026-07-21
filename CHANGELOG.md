@@ -1,3 +1,11 @@
+# 2.15.6 — R24.3
+
+- Corrige el filtro de elementos y juguetes del modo solitario.
+- Reconoce `solo_gender_scope=all` como alcance universal.
+- Centraliza la compatibilidad por sexo para evitar diferencias entre listado, cambio de modo y cambio de sexo.
+- Agrega prueba sobre el catálogo real: 17 elementos y 26 juguetes visibles.
+- No modifica cartas, relaciones ni configuración de contenido.
+
 # 2.15.5 — R24.2
 
 - Selector individual de intensidad 1–7.
