@@ -1,8 +1,0 @@
-FRONTEND 2.14.3 R19
-
-- 31 archivos de prueba aprobados.
-- 94 pruebas aprobadas.
-- Build TypeScript, Vite y PWA aprobado.
-- Alta por invitación, activación, login, recuperación y perfil cubiertos por pruebas.
-- Sin llamadas del navegador a /users/register.
-- Sin llamadas del navegador a /items/pc_user_profiles.
