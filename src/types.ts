@@ -292,6 +292,7 @@ export interface AppSettings {
   status: string;
   default_mode: Id | null;
   default_level: Id | null;
+  default_intensity_level: number | null;
   start_screen_title: string;
   intro_text: string;
   instructions_text: string;

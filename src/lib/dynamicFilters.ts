@@ -104,7 +104,10 @@ export function fallbackFilterDefinitions(
       {
         description:
           "1–2 usa un mazo social y pícaro; 3–4 uno sensual; 5–7 uno explícito. Cada franja tiene cartas distintas.",
-        defaultNumber: 7,
+        defaultNumber: Math.min(
+          7,
+          Math.max(1, Number(settings?.default_intensity_level ?? 7)),
+        ),
         minValue: 1,
         maxValue: 7,
         advanced: false,
@@ -236,20 +239,36 @@ export function ensureIntensityFilterDefinition(
     return [...current, fallback];
   }
 
-  return current.map((definition, index) =>
-    index === existingIndex
-      ? {
-          ...fallback,
-          ...definition,
-          key: "maxIntensity",
-          label: definition.label || fallback.label,
-          filter_kind: "max_number",
-          numeric_field: "intensity",
-          visible: true,
-          advanced: false,
-        }
-      : definition,
-  );
+  return current.map((definition, index) => {
+    if (index !== existingIndex) return definition;
+
+    const merged = {
+      ...fallback,
+      ...definition,
+      key: "maxIntensity",
+      label: definition.label || fallback.label,
+      filter_kind: "max_number" as const,
+      numeric_field: "intensity",
+      visible: true,
+      advanced: false,
+    };
+    const configuredValue = settings?.default_intensity_level;
+    if (configuredValue === null || configuredValue === undefined) {
+      return merged;
+    }
+    const configuredDefault = Number(configuredValue);
+    if (!Number.isFinite(configuredDefault)) return merged;
+
+    const minimum = Number(merged.min_value ?? 1);
+    const maximum = Number(merged.max_value ?? 7);
+    return {
+      ...merged,
+      default_number: Math.min(
+        Math.max(configuredDefault, minimum),
+        Math.max(minimum, maximum),
+      ),
+    };
+  });
 }
 
 export function normalizeFilterDefinitionsForCards(

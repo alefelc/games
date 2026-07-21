@@ -211,8 +211,9 @@ export function SetupScreen({
       intensityMinimum,
       Number(
         setup.filters.maxIntensity ??
+          content.settings.default_intensity_level ??
           intensityDefinition?.default_number ??
-          intensityMaximum,
+          intensityMinimum,
       ),
     ),
   );
@@ -765,19 +766,6 @@ export function SetupScreen({
                 <b>{eligibleCount}</b>
                 <span>cartas compatibles con esta configuración</span>
               </div>
-              {eligibleCount > 0 && (
-                <div className="eligibility-breakdown">
-                  <span>
-                    <b>{eligibleStats.withSelectedInventory}</b> usan lo elegido
-                  </span>
-                  <span>
-                    <b>{eligibleStats.penetration}</b> incluyen coger/penetración
-                  </span>
-                  <span>
-                    <b>{eligibleStats.toys}</b> incluyen juguetes
-                  </span>
-                </div>
-              )}
               {eligibleCount === 0 && (
                 <p>
                   Los filtros y elementos seleccionados dejaron la partida sin

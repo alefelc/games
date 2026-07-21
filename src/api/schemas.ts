@@ -341,6 +341,13 @@ export const settingsSchema = z.object({
   status: z.string(),
   default_mode: relationId,
   default_level: relationId,
+  default_intensity_level: z
+    .preprocess(
+      (value) => (value === "" || value === undefined ? null : value),
+      z.coerce.number().int().min(1).max(7).nullable(),
+    )
+    .optional()
+    .transform((value) => value ?? null),
   start_screen_title: z.string(),
   intro_text: z.string(),
   instructions_text: z.string(),

@@ -177,6 +177,7 @@ const SETTINGS_FIELDS = [
   "status",
   "default_mode",
   "default_level",
+  "default_intensity_level",
   "start_screen_title",
   "intro_text",
   "instructions_text",
@@ -242,6 +243,7 @@ const SETTINGS_FIELDS = [
 ];
 
 const OPTIONAL_SETTINGS_FIELDS = new Set([
+  "default_intensity_level",
   "analytics_measurement_id",
   "default_cards_per_session",
   "how_to_play_eyebrow",

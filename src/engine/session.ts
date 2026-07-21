@@ -37,14 +37,11 @@ function historyContext(content: ContentBundle, setup: GameSetup) {
 }
 
 export function createDefaultSetup(content: ContentBundle): GameSetup {
-  const safeLevels = content.levels
-    .filter((level) => !level.requires_confirmation)
-    .map((level) => level.id);
   const configuredLevel = content.levels.find(
     (level) => level.id === content.settings.default_level,
   );
   const fallbackLevel = configuredLevel?.id ?? content.levels[0]?.id ?? "";
-  const defaultLevels = safeLevels.length ? safeLevels : [fallbackLevel];
+  const defaultLevels = fallbackLevel ? [fallbackLevel] : [];
   const defaultModeRecord =
     content.modes.find((mode) => mode.id === content.settings.default_mode) ??
     content.modes[0];
