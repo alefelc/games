@@ -1,9 +1,0 @@
-FRONTEND 2.13.7 — VALIDACIÓN R12
-
-- 30 archivos de pruebas aprobados.
-- 85 pruebas aprobadas.
-- Build TypeScript/Vite/PWA aprobado.
-- runtime-config.js incluye G-8CMSB2VYC8.
-- runtime-config.js se carga antes de la aplicación.
-- runtime-config.js no se incluye en la caché de la PWA.
-- El ID runtime tiene prioridad sobre analytics_measurement_id.
