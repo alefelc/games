@@ -146,8 +146,13 @@ export function cardHistoryPenalty(
     entries.slice(0, 60).map((item) => item.anatomyFocus),
     card.anatomy_focus,
   );
+  const variantCount = countRecent(
+    entries.slice(0, 100).map((item) => item.variantGroup),
+    card.variant_group,
+  );
 
   penalty += Math.min(15, groupCount * 1.9);
+  penalty += Math.min(24, variantCount * 6);
   if (card.anatomy_focus !== "none" && card.anatomy_focus !== "body") {
     penalty += Math.min(8, anatomyCount * 0.85);
   }
@@ -159,7 +164,12 @@ export function preferFreshCards<
   T extends Pick<Card, "id" | "gm_continuity_group" | "anatomy_focus" | "variant_group">,
 >(cards: T[], minimumPool = 18): T[] {
   const recent = new Set(recentCardIds());
-  const fresh = cards.filter((card) => !recent.has(card.id));
+  const recentVariants = new Set(recentVariantGroups());
+  const fresh = cards.filter(
+    (card) =>
+      !recent.has(card.id) &&
+      (!card.variant_group || !recentVariants.has(card.variant_group)),
+  );
 
   if (fresh.length >= minimumPool) {
     return fresh.sort((a, b) => cardHistoryPenalty(a) - cardHistoryPenalty(b));

@@ -143,4 +143,51 @@ describe("motor de sesión", () => {
     expect(draw.card?.id).toBe("b");
     expect(draw.session.usedCardIds).toEqual(["a", "b"]);
   });
+  it("no muestra dos veces el mismo texto aunque Directus use IDs distintos", () => {
+    localStorage.clear();
+    const duplicateContent = {
+      ...content,
+      modes: [
+        {
+          ...content.modes[0],
+          slug: "clasico",
+          automatic_progression: false,
+          cards_before_level_up: 99,
+        },
+      ],
+      cards: [
+        { ...makeCard("a", "level-1"), text: "La misma carta exacta." },
+        { ...makeCard("b", "level-1"), text: "  LA MISMA carta exacta  " },
+        { ...makeCard("c", "level-1"), text: "Una carta realmente nueva." },
+      ],
+      deckCards: [
+        { id: "da", deck: "deck", card: "a", sort: 1, enabled: true },
+        { id: "db", deck: "deck", card: "b", sort: 2, enabled: true },
+        { id: "dc", deck: "deck", card: "c", sort: 3, enabled: true },
+      ],
+    } as ContentBundle;
+
+    const setup = createDefaultSetup(duplicateContent);
+    setup.levelIds = ["level-1"];
+    setup.deckIds = ["deck"];
+    setup.filters.maxIntensity = 2;
+
+    let session = createSession(duplicateContent, setup);
+    let draw = drawNextCard(duplicateContent, setup, session, () => 0);
+    expect(draw.card?.id).toBe("a");
+
+    session = resolveCurrentCard(
+      duplicateContent,
+      setup,
+      draw.session,
+      "completed",
+      () => 0,
+    );
+    draw = drawNextCard(duplicateContent, setup, session, () => 0);
+
+    expect(draw.card?.id).toBe("c");
+    expect(draw.card?.text).toBe("Una carta realmente nueva.");
+    expect(draw.session.resolvedCount).toBe(1);
+  });
+
 });

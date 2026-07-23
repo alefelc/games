@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import { eligibleCards } from "./eligibility";
 import { weightedPick } from "./random";
+import { usedVisibleCardFingerprints, visibleCardFingerprint } from "./card-identity";
 import { preferFreshCards, recordCardSeen } from "./card-history";
 import {
   applyCardMemory,
@@ -303,13 +304,19 @@ export function getDrawCandidatePool(
     mode,
     resolvedEvent,
   );
-  let used = new Set(session.usedCardIds);
+  let used = new Set(session.usedCardIds.map(String));
+  let usedFingerprints = usedVisibleCardFingerprints(
+    content.cards ?? [],
+    used,
+  );
   let drawPlayer = session.currentPlayer;
 
   const rawEligibleFor = (player: 0 | 1) =>
-    eligibleCards(content, contextForPlayer(player)).filter(
-      (card) => !used.has(card.id),
-    );
+    eligibleCards(content, contextForPlayer(player)).filter((card) => {
+      if (used.has(String(card.id))) return false;
+      const fingerprint = visibleCardFingerprint(card);
+      return !fingerprint || !usedFingerprints.has(fingerprint);
+    });
   const eligibleFor = (player: 0 | 1) =>
     sceneCompatibleCards(rawEligibleFor(player), content, session.scene);
 
@@ -341,7 +348,11 @@ export function getDrawCandidatePool(
       ...session.completedCardIds,
       ...session.skippedCardIds,
     ]);
-    used = currentSessionIds;
+    used = new Set(Array.from(currentSessionIds, String));
+    usedFingerprints = usedVisibleCardFingerprints(
+      content.cards ?? [],
+      used,
+    );
     resetCardHistory(historyContext(content, setup).key);
     drawPlayer = session.currentPlayer;
     allEligible = eligibleFor(drawPlayer);
