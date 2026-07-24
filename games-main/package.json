@@ -1,0 +1,38 @@
+{
+  "name": "te-animas-app",
+  "private": true,
+  "version": "5.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node scripts/test-all.mjs",
+    "test:watch": "vitest",
+    "check": "npm run test && npm run build",
+    "test:raw": "vitest run --pool=threads --maxWorkers=1"
+  },
+  "dependencies": {
+    "idb": "8.0.3",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "4.4.3",
+    "zustand": "5.0.14",
+    "@te-animas/contracts": "5.0.1",
+    "@te-animas/game-domain": "5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.13",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "jsdom": "28.0.0",
+    "typescript": "6.0.3",
+    "vite": "8.1.4",
+    "vite-plugin-pwa": "1.3.0",
+    "vitest": "4.1.10"
+  }
+}
