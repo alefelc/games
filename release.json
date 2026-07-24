@@ -1,0 +1,8 @@
+{
+  "product": "¿Te animás? Web",
+  "version": "5.0.0-r2",
+  "deployment": "easypanel-standalone-root",
+  "node": "22",
+  "runtime": "nginx",
+  "port": 80
+}
