@@ -69,6 +69,7 @@ function runSession(
 
   const finished = drawNextCard(content, setup, session, () => 0);
   expect(finished.exhausted).toBe(true);
+  expect(finished.finishReason).toBe("limit_reached");
   expect(finished.card).toBeNull();
   expect(finished.session.resolvedCount).toBe(setup.maxCards);
 }

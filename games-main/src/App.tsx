@@ -306,6 +306,15 @@ export default function App() {
         );
       }
 
+      if (setup && session && !gameMasterBusy && !session.currentCardId) {
+        return (
+          <ErrorScreen
+            message="No encontramos otra carta compatible con esta configuración. La partida no se marcó como terminada."
+            onRetry={restart}
+          />
+        );
+      }
+
       return setup && session ? (
         <GameScreen
           content={content}

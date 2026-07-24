@@ -243,12 +243,19 @@ export interface DrawResult {
   session: SessionState;
   card: Card | null;
   exhausted: boolean;
+  finishReason:
+    | "limit_reached"
+    | "no_compatible_card"
+    | "invalid_configuration"
+    | null;
 }
 
 export interface DrawCandidatePool {
   player: 0 | 1;
   candidates: Card[];
   exhausted: boolean;
+  scene: SessionState["scene"];
+  finishReason: DrawResult["finishReason"];
 }
 
 function sexSlugById(content: ContentBundle, id: Id | null): string | null {
@@ -262,15 +269,30 @@ export function getDrawCandidatePool(
   resolvedEvent: import("../types").GameMasterEvent | null = null,
 ): DrawCandidatePool {
   if (session.resolvedCount >= setup.maxCards) {
-    return { player: session.currentPlayer, candidates: [], exhausted: true };
+    return {
+      player: session.currentPlayer,
+      candidates: [],
+      exhausted: true,
+      scene: session.scene,
+      finishReason: "limit_reached",
+    };
   }
 
   const mode =
     content.modes.find((item) => item.id === setup.modeId) ?? content.modes[0];
   if (!mode) {
-    return { player: session.currentPlayer, candidates: [], exhausted: true };
+    return {
+      player: session.currentPlayer,
+      candidates: [],
+      exhausted: true,
+      scene: session.scene,
+      finishReason: "invalid_configuration",
+    };
   }
 
+  const selectedLevels = content.levels
+    .filter((level) => setup.levelIds.includes(level.id))
+    .sort((a, b) => a.intensity_order - b.intensity_order);
   const isSolo = mode.slug === "solitario" || mode.turn_mode === "single";
   const contextForPlayer = (player: 0 | 1) => ({
     playerCount: isSolo ? (1 as const) : (2 as const),
@@ -314,6 +336,7 @@ export function getDrawCandidatePool(
     used,
   );
   let drawPlayer = session.currentPlayer;
+  let drawScene = session.scene;
 
   const rawEligibleFor = (player: 0 | 1) =>
     eligibleCards(content, contextForPlayer(player)).filter((card) => {
@@ -354,6 +377,59 @@ export function getDrawCandidatePool(
     }
   }
 
+  if (!candidates.length) {
+    const currentLevelIndex = Math.max(
+      0,
+      selectedLevels.findIndex(
+        (level) => level.id === session.currentLevelId,
+      ),
+    );
+    const orderedRecoveryLevels = [
+      ...selectedLevels.slice(currentLevelIndex),
+      ...selectedLevels.slice(0, currentLevelIndex),
+    ];
+    const requestedLevel = session.pendingLevelId
+      ? selectedLevels.find((level) => level.id === session.pendingLevelId)
+      : null;
+    const recoveryLevels = requestedLevel
+      ? [
+          requestedLevel,
+          ...orderedRecoveryLevels.filter(
+            (level) => level.id !== requestedLevel.id,
+          ),
+        ]
+      : orderedRecoveryLevels;
+    const recoveryPlayers: Array<0 | 1> = isSolo
+      ? [drawPlayer]
+      : [drawPlayer, drawPlayer === 0 ? 1 : 0];
+
+    recovery:
+    for (const level of recoveryLevels) {
+      const alignedScene = alignSceneForManualLevel(
+        session.scene,
+        level.id,
+        content,
+        setup,
+      );
+
+      for (const player of recoveryPlayers) {
+        const recovered = sceneCompatibleCards(
+          rawEligibleFor(player),
+          content,
+          alignedScene,
+        ).filter((card) => card.level === level.id);
+
+        if (!recovered.length) continue;
+
+        drawPlayer = player;
+        drawScene = alignedScene;
+        allEligible = recovered;
+        candidates = recovered;
+        break recovery;
+      }
+    }
+  }
+
   const inventoryAware = chooseInventoryPool(
     candidates,
     allEligible,
@@ -370,12 +446,17 @@ export function getDrawCandidatePool(
 
   const memoryAware = applyCardMemory(practiceAware);
   const fresh = preferFreshCards(memoryAware);
-  const sceneWeighted = applySceneWeights(fresh, content, setup, session);
+  const sceneWeighted = applySceneWeights(fresh, content, setup, {
+    ...session,
+    scene: drawScene,
+  });
 
   return {
     player: drawPlayer,
     candidates: sceneWeighted,
     exhausted: sceneWeighted.length === 0,
+    scene: drawScene,
+    finishReason: sceneWeighted.length ? null : "no_compatible_card",
   };
 }
 
@@ -463,20 +544,27 @@ export function drawNextCard(
       session: { ...session, currentCardId: null },
       card: null,
       exhausted: true,
+      finishReason: pool.finishReason ?? "no_compatible_card",
     };
   }
 
   rememberSelectedCard(content, setup, card);
 
   return {
-    session: applyCardSelection(session, card, pool.player, {
-      fallbackUsed: false,
-      provider: "local",
-      model: "local-browser",
-      latencyMs: 0,
-    }),
+    session: applyCardSelection(
+      { ...session, scene: pool.scene },
+      card,
+      pool.player,
+      {
+        fallbackUsed: false,
+        provider: "local",
+        model: "local-browser",
+        latencyMs: 0,
+      },
+    ),
     card,
     exhausted: false,
+    finishReason: null,
   };
 }
 
@@ -628,9 +716,6 @@ export function previewEligibleStats(
   };
   const allCards = [...one, ...two];
   const cardGroups = groupByVisibleIdentity(allCards);
-  const initiallyPlayableGroups = groupByVisibleIdentity(
-    sceneCompatibleCards(allCards, content, initialSceneState()),
-  );
   const selectedInventory = new Set([...setup.elementIds, ...setup.toyIds]);
   const usesSelectedInventory = (card: Card) =>
     content.cardElements.some(
@@ -645,7 +730,11 @@ export function previewEligibleStats(
 
   return {
     total: cardGroups.length,
-    sessionCapacity: initiallyPlayableGroups.length,
+    // The number of cards that can open a scene is not the capacity of the
+    // session. A configuration may intentionally have one valid opener and
+    // many continuations. Clamping maxCards to the opener count turns that
+    // perfectly valid game into a one-card session.
+    sessionCapacity: cardGroups.length,
     withSelectedInventory: cardGroups.filter((cards) =>
       cards.some(usesSelectedInventory),
     ).length,

@@ -157,7 +157,12 @@ export async function drawAdaptiveCard(
 
   const pool = getDrawCandidatePool(content, setup, session, resolvedEvent);
   if (pool.exhausted || !pool.candidates.length) {
-    return { session, card: null, exhausted: true };
+    return {
+      session,
+      card: null,
+      exhausted: true,
+      finishReason: pool.finishReason ?? "no_compatible_card",
+    };
   }
 
   try {
@@ -183,24 +188,30 @@ export async function drawAdaptiveCard(
     rememberSelectedCard(content, setup, selected);
 
     return {
-      session: applyCardSelection(session, selected, pool.player, {
-        phase: decision.phase,
-        tension: decision.target_tension,
-        energy: decision.target_energy,
-        hostMessage: decision.host_message || null,
-        strategy: decision.strategy,
-        fallbackUsed: decision.fallback_used,
-        provider: decision.provider,
-        model: decision.model,
-        latencyMs: decision.latency_ms,
-        errorCode: decision.fallback_code ?? null,
-        errorReason: decision.fallback_reason ?? null,
-        endpoint: decision.endpoint,
-        requestId: decision.request_id,
-        apiVersion: decision.api_version,
-      }),
+      session: applyCardSelection(
+        { ...session, scene: pool.scene },
+        selected,
+        pool.player,
+        {
+          phase: decision.phase,
+          tension: decision.target_tension,
+          energy: decision.target_energy,
+          hostMessage: decision.host_message || null,
+          strategy: decision.strategy,
+          fallbackUsed: decision.fallback_used,
+          provider: decision.provider,
+          model: decision.model,
+          latencyMs: decision.latency_ms,
+          errorCode: decision.fallback_code ?? null,
+          errorReason: decision.fallback_reason ?? null,
+          endpoint: decision.endpoint,
+          requestId: decision.request_id,
+          apiVersion: decision.api_version,
+        },
+      ),
       card: selected,
       exhausted: false,
+      finishReason: null,
     };
   } catch (error) {
     const failure = normalizeGameMasterError(error);
@@ -218,6 +229,7 @@ export async function drawAdaptiveCard(
         session: { ...session, currentCardId: null },
         card: null,
         exhausted: true,
+        finishReason: "no_compatible_card",
       };
     }
 
@@ -225,30 +237,36 @@ export async function drawAdaptiveCard(
     rememberSelectedCard(content, setup, selected);
 
     return {
-      session: applyCardSelection(session, selected, pool.player, {
-        phase: session.gmPhase,
-        tension: Math.max(session.gmTension, selected.intensity * 14),
-        energy: selected.gm_energy_score * 20,
-        hostMessage:
-          resolvedEvent?.reaction === "too_soft"
-            ? "Subimos el ritmo de verdad."
-            : "La conexión falló en esta carta; se reintentará en la próxima.",
-        strategy:
-          resolvedEvent?.reaction === "too_soft"
-            ? "escalate"
-            : "continue_scene",
-        fallbackUsed: true,
-        provider: "frontend_fallback",
-        model: "local-browser",
-        latencyMs: null,
-        errorCode: failure.code,
-        errorReason: failure.reason,
-        endpoint: failure.endpoint,
-        requestId: failure.requestId,
-        apiVersion: null,
-      }),
+      session: applyCardSelection(
+        { ...session, scene: pool.scene },
+        selected,
+        pool.player,
+        {
+          phase: session.gmPhase,
+          tension: Math.max(session.gmTension, selected.intensity * 14),
+          energy: selected.gm_energy_score * 20,
+          hostMessage:
+            resolvedEvent?.reaction === "too_soft"
+              ? "Subimos el ritmo de verdad."
+              : "La conexión falló en esta carta; se reintentará en la próxima.",
+          strategy:
+            resolvedEvent?.reaction === "too_soft"
+              ? "escalate"
+              : "continue_scene",
+          fallbackUsed: true,
+          provider: "frontend_fallback",
+          model: "local-browser",
+          latencyMs: null,
+          errorCode: failure.code,
+          errorReason: failure.reason,
+          endpoint: failure.endpoint,
+          requestId: failure.requestId,
+          apiVersion: null,
+        },
+      ),
       card: selected,
       exhausted: false,
+      finishReason: null,
     };
   }
 }

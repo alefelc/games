@@ -133,8 +133,13 @@ function recoverWithLocalDraw(
       },
       card: null,
       exhausted: true,
+      finishReason: "invalid_configuration",
     };
   }
+}
+
+function finishedByConfiguredLimit(draw: DrawResult): boolean {
+  return draw.finishReason === "limit_reached";
 }
 
 const ageAccepted = () =>
@@ -251,7 +256,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       if (get().session?.id !== session.id) return;
 
-      if (draw.exhausted) {
+      const finished = finishedByConfiguredLimit(draw);
+      if (finished) {
         trackAnalyticsEvent("game_finished", {
           finish_reason: "automatic",
           resolved_cards: draw.session.resolvedCount,
@@ -260,7 +266,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       }
       set({
-        stage: draw.exhausted ? "summary" : "game",
+        stage: finished ? "summary" : "game",
         session: draw.session,
       });
     } catch (error) {
@@ -272,7 +278,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (get().session?.id !== session.id) return;
 
       const draw = recoverWithLocalDraw(content, effectiveSetup, session);
-      if (draw.exhausted) {
+      const finished = finishedByConfiguredLimit(draw);
+      if (finished) {
         trackAnalyticsEvent("game_finished", {
           finish_reason: "automatic",
           resolved_cards: draw.session.resolvedCount,
@@ -281,7 +288,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       }
       set({
-        stage: draw.exhausted ? "summary" : "game",
+        stage: finished ? "summary" : "game",
         session: draw.session,
       });
     } finally {
@@ -347,7 +354,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       if (get().session?.id !== resolved.id) return;
 
-      if (draw.exhausted) {
+      const finished = finishedByConfiguredLimit(draw);
+      if (finished) {
         trackAnalyticsEvent("game_finished", {
           finish_reason: "automatic",
           resolved_cards: draw.session.resolvedCount,
@@ -356,7 +364,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       }
       set({
-        stage: draw.exhausted ? "summary" : "game",
+        stage: finished ? "summary" : "game",
         session: draw.session,
       });
     } catch (error) {
@@ -368,7 +376,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (get().session?.id !== resolved.id) return;
 
       const draw = recoverWithLocalDraw(content, setup, resolved);
-      if (draw.exhausted) {
+      const finished = finishedByConfiguredLimit(draw);
+      if (finished) {
         trackAnalyticsEvent("game_finished", {
           finish_reason: "automatic",
           resolved_cards: draw.session.resolvedCount,
@@ -377,7 +386,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       }
       set({
-        stage: draw.exhausted ? "summary" : "game",
+        stage: finished ? "summary" : "game",
         session: draw.session,
       });
     } finally {
