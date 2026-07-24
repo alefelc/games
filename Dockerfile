@@ -22,7 +22,7 @@ ARG VITE_BASE_PATH=/
 ARG VITE_GAME_SLUG=te-animas
 ARG VITE_ALLOW_BOOTSTRAP_FALLBACK=true
 ARG VITE_CONTENT_CACHE_HOURS=24
-ARG BUILD_RELEASE=5.1.0-r1
+ARG BUILD_RELEASE=5.1.0-r2
 ENV VITE_DIRECTUS_URL=${VITE_DIRECTUS_URL} \
     VITE_GAME_MASTER_URL=${VITE_GAME_MASTER_URL} \
     VITE_BASE_PATH=${VITE_BASE_PATH} \
@@ -34,7 +34,7 @@ RUN npm run build:web && printf '{"frontend_release":"%s","built_at":"%s"}\n' \
   "$BUILD_RELEASE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > games-main/dist/build-info.json
 
 FROM nginx:1.29-alpine AS runtime
-ARG BUILD_RELEASE=5.1.0-r1
+ARG BUILD_RELEASE=5.1.0-r2
 LABEL org.opencontainers.image.title="¿Te animás? Web" \
       org.opencontainers.image.version=${BUILD_RELEASE}
 ENV GAME_MASTER_UPSTREAM=https://gm.teanimas.com
