@@ -18,6 +18,7 @@ import {
   recentCardIds,
   recentContinuityGroups,
 } from "../engine/card-history";
+import { buildGameMasterEventContext } from "../lib/gameMasterContext";
 
 const wireResponseSchema = NextResponseSchema;
 
@@ -177,20 +178,6 @@ function tagSlugsForCard(content: ContentBundle, cardId: string) {
 
 function sexSlug(content: ContentBundle, sexId: string | null) {
   return content.sexes.find((sex) => sex.id === sexId)?.slug ?? null;
-}
-
-function eventPayload(event: GameMasterEvent) {
-  return {
-    id: event.id,
-    card_id: event.cardId,
-    result: event.result,
-    reaction: event.reaction,
-    player_index: event.playerIndex,
-    intensity: event.intensity,
-    continuity_group: event.continuityGroup,
-    scene_role: event.sceneRole,
-    created_at: event.createdAt,
-  };
 }
 
 function candidatePayload(content: ContentBundle, card: Card) {
@@ -512,6 +499,10 @@ export async function requestGameMasterDecision({
     : player === 0
       ? sexSlug(content, setup.playerTwoSexId)
       : sexSlug(content, setup.playerOneSexId);
+  const eventContext = buildGameMasterEventContext(
+    session.gmEvents,
+    resolvedEvent,
+  );
 
   const payload = {
     game_id: content.game.id,
@@ -543,11 +534,7 @@ export async function requestGameMasterDecision({
     selected_element_slugs: content.elements
       .filter((item) => setup.elementIds.includes(item.id))
       .map((item) => item.slug),
-    recent_events: session.gmEvents
-      .filter((event) => event.id !== resolvedEvent?.id)
-      .slice(-10)
-      .map(eventPayload),
-    resolved_event: resolvedEvent ? eventPayload(resolvedEvent) : null,
+    ...eventContext,
     candidates: candidates.slice(0, 60).map((card) => ({
       ...candidatePayload(content, card),
       uses_selected_inventory: cardUsesSelectedInventory(card, content, setup),

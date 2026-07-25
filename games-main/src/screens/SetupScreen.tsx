@@ -227,23 +227,19 @@ export function SetupScreen({
     [content.levels],
   );
   const isPreviaOnlyMode = ["previa-solamente", "solo-previa"].includes(selectedMode?.slug ?? "");
-  const selectedProgressionCeiling = Math.max(
-    1,
-    ...orderedLevels
-      .filter((level) => setup.levelIds.includes(level.id))
-      .map((level) => level.intensity_order),
-  );
   const selectMaximumIntensity = (value: number) => {
     const maximum = Math.min(intensityMaximum, Math.max(intensityMinimum, Math.round(value)));
     updateFilters({ maxIntensity: maximum });
   };
-  const selectProgressionCeiling = (value: number) => {
-    const ceiling = Math.max(1, Math.round(value));
-    const includedLevels = orderedLevels
-      .filter((level) => level.intensity_order <= ceiling)
-      .map((level) => level.id);
+  const toggleCustomLevel = (levelId: Id) => {
+    if (isPreviaOnlyMode) {
+      const previa = orderedLevels.find((level) => level.slug === "previa");
+      if (previa) updateSetup({ levelIds: [previa.id], intenseConsent: true });
+      return;
+    }
+
     updateSetup({
-      levelIds: includedLevels.length ? includedLevels : setup.levelIds,
+      levelIds: toggleId(setup.levelIds, levelId),
       intenseConsent: true,
     });
   };
@@ -659,18 +655,23 @@ export function SetupScreen({
             <p className="eyebrow">PASO 2 DE 4</p>
             <h1>{stepContent[1].title}</h1>
             <p className="section-copy">{stepContent[1].subtitle}</p>
+            <p className="section-copy">
+              Elegí cada nivel por separado. Marcar uno no activa los anteriores.
+            </p>
 
             <div className="level-grid">
               {orderedLevels.map((level) => {
                 const selected = setup.levelIds.includes(level.id);
-                const current = level.intensity_order === selectedProgressionCeiling;
+                const unavailable =
+                  isPreviaOnlyMode && level.slug !== "previa";
                 return (
                   <button
                     key={level.id}
-                    className={`level-card ${selected ? "selected" : ""} ${current ? "current" : ""}`}
+                    className={`level-card ${selected ? "selected" : ""}`}
                     type="button"
-                    aria-pressed={current}
-                    onClick={() => selectProgressionCeiling(level.intensity_order)}
+                    aria-pressed={selected}
+                    disabled={unavailable}
+                    onClick={() => toggleCustomLevel(level.id)}
                     style={
                       { "--level-color": level.color } as React.CSSProperties
                     }
