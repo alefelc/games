@@ -10,11 +10,18 @@ describe("selector visible de intensidad r22", () => {
     expect(setup).toContain("selectMaximumIntensity(Number(event.target.value))");
     const intensityBlock = setup.slice(
       setup.indexOf("const selectMaximumIntensity"),
-      setup.indexOf("const selectProgressionCeiling"),
+      setup.indexOf("const toggleCustomLevel"),
     );
     expect(intensityBlock).not.toContain("levelIds");
-    expect(setup).toContain("level.intensity_order <= ceiling");
-    expect(setup).toContain("selectProgressionCeiling(level.intensity_order)");
     expect(setup).toContain("limitFilterDefinitions");
+  });
+
+  it("permite elegir niveles personalizados de forma independiente", () => {
+    expect(setup).toContain("const toggleCustomLevel = (levelId: Id)");
+    expect(setup).toContain("levelIds: toggleId(setup.levelIds, levelId)");
+    expect(setup).toContain("Marcar uno no activa los anteriores.");
+    expect(setup).toContain("aria-pressed={selected}");
+    expect(setup).not.toContain("selectProgressionCeiling");
+    expect(setup).not.toContain("level.intensity_order <= ceiling");
   });
 });
