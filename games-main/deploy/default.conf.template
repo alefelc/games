@@ -27,6 +27,24 @@ server {
     add_header Cache-Control "no-store" always;
   }
 
+  # Archivos públicos para buscadores. Las coincidencias exactas evitan que
+  # una ausencia o un error de copia termine devolviendo index.html.
+  location = /robots.txt {
+    default_type text/plain;
+    charset utf-8;
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "no-cache" always;
+    try_files $uri =404;
+  }
+
+  location = /sitemap.xml {
+    default_type application/xml;
+    charset utf-8;
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "no-cache" always;
+    try_files $uri =404;
+  }
+
   location / {
     try_files $uri $uri/ /index.html;
   }
@@ -35,7 +53,6 @@ server {
     include /etc/nginx/security-headers.conf;
     add_header Cache-Control "no-cache, no-store, must-revalidate" always;
   }
-
 
   location = /build-info.json {
     default_type application/json;

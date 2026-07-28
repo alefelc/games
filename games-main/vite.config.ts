@@ -62,6 +62,8 @@ export default defineConfig(({ mode }) => {
           navigateFallbackDenylist: [
             /^\/api\/game-master\//,
             /^\/build-info\.json$/,
+            /^\/robots\.txt$/,
+            /^\/sitemap\.xml$/,
           ],
           globPatterns: ["**/*.{js,css,html,svg,png,json,webmanifest}"],
           maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
