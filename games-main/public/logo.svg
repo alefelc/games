@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 160" role="img" aria-label="¿Te animás?">
+  <defs>
+    <linearGradient id="heart" x1="12" y1="18" x2="128" y2="142" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E83F73"/>
+      <stop offset="1" stop-color="#2D1932"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#heart)" d="M137.9 68.3C143.5 25 94.3 7.8 69.3 41.7 69.8-.4 20-16.3-1.5 21.7-21 56.2 36.4 140.1 36.4 140.1s96.3-32.5 101.5-71.8Z" transform="translate(17 10) scale(.9)"/>
+  <text x="160" y="101" fill="#F8EAD6" font-size="65" font-family="Inter,Montserrat,Arial,sans-serif" font-weight="800" letter-spacing="-2">¿TE ANIMÁS?</text>
+  <text x="164" y="131" fill="#D6B16F" font-size="15" font-family="Inter,Arial,sans-serif" font-weight="600" letter-spacing="5">CUANDO SE JUEGA, SE ENCIENDE</text>
+</svg>
