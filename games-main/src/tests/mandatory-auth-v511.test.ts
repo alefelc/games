@@ -5,7 +5,7 @@ const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
 const authApi = readFileSync(new URL("../auth/auth-api.ts", import.meta.url), "utf8");
 const gameMasterApi = readFileSync(new URL("../api/game-master.ts", import.meta.url), "utf8");
 
-describe("acceso obligatorio 5.1.2", () => {
+describe("acceso obligatorio 5.1.3", () => {
   it("no renderiza el juego mientras la sesión se inicializa o es anónima", () => {
     const initializingGate = app.indexOf('authStatus === "initializing"');
     const anonymousGate = app.indexOf('authStatus !== "authenticated"');
@@ -27,5 +27,14 @@ describe("acceso obligatorio 5.1.2", () => {
   it("no cancela el login si falla una función opcional de pareja", () => {
     const authStore = readFileSync(new URL("../auth/useAuthStore.ts", import.meta.url), "utf8");
     expect(authStore).toContain("[401, 403, 404, 503].includes(error.status)");
+  });
+
+  it("conserva una sesión válida cuando el servicio privado está caído", () => {
+    const authStore = readFileSync(new URL("../auth/useAuthStore.ts", import.meta.url), "utf8");
+
+    expect(authApi).toContain("export async function readCurrentUser()");
+    expect(authApi).toContain("/users/me?fields=id,email,first_name,last_name,status");
+    expect(authStore).toContain("const user = await readCurrentUser()");
+    expect(authStore).toContain("account = { user, profile: null }");
   });
 });
