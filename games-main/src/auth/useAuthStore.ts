@@ -77,7 +77,9 @@ async function loadAccount() {
   try {
     couple = await readCouple();
   } catch (error) {
-    if (!(error instanceof AuthApiError) || ![404, 503].includes(error.status)) throw error;
+    // Una falla de la vinculación de pareja no debe cancelar una sesión que el
+    // endpoint de cuenta ya validó correctamente.
+    if (!(error instanceof AuthApiError) || ![401, 403, 404, 503].includes(error.status)) throw error;
   }
   return { ...account, couple };
 }
