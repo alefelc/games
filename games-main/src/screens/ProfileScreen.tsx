@@ -4,7 +4,7 @@ import { TopBar } from "../components/TopBar";
 import { Icon } from "../components/Icon";
 import { useAuthStore } from "../auth/useAuthStore";
 import type { SavedGamePreferences } from "../auth/types";
-import { resolveDefaultCards } from "../lib/cardCount";
+import { resolveDefaultCards, resolveMaximumCards } from "../lib/cardCount";
 import { clearCoupleCodeFromLocation, readCoupleCodeFromLocation } from "../auth/couple-link";
 
 export function ProfileScreen({
@@ -33,10 +33,53 @@ export function ProfileScreen({
   const unlinkCouple = useAuthStore((state) => state.unlinkCouple);
   const refreshCoupleMatches = useAuthStore((state) => state.refreshCoupleMatches);
   const existing = profile?.preferences ?? null;
+  const orderedLevels = useMemo(
+    () => [...content.levels].sort((a, b) => a.intensity_order - b.intensity_order),
+    [content.levels],
+  );
+  const defaultMode =
+    content.modes.find((item) => item.id === content.settings.default_mode) ??
+    content.modes[0];
+  const intensityDefinition = content.filters?.find(
+    (item) => item.key === "maxIntensity" || item.numeric_field === "intensity",
+  );
+  const intensityMinimum = Number(intensityDefinition?.min_value ?? orderedLevels[0]?.intensity_order ?? 1);
+  const intensityMaximum = Number(
+    intensityDefinition?.max_value ?? orderedLevels.at(-1)?.intensity_order ?? 7,
+  );
+  const savedLevelMaximum = Math.max(
+    intensityMinimum,
+    ...content.levels
+      .filter((item) => existing?.levelSlugs.includes(item.slug))
+      .map((item) => item.intensity_order),
+  );
   const [accountFirstName, setAccountFirstName] = useState(user?.first_name ?? "");
   const [accountLastName, setAccountLastName] = useState(user?.last_name ?? "");
   const [playerOne, setPlayerOne] = useState(existing?.playerOne ?? user?.first_name ?? "");
   const [playerTwo, setPlayerTwo] = useState(existing?.playerTwo ?? "");
+  const [playerOneSexSlug, setPlayerOneSexSlug] = useState(existing?.playerOneSexSlug ?? "");
+  const [playerTwoSexSlug, setPlayerTwoSexSlug] = useState(existing?.playerTwoSexSlug ?? "");
+  const [modeSlug, setModeSlug] = useState(existing?.modeSlug ?? defaultMode?.slug ?? "");
+  const [maximumIntensity, setMaximumIntensity] = useState(() =>
+    Math.min(
+      intensityMaximum,
+      Math.max(
+        intensityMinimum,
+        Number(
+          existing?.filters.maxIntensity ??
+            savedLevelMaximum ??
+            content.settings.default_intensity_level ??
+            intensityMinimum,
+        ),
+      ),
+    ),
+  );
+  const [maxCards, setMaxCards] = useState(
+    existing?.maxCards ?? resolveDefaultCards(content.settings),
+  );
+  const [gameMasterEnabled, setGameMasterEnabled] = useState(
+    existing?.gameMasterEnabled ?? content.settings.game_master_default_on,
+  );
   const [notice, setNotice] = useState<string | null>(null);
   const initialCoupleCode = readCoupleCodeFromLocation();
   const [coupleCode, setCoupleCode] = useState(initialCoupleCode);
@@ -68,7 +111,7 @@ export function ProfileScreen({
     }
   };
 
-  const saveNames = async () => {
+  const saveGameDefaults = async () => {
     setNotice(null);
     const base: SavedGamePreferences = existing ?? {
       version: 1,
@@ -85,13 +128,39 @@ export function ProfileScreen({
       maxCards: resolveDefaultCards(content.settings),
       gameMasterEnabled: content.settings.game_master_default_on,
     };
+    const selectedMode = content.modes.find((item) => item.slug === modeSlug);
+    const isSolo = selectedMode?.slug === "solitario" || selectedMode?.turn_mode === "single";
+    const modeChanged = Boolean(existing?.modeSlug && existing.modeSlug !== modeSlug);
+    const levelSlugs = ["previa-solamente", "solo-previa"].includes(modeSlug)
+      ? orderedLevels.filter((item) => item.slug === "previa").map((item) => item.slug)
+      : orderedLevels
+          .filter((item) => item.intensity_order <= maximumIntensity)
+          .map((item) => item.slug);
+    const compatibleDeckSlugs = content.decks
+      .filter(
+        (deck) =>
+          deck.active &&
+          (isSolo
+            ? deck.minimum_players <= 1 && deck.maximum_players >= 1
+            : deck.minimum_players <= 2 && deck.maximum_players >= 2),
+      )
+      .map((deck) => deck.slug);
     try {
       await savePreferences({
         ...base,
         playerOne: playerOne.trim(),
         playerTwo: playerTwo.trim(),
+        playerOneSexSlug: playerOneSexSlug || null,
+        playerTwoSexSlug: playerTwoSexSlug || null,
+        modeSlug: modeSlug || null,
+        levelSlugs,
+        deckSlugs: modeChanged ? compatibleDeckSlugs : base.deckSlugs,
+        filters: { ...base.filters, maxIntensity: maximumIntensity },
+        maxCards: Math.max(5, Math.min(resolveMaximumCards(content.settings), maxCards)),
+        gameMasterEnabled:
+          content.settings.game_master_enabled && gameMasterEnabled,
       });
-      setNotice("Perfil guardado.");
+      setNotice("Preferencias de juego guardadas.");
     } catch {
       // El store muestra el error.
     }
@@ -181,8 +250,8 @@ export function ProfileScreen({
         </section>
 
         <section className="profile-card">
-          <h2>Nombres de la partida</h2>
-          <p>Se completarán automáticamente al preparar una partida.</p>
+          <h2>Personas que juegan</h2>
+          <p>Estos datos se completarán automáticamente en cada partida.</p>
           <div className="auth-name-grid">
             <label>
               <span>Tu nombre</span>
@@ -192,9 +261,76 @@ export function ProfileScreen({
               <span>Nombre de tu pareja</span>
               <input maxLength={24} value={playerTwo} onChange={(event) => setPlayerTwo(event.target.value)} placeholder="Tu pareja" />
             </label>
+            <label>
+              <span>Tu sexo</span>
+              <select value={playerOneSexSlug} onChange={(event) => setPlayerOneSexSlug(event.target.value)}>
+                <option value="">Sin definir</option>
+                {content.sexes.map((sex) => <option key={sex.id} value={sex.slug}>{sex.name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Sexo de tu pareja</span>
+              <select value={playerTwoSexSlug} onChange={(event) => setPlayerTwoSexSlug(event.target.value)}>
+                <option value="">Sin definir</option>
+                {content.sexes.map((sex) => <option key={sex.id} value={sex.slug}>{sex.name}</option>)}
+              </select>
+            </label>
           </div>
-          <button className="secondary-button wide" type="button" disabled={busy} onClick={() => void saveNames()}>
-            Guardar nombres
+        </section>
+
+        <section className="profile-card">
+          <div className="profile-section-heading">
+            <div>
+              <h2>Partida predeterminada</h2>
+              <p>Estas opciones se cargarán cada vez que prepares una partida.</p>
+            </div>
+            <Icon name="settings" />
+          </div>
+          <div className="auth-name-grid">
+            <label>
+              <span>Modo de juego</span>
+              <select value={modeSlug} onChange={(event) => setModeSlug(event.target.value)}>
+                {content.modes.map((mode) => <option key={mode.id} value={mode.slug}>{mode.name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Dirección adaptativa</span>
+              <select
+                value={gameMasterEnabled ? "on" : "off"}
+                disabled={!content.settings.game_master_enabled}
+                onChange={(event) => setGameMasterEnabled(event.target.value === "on")}
+              >
+                <option value="on">Activada</option>
+                <option value="off">Desactivada</option>
+              </select>
+            </label>
+          </div>
+          <label className="profile-range-row">
+            <span>Intensidad / nivel máximo</span>
+            <small>Nivel {maximumIntensity} de {intensityMaximum}. La partida empezará más abajo y avanzará hasta este nivel.</small>
+            <input
+              type="range"
+              min={intensityMinimum}
+              max={intensityMaximum}
+              step="1"
+              value={maximumIntensity}
+              onChange={(event) => setMaximumIntensity(Number(event.target.value))}
+            />
+          </label>
+          <label className="profile-range-row">
+            <span>Duración predeterminada</span>
+            <small>{maxCards} cartas por partida.</small>
+            <input
+              type="range"
+              min="5"
+              max={resolveMaximumCards(content.settings)}
+              step="5"
+              value={maxCards}
+              onChange={(event) => setMaxCards(Number(event.target.value))}
+            />
+          </label>
+          <button className="primary-button wide" type="button" disabled={busy} onClick={() => void saveGameDefaults()}>
+            {busy ? "Guardando…" : "Guardar preferencias"}
           </button>
         </section>
 
@@ -279,6 +415,7 @@ export function ProfileScreen({
             <div className="preference-summary">
               <div><span>Modo</span><b>{summary?.mode || "Predeterminado"}</b></div>
               <div><span>Niveles</span><b>{summary?.levels.join(", ") || "Predeterminados"}</b></div>
+              <div><span>Intensidad máxima</span><b>{String(existing.filters.maxIntensity ?? "Predeterminada")}</b></div>
               <div><span>Cartas</span><b>{existing.maxCards}</b></div>
               <div><span>IA adaptativa</span><b>{existing.gameMasterEnabled ? "Activada" : "Desactivada"}</b></div>
               <div><span>Elementos</span><b>{existing.elementSlugs.length}</b></div>
@@ -291,8 +428,8 @@ export function ProfileScreen({
             </div>
           )}
 
-          <button className="primary-button wide" type="button" onClick={onEditDefaults}>
-            {existing ? "Editar preferencias" : "Configurar preferencias"}
+          <button className="secondary-button wide" type="button" onClick={onEditDefaults}>
+            Editar elementos, juguetes y límites
           </button>
           {existing && (
             <button className="text-button danger-text" type="button" disabled={busy} onClick={() => void clearDefaults()}>
