@@ -304,7 +304,12 @@ export default function App() {
               ? async () => {
                   const preferences = serializeSetupPreferences(content, setup);
                   await savePreferences(preferences);
-                  if (authCouple) await saveCouplePreferences(preferences);
+                  if (authCouple) {
+                    // La preferencia personal ya quedó guardada. Una falla de
+                    // sincronización con la pareja no debe informar que todo
+                    // el guardado falló ni descartar la configuración propia.
+                    await saveCouplePreferences(preferences).catch(() => undefined);
+                  }
                 }
               : undefined
           }
