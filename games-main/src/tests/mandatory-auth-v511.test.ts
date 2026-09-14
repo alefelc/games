@@ -5,7 +5,7 @@ const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
 const authApi = readFileSync(new URL("../auth/auth-api.ts", import.meta.url), "utf8");
 const gameMasterApi = readFileSync(new URL("../api/game-master.ts", import.meta.url), "utf8");
 
-describe("acceso obligatorio 5.1.1", () => {
+describe("acceso obligatorio 5.1.2", () => {
   it("no renderiza el juego mientras la sesión se inicializa o es anónima", () => {
     const initializingGate = app.indexOf('authStatus === "initializing"');
     const anonymousGate = app.indexOf('authStatus !== "authenticated"');
@@ -22,5 +22,10 @@ describe("acceso obligatorio 5.1.1", () => {
     expect(gameMasterApi).toContain("const accessToken = getAccessToken()");
     expect(gameMasterApi).toContain("Authorization: `Bearer ${accessToken}`");
     expect(gameMasterApi).toContain('code: "ACCOUNT_UNAUTHORIZED"');
+  });
+
+  it("no cancela el login si falla una función opcional de pareja", () => {
+    const authStore = readFileSync(new URL("../auth/useAuthStore.ts", import.meta.url), "utf8");
+    expect(authStore).toContain("[401, 403, 404, 503].includes(error.status)");
   });
 });
