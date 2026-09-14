@@ -11,6 +11,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   readAccount,
+  readCurrentUser,
   refreshSession,
   registerUser,
   requestPasswordReset,
@@ -72,7 +73,17 @@ function friendlyError(error: unknown) {
 }
 
 async function loadAccount() {
-  const account = await readAccount();
+  let account: { user: AuthUser; profile: UserProfileRecord | null };
+  try {
+    account = await readAccount();
+  } catch (error) {
+    // La identidad la determina Directus. El servicio privado agrega perfil y
+    // pareja, pero una caída suya no puede convertir una sesión válida en un
+    // login fallido.
+    if (!(error instanceof AuthApiError) || ![403, 404, 503].includes(error.status)) throw error;
+    const user = await readCurrentUser();
+    account = { user, profile: null };
+  }
   let couple: CoupleProfile | null = null;
   try {
     couple = await readCouple();
