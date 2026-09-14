@@ -383,6 +383,37 @@ export function SetupScreen({
     setSetupNotice("Preparamos una combinación sorpresa dentro de tus límites. Podés revisarla antes de empezar.");
   };
 
+  const saveCurrentDefaults = () => {
+    if (!onSaveDefaults) return;
+    setSavingDefaults(true);
+    setDefaultsNotice(null);
+    void onSaveDefaults()
+      .then(() => setDefaultsNotice("Preferencias guardadas en tu perfil."))
+      .catch(() => setDefaultsNotice("No se pudieron guardar las preferencias."))
+      .finally(() => setSavingDefaults(false));
+  };
+
+  const defaultsPanel = authenticated && onSaveDefaults && (
+    <div className="save-defaults-panel">
+      <div>
+        <Icon name="check" />
+        <span>
+          <b>Usar esta configuración siempre</b>
+          <small>Guardá personas, modo, intensidad, niveles, elementos, juguetes, filtros y duración.</small>
+        </span>
+      </div>
+      <button
+        className="secondary-button wide"
+        type="button"
+        disabled={savingDefaults}
+        onClick={saveCurrentDefaults}
+      >
+        {savingDefaults ? "Guardando…" : "Guardar como predeterminada"}
+      </button>
+      {defaultsNotice && <p className="defaults-notice">{defaultsNotice}</p>}
+    </div>
+  );
+
   return (
     <div className="app-page setup-page">
       <TopBar
@@ -610,8 +641,9 @@ export function SetupScreen({
             )}
 
             {setupPath === "quick" && (
-              <div className="quick-setup-panel">
-                <div className="intensity-selector-panel">
+              <>
+                <div className="quick-setup-panel">
+                  <div className="intensity-selector-panel">
                   <label className="range-row intensity-range">
                     <span>
                       <b>{content.settings.setup_intensity_title}</b>
@@ -637,15 +669,17 @@ export function SetupScreen({
                       >{value}</button>
                     ))}
                   </div>
+                  </div>
+                  <label className="range-row cards-range">
+                    <span><b>Duración aproximada</b><small>{setup.maxCards} cartas</small></span>
+                    <input type="range" min={cardRangeMinimum} max={cardRangeMaximum} step={cardRangeMaximum < 5 ? 1 : 5} value={setup.maxCards} disabled={eligibleCount === 0} onChange={(event) => updateSetup({ maxCards: Number(event.target.value) })} />
+                  </label>
+                  <div className={`eligibility-summary ${eligibleCount === 0 ? "invalid" : ""}`}>
+                    <div><b>{eligibleCount}</b><span>cartas compatibles</span></div>
+                  </div>
                 </div>
-                <label className="range-row cards-range">
-                  <span><b>Duración aproximada</b><small>{setup.maxCards} cartas</small></span>
-                  <input type="range" min={cardRangeMinimum} max={cardRangeMaximum} step={cardRangeMaximum < 5 ? 1 : 5} value={setup.maxCards} disabled={eligibleCount === 0} onChange={(event) => updateSetup({ maxCards: Number(event.target.value) })} />
-                </label>
-                <div className={`eligibility-summary ${eligibleCount === 0 ? "invalid" : ""}`}>
-                  <div><b>{eligibleCount}</b><span>cartas compatibles</span></div>
-                </div>
-              </div>
+                {defaultsPanel}
+              </>
             )}
           </section>
         )}
@@ -852,33 +886,7 @@ export function SetupScreen({
               />
             </label>
 
-            {authenticated && onSaveDefaults && (
-              <div className="save-defaults-panel">
-                <div>
-                  <Icon name="check" />
-                  <span>
-                    <b>Usar esta configuración siempre</b>
-                    <small>Guardá nombres, modo, niveles, elementos, juguetes, filtros y cantidad de cartas.</small>
-                  </span>
-                </div>
-                <button
-                  className="secondary-button wide"
-                  type="button"
-                  disabled={savingDefaults}
-                  onClick={() => {
-                    setSavingDefaults(true);
-                    setDefaultsNotice(null);
-                    void onSaveDefaults()
-                      .then(() => setDefaultsNotice("Preferencias guardadas en tu perfil."))
-                      .catch(() => setDefaultsNotice("No se pudieron guardar las preferencias."))
-                      .finally(() => setSavingDefaults(false));
-                  }}
-                >
-                  {savingDefaults ? "Guardando…" : "Guardar como predeterminada"}
-                </button>
-                {defaultsNotice && <p className="defaults-notice">{defaultsNotice}</p>}
-              </div>
-            )}
+            {defaultsPanel}
 
             <div
               className={`eligibility-summary ${eligibleCount === 0 ? "invalid" : ""}`}
