@@ -312,6 +312,13 @@ export async function readAccount() {
   return accountRequest<AccountBundle>("/v1/account/me", { method: "GET" });
 }
 
+export async function readCurrentUser() {
+  return directusRequest<AuthUser>(
+    "/users/me?fields=id,email,first_name,last_name,status",
+    { method: "GET" },
+  );
+}
+
 export async function updateAccount(input: {
   firstName: string;
   lastName: string;
