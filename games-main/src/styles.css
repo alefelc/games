@@ -2139,7 +2139,8 @@ h2 {
   font-weight: 800;
 }
 .auth-form input,
-.profile-card input {
+.profile-card input,
+.profile-card select {
   width: 100%;
   min-height: 50px;
   border: 1px solid color-mix(in srgb, var(--pc-text) 14%, transparent);
@@ -2151,9 +2152,31 @@ h2 {
   outline: none;
 }
 .auth-form input:focus,
-.profile-card input:focus {
+.profile-card input:focus,
+.profile-card select:focus {
   border-color: var(--pc-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc-accent) 15%, transparent);
+}
+.profile-card select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--pc-muted) 50%),
+    linear-gradient(135deg, var(--pc-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 21px,
+    calc(100% - 12px) 21px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+.profile-range-row small {
+  color: var(--pc-muted);
+  line-height: 1.4;
+}
+.profile-range-row input[type="range"] {
+  min-height: 28px;
+  padding: 0;
+  accent-color: var(--pc-accent);
 }
 .auth-form label small {
   color: var(--pc-muted);
