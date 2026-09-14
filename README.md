@@ -1,4 +1,4 @@
-# Web 5.1.1-r1 — repositorio EasyPanel
+# Web 5.1.2-r1 — repositorio EasyPanel
 
 Este paquete es autocontenido. Subí a GitHub todo el contenido de esta carpeta.
 El repositorio debe mostrar en su raíz:
@@ -28,4 +28,4 @@ partida hasta verificar una cuenta activa. Cada solicitud al Game Master envía
 el token efímero de la sesión; no se guarda en `localStorage` ni en
 `sessionStorage`.
 
-Desplegá primero Game Master 5.0.2-r1 y después esta web.
+Desplegá primero Game Master 5.0.3-r1 y después esta web.
