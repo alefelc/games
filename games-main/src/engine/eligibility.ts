@@ -99,6 +99,13 @@ function matchesSexRequirements(
   card: Card,
   context: EligibilityContext,
 ): boolean {
+  const canonicalSoloSex = inferredSoloCardSex(card);
+  if (context.playerCount === 1 && canonicalSoloSex) {
+    // El catálogo histórico contiene cartas SOLO-H/SOLO-M con metadatos de
+    // sexo vacíos o contradictorios. El código editorial es estable y, en una
+    // carta individual, identifica de forma inequívoca a la única persona.
+    return normalizeSexSlug(context.currentPlayerSexSlug) === canonicalSoloSex;
+  }
   const performerRole =
     card.performer === "none" ? "current_player" : card.performer;
   const targetRole =
@@ -138,6 +145,13 @@ function normalizeSexSlug(value: string | null | undefined): CanonicalSex {
   return null;
 }
 
+function inferredSoloCardSex(card: Card): CanonicalSex {
+  const code = String(card.code ?? "").trim().toLocaleUpperCase("es-AR");
+  if (/^SOLO-(?:H|HT)-/.test(code)) return "hombre";
+  if (/^SOLO-(?:M|MT)-/.test(code)) return "mujer";
+  return null;
+}
+
 function roleSexSlug(
   role: string,
   context: EligibilityContext,
@@ -160,6 +174,10 @@ function matchesGenderScope(
   card: Card,
   context: EligibilityContext,
 ): boolean {
+  const canonicalSoloSex = inferredSoloCardSex(card);
+  if (context.playerCount === 1 && canonicalSoloSex) {
+    return normalizeSexSlug(context.currentPlayerSexSlug) === canonicalSoloSex;
+  }
   const scope = String(card.gender_scope ?? "neutral")
     .trim()
     .toLocaleLowerCase("es-AR");
