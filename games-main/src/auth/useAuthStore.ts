@@ -12,6 +12,7 @@ import {
   logout as apiLogout,
   readAccount,
   readCurrentUser,
+  readProfile,
   refreshSession,
   registerUser,
   requestPasswordReset,
@@ -72,6 +73,39 @@ function friendlyError(error: unknown) {
   return error.message;
 }
 
+const profileCachePrefix = "pecadoclub-profile-preferences:";
+
+function readCachedProfile(userId: string): UserProfileRecord | null {
+  try {
+    const raw = localStorage.getItem(`${profileCachePrefix}${userId}`);
+    if (!raw) return null;
+    const preferences = JSON.parse(raw) as SavedGamePreferences | null;
+    return {
+      id: `local:${userId}`,
+      user: userId,
+      preferences,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function cacheProfile(userId: string, profile: UserProfileRecord | null) {
+  try {
+    if (profile?.preferences) {
+      localStorage.setItem(
+        `${profileCachePrefix}${userId}`,
+        JSON.stringify(profile.preferences),
+      );
+    } else if (profile) {
+      localStorage.removeItem(`${profileCachePrefix}${userId}`);
+    }
+  } catch {
+    // El almacenamiento local es solo una recuperación; el servidor sigue
+    // siendo la fuente principal de preferencias.
+  }
+}
+
 async function loadAccount() {
   let account: { user: AuthUser; profile: UserProfileRecord | null };
   try {
@@ -83,6 +117,18 @@ async function loadAccount() {
     if (!(error instanceof AuthApiError) || ![403, 404, 503].includes(error.status)) throw error;
     const user = await readCurrentUser();
     account = { user, profile: null };
+  }
+  if (!account.profile) {
+    try {
+      account.profile = await readProfile();
+    } catch (error) {
+      if (!(error instanceof AuthApiError) || ![401, 403, 404, 503].includes(error.status)) throw error;
+    }
+  }
+  if (account.profile) {
+    cacheProfile(account.user.id, account.profile);
+  } else {
+    account.profile = readCachedProfile(account.user.id);
   }
   let couple: CoupleProfile | null = null;
   try {
@@ -202,6 +248,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const saved = await saveProfile(preferences);
+      cacheProfile(user.id, saved);
       set({ profile: saved });
     } catch (error) {
       set({ error: friendlyError(error) });
