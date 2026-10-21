@@ -12,7 +12,7 @@ import {
   logout as apiLogout,
   readAccount,
   readCurrentUser,
-  readProfile,
+  clearSession,
   refreshSession,
   registerUser,
   requestPasswordReset,
@@ -65,7 +65,9 @@ function friendlyError(error: unknown) {
     return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
   }
 
-  if (error.status === 401 && error.code === "ACCOUNT_UNAUTHORIZED") return "Tu sesión venció. Volvé a ingresar.";
+  if (error.code === "INVALID_OTP") return "La cuenta requiere un código de autenticación de dos pasos.";
+  if (error.status >= 500) return error.message;
+  if (error.status === 401 && error.code === "ACCOUNT_UNAUTHORIZED") return "Tu cuenta no está activa o la sesión venció. Volvé a ingresar.";
   if (error.status === 401) return "Email o contraseña incorrectos.";
   if (error.status === 429) return "Demasiados intentos. Esperá unos minutos y probá otra vez.";
   if (error.code === "INVALID_PAYLOAD") return "Revisá los datos ingresados.";
@@ -107,39 +109,27 @@ function cacheProfile(userId: string, profile: UserProfileRecord | null) {
 }
 
 async function loadAccount() {
-  let account: { user: AuthUser; profile: UserProfileRecord | null };
-  try {
-    account = await readAccount();
-  } catch (error) {
-    // La identidad la determina Directus. El servicio privado agrega perfil y
-    // pareja, pero una caída suya no puede convertir una sesión válida en un
-    // login fallido.
-    if (!(error instanceof AuthApiError) || ![403, 404, 503].includes(error.status)) throw error;
-    const user = await readCurrentUser();
-    account = { user, profile: null };
+  // Única fuente de identidad: Directus, usando el token del propio usuario.
+  // Perfiles y parejas son opcionales incluso ante 502/504, timeout o fallos de red.
+  const user = await readCurrentUser();
+  const [account, couple] = await Promise.all([
+    readAccount().catch(() => null),
+    readCouple().catch(() => null),
+  ]);
+  let profile = readCachedProfile(user.id);
+  if (account?.user?.id === user.id && account.profile?.user === user.id) {
+    profile = account.profile;
+    cacheProfile(user.id, profile);
+  } else if (account?.user?.id === user.id && account.profile === null && account.profile_available === true) {
+    // Lectura exitosa sin preferencias: no resucitar una copia borrada en otro equipo.
+    profile = null;
+    cacheProfile(user.id, { id: `local:${user.id}`, user: user.id, preferences: null });
   }
-  if (!account.profile) {
-    try {
-      account.profile = await readProfile();
-    } catch (error) {
-      if (!(error instanceof AuthApiError) || ![401, 403, 404, 503].includes(error.status)) throw error;
-    }
-  }
-  if (account.profile) {
-    cacheProfile(account.user.id, account.profile);
-  } else {
-    account.profile = readCachedProfile(account.user.id);
-  }
-  let couple: CoupleProfile | null = null;
-  try {
-    couple = await readCouple();
-  } catch (error) {
-    // Una falla de la vinculación de pareja no debe cancelar una sesión que el
-    // endpoint de cuenta ya validó correctamente.
-    if (!(error instanceof AuthApiError) || ![401, 403, 404, 503].includes(error.status)) throw error;
-  }
-  return { ...account, couple };
+  return { user, profile, couple };
 }
+
+let initialization: Promise<void> | null = null;
+let authRequestRevision = 0;
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   status: "initializing",
@@ -153,40 +143,54 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   async initialize() {
     if (get().status !== "initializing") return;
-    try {
-      await refreshSession(() =>
-        set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [] }),
-      );
-      const account = await loadAccount();
-      set({ status: "authenticated", ...account, error: null });
-    } catch {
-      set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [], error: null });
-    }
+    // React StrictMode monta el efecto dos veces. Un único refresh evita
+    // rotaciones de cookie simultáneas que cancelaban sesiones válidas.
+    if (initialization) return initialization;
+    const revision = ++authRequestRevision;
+    initialization = (async () => {
+      try {
+        await refreshSession(() =>
+          set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [] }),
+        );
+        const account = await loadAccount();
+        if (revision !== authRequestRevision) return;
+        set({ status: "authenticated", ...account, error: null });
+      } catch {
+        if (revision !== authRequestRevision) return;
+        clearSession();
+        set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [], error: null });
+      }
+    })().finally(() => { initialization = null; });
+    return initialization;
   },
 
   async login(email, password) {
+    const revision = ++authRequestRevision;
     set({ busy: true, error: null });
     try {
       await apiLogin(email, password, () =>
         set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [] }),
       );
       const account = await loadAccount();
+      if (revision !== authRequestRevision) return;
       set({ status: "authenticated", ...account });
     } catch (error) {
-      set({ error: friendlyError(error) });
+      if (revision !== authRequestRevision) return;
+      clearSession();
+      set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [], error: friendlyError(error) });
       throw error;
     } finally {
-      set({ busy: false });
+      if (revision === authRequestRevision) set({ busy: false });
     }
   },
 
   async logout() {
+    authRequestRevision++;
     set({ busy: true, error: null });
     try {
       await apiLogout();
-      set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [] });
     } finally {
-      set({ busy: false });
+      set({ status: "anonymous", user: null, profile: null, couple: null, coupleInvite: null, coupleMatches: [], busy: false });
     }
   },
 

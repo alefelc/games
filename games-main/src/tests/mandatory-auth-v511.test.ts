@@ -30,7 +30,7 @@ describe("acceso obligatorio 5.1.3", () => {
 
   it("no cancela el login si falla una función opcional de pareja", () => {
     const authStore = readFileSync(resolve(packageRoot, "src/auth/useAuthStore.ts"), "utf8");
-    expect(authStore).toContain("[401, 403, 404, 503].includes(error.status)");
+    expect(authStore).toContain("readCouple().catch(() => null)");
   });
 
   it("conserva una sesión válida cuando el servicio privado está caído", () => {
@@ -39,6 +39,6 @@ describe("acceso obligatorio 5.1.3", () => {
     expect(authApi).toContain("export async function readCurrentUser()");
     expect(authApi).toContain("/users/me?fields=id,email,first_name,last_name,status");
     expect(authStore).toContain("const user = await readCurrentUser()");
-    expect(authStore).toContain("account = { user, profile: null }");
+    expect(authStore).toContain("readAccount().catch(() => null)");
   });
 });

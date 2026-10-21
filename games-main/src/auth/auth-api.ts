@@ -13,6 +13,7 @@ interface LoginResult {
 interface AccountBundle {
   user: AuthUser;
   profile: UserProfileRecord | null;
+  profile_available?: boolean;
 }
 
 export class AuthApiError extends Error {
@@ -29,6 +30,8 @@ export class AuthApiError extends Error {
 
 let accessToken: string | null = null;
 let refreshTimer: number | null = null;
+let refreshInFlight: Promise<LoginResult> | null = null;
+let sessionGeneration = 0;
 
 export function getAccessToken() {
   return accessToken;
@@ -58,6 +61,46 @@ function normalizeErrorCode(payload: unknown) {
   return errors?.[0]?.extensions?.code ?? null;
 }
 
+async function fetchAccountJson<T>(
+  url: string,
+  options: RequestInit,
+  unavailableCode: string,
+  timeoutMs = 12_000,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const text = await response.text();
+    let payload: unknown = null;
+    try { payload = text ? JSON.parse(text) : null; } catch { /* Never show proxy HTML. */ }
+    if (!response.ok) {
+      throw new AuthApiError(
+        normalizeErrorMessage(payload, response.status >= 500
+          ? "El servicio de cuentas no está disponible. Intentá nuevamente en unos minutos."
+          : "No se pudo completar la solicitud."),
+        response.status,
+        normalizeErrorCode(payload) ?? (response.status >= 500 ? unavailableCode : null),
+      );
+    }
+    if (text && payload === null) {
+      throw new AuthApiError("El servidor devolvió una respuesta inválida.", 502, unavailableCode);
+    }
+    return payload && typeof payload === "object" && "data" in payload
+      ? (payload as DirectusEnvelope<T>).data
+      : payload as T;
+  } catch (error) {
+    if (error instanceof AuthApiError) throw error;
+    throw new AuthApiError(
+      "No se pudo conectar con el servicio de cuentas. Revisá tu conexión o intentá más tarde.",
+      503,
+      unavailableCode,
+    );
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 async function directusRequest<T>(
   endpoint: string,
   options: RequestInit & { authenticated?: boolean } = {},
@@ -71,37 +114,15 @@ async function directusRequest<T>(
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(`${env.directusUrl}${endpoint}`, {
+  return fetchAccountJson<T>(`${env.directusUrl}${endpoint}`, {
     ...options,
     headers,
     credentials: "include",
     cache: "no-store",
-  });
-
-  const text = await response.text();
-  let payload: unknown = null;
-  try {
-    payload = text ? JSON.parse(text) : null;
-  } catch {
-    payload = text;
-  }
-
-  if (!response.ok) {
-    throw new AuthApiError(
-      normalizeErrorMessage(payload, "No se pudo completar la solicitud."),
-      response.status,
-      normalizeErrorCode(payload),
-    );
-  }
-
-  if (payload && typeof payload === "object" && "data" in payload) {
-    return (payload as DirectusEnvelope<T>).data;
-  }
-
-  return payload as T;
+  }, "DIRECTUS_UNAVAILABLE");
 }
 
-async function accountRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function accountRequest<T>(endpoint: string, options: RequestInit = {}, timeoutMs = 12_000): Promise<T> {
   if (!accessToken) {
     throw new AuthApiError("La sesión no está disponible.", 401, "ACCOUNT_UNAUTHORIZED");
   }
@@ -116,40 +137,16 @@ async function accountRequest<T>(endpoint: string, options: RequestInit = {}): P
     }
 
     try {
-      const response = await fetch(`${baseUrl}${endpoint}`, {
+      return await fetchAccountJson<T>(`${baseUrl}${endpoint}`, {
         ...options,
         headers,
         credentials: "omit",
         cache: "no-store",
-      });
-      const text = await response.text();
-      let payload: unknown = null;
-      try {
-        payload = text ? JSON.parse(text) : null;
-      } catch {
-        payload = text;
-      }
-
-      if (!response.ok) {
-        const error = new AuthApiError(
-          normalizeErrorMessage(payload, "No se pudo completar la operación de cuenta."),
-          response.status,
-          normalizeErrorCode(payload),
-        );
-        // Un 404 puede provenir de un servicio viejo; se prueba la ruta alternativa.
-        if (response.status === 404) {
-          lastError = error;
-          continue;
-        }
-        throw error;
-      }
-
-      if (payload && typeof payload === "object" && "data" in payload) {
-        return (payload as DirectusEnvelope<T>).data;
-      }
-      return payload as T;
+      }, "ACCOUNT_SERVICE_UNAVAILABLE", timeoutMs);
     } catch (error) {
-      if (error instanceof AuthApiError && error.status !== 404) throw error;
+      // GETs may safely try another route; do not replay a mutation after a 5xx.
+      if (error instanceof AuthApiError && error.status !== 404 &&
+        !(options.method === "GET" && error.status >= 500)) throw error;
       lastError = error;
     }
   }
@@ -173,33 +170,12 @@ async function publicAccountRequest<T>(endpoint: string, options: RequestInit = 
     }
 
     try {
-      const response = await fetch(`${baseUrl}${endpoint}`, {
+      return await fetchAccountJson<T>(`${baseUrl}${endpoint}`, {
         ...options,
         headers,
         credentials: "omit",
         cache: "no-store",
-      });
-      const text = await response.text();
-      let payload: unknown = null;
-      try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
-
-      if (!response.ok) {
-        const error = new AuthApiError(
-          normalizeErrorMessage(payload, "No se pudo completar el registro."),
-          response.status,
-          normalizeErrorCode(payload),
-        );
-        if (response.status === 404) {
-          lastError = error;
-          continue;
-        }
-        throw error;
-      }
-
-      if (payload && typeof payload === "object" && "data" in payload) {
-        return (payload as DirectusEnvelope<T>).data;
-      }
-      return payload as T;
+      }, "ACCOUNT_SERVICE_UNAVAILABLE");
     } catch (error) {
       if (error instanceof AuthApiError && error.status !== 404) throw error;
       lastError = error;
@@ -220,10 +196,11 @@ function scheduleRefresh(expiresMs: number, onFailure?: () => void) {
   // the worker alive after every assertion and makes the release gate unreliable.
   if (import.meta.env.MODE === "test") return;
   const delay = Math.max(30_000, expiresMs - 60_000);
+  const generation = sessionGeneration;
   refreshTimer = window.setTimeout(() => {
-    void refreshSession()
-      .then((result) => scheduleRefresh(result.expires, onFailure))
+    void refreshSession(onFailure)
       .catch(() => {
+        if (generation !== sessionGeneration) return;
         clearSession();
         onFailure?.();
       });
@@ -231,33 +208,56 @@ function scheduleRefresh(expiresMs: number, onFailure?: () => void) {
 }
 
 export function clearSession() {
+  sessionGeneration++;
   accessToken = null;
+  refreshInFlight = null;
   clearRefreshTimer();
 }
 
 export async function login(email: string, password: string, onSessionLost?: () => void) {
+  clearSession();
+  const generation = sessionGeneration;
   const result = await directusRequest<LoginResult>("/auth/login", {
     method: "POST",
     authenticated: false,
-    body: JSON.stringify({ email, password, mode: "cookie" }),
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password, mode: "cookie" }),
   });
+  assertLoginResult(result);
+  if (generation !== sessionGeneration) throw new AuthApiError("El inicio de sesión fue cancelado.", 401, "ACCOUNT_UNAUTHORIZED");
   accessToken = result.access_token;
   scheduleRefresh(result.expires, onSessionLost);
   return result;
 }
 
-export async function refreshSession(onSessionLost?: () => void) {
-  const result = await directusRequest<LoginResult>("/auth/refresh", {
-    method: "POST",
-    authenticated: false,
-    body: JSON.stringify({ mode: "cookie" }),
-  });
-  accessToken = result.access_token;
-  scheduleRefresh(result.expires, onSessionLost);
-  return result;
+function assertLoginResult(result: LoginResult): void {
+  if (!result || typeof result.access_token !== "string" || !result.access_token.trim() ||
+    !Number.isFinite(result.expires) || result.expires <= 0) {
+    throw new AuthApiError("La respuesta de autenticación no es válida.", 502, "DIRECTUS_UNAVAILABLE");
+  }
+}
+
+export function refreshSession(onSessionLost?: () => void): Promise<LoginResult> {
+  if (refreshInFlight) return refreshInFlight;
+  const generation = sessionGeneration;
+  const pending = directusRequest<LoginResult>("/auth/refresh", {
+      method: "POST",
+      authenticated: false,
+      body: JSON.stringify({ mode: "cookie" }),
+    }).then((result) => {
+      assertLoginResult(result);
+      if (generation !== sessionGeneration) throw new AuthApiError("La sesión fue cerrada.", 401, "ACCOUNT_UNAUTHORIZED");
+      accessToken = result.access_token;
+      scheduleRefresh(result.expires, onSessionLost);
+      return result;
+    }).finally(() => {
+      if (refreshInFlight === pending) refreshInFlight = null;
+    });
+  refreshInFlight = pending;
+  return pending;
 }
 
 export async function logout() {
+  clearSession();
   try {
     await directusRequest<void>("/auth/logout", {
       method: "POST",
@@ -274,7 +274,7 @@ export async function registerUser(input: {
   firstName: string;
   lastName: string;
 }) {
-  await publicAccountRequest<{ accepted: true }>("/v1/account/register", {
+  const result = await publicAccountRequest<{ accepted: true }>("/v1/account/register", {
     method: "POST",
     body: JSON.stringify({
       email: input.email,
@@ -282,6 +282,9 @@ export async function registerUser(input: {
       last_name: input.lastName,
     }),
   });
+  if (result?.accepted !== true) {
+    throw new AuthApiError("No se pudo confirmar el envío de la invitación.", 502, "ACCOUNT_SERVICE_UNAVAILABLE");
+  }
 }
 
 export async function acceptInvite(token: string, password: string) {
@@ -309,14 +312,18 @@ export async function resetPassword(token: string, password: string) {
 }
 
 export async function readAccount() {
-  return accountRequest<AccountBundle>("/v1/account/me", { method: "GET" });
+  return accountRequest<AccountBundle>("/v1/account/me", { method: "GET" }, 4_000);
 }
 
 export async function readCurrentUser() {
-  return directusRequest<AuthUser>(
+  const user = await directusRequest<AuthUser>(
     "/users/me?fields=id,email,first_name,last_name,status",
     { method: "GET" },
   );
+  if (!user?.id || user.status !== "active") {
+    throw new AuthApiError("Tu cuenta no está activa o no se pudo verificar.", 401, "ACCOUNT_UNAUTHORIZED");
+  }
+  return user;
 }
 
 export async function updateAccount(input: {
@@ -346,7 +353,7 @@ export async function saveProfile(preferences: SavedGamePreferences | null) {
 }
 
 export async function readCouple() {
-  return accountRequest<import("./types").CoupleProfile | null>("/v1/couples/me", { method: "GET" });
+  return accountRequest<import("./types").CoupleProfile | null>("/v1/couples/me", { method: "GET" }, 4_000);
 }
 
 export async function createCoupleInvite(expiresInDays = 7) {
